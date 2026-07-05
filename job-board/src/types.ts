@@ -1,0 +1,29 @@
+export interface Job {
+  id: string;
+  title: string;
+  company: string;
+  companyAbout: string;
+  companyUrl: string;
+  location: string;
+  jobLevel: string;
+  type: string;
+  arrangement: string;
+  salary: string;
+  salaryMinAnnual: number;
+  salaryMaxAnnual: number;
+  educationLevel: string;
+  visaEligible: string[];
+  visaPathways: string[];
+  skillAssessment: string;
+  employerSponsored: boolean;
+  posted: string;
+  closes: string;
+  skills: string[];
+  summary: string;
+  dayToDay: string;
+  dailySkills: string[];
+  companyValues: string[];
+  careerAdvancement: string;
+  description: string;
+  applyUrl: string;
+}
