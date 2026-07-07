@@ -36,7 +36,7 @@ export function About() {
     <div className="about">
       <header className="about-hero">
         <p className="about-eyebrow">International student job board</p>
-        <h1>International students 🤝🏾local startups</h1>
+        <h1>International students 🤝 local startups</h1>
         <p className="about-lede">
           I've created this website to connect international students and graduates studying STEM with early-career roles at
           Melbourne startups.
