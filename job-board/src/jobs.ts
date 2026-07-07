@@ -1,7 +1,6 @@
-import Papa from 'papaparse';
 import { Job } from './types';
 
-const CSV_URL = `${process.env.PUBLIC_URL || ''}/jobs.csv`;
+const JOBS_URL = `${process.env.PUBLIC_URL || ''}/jobs.json`;
 
 const isTruthy = (value: string) =>
   ['yes', 'true', '1', 'y'].includes(value.trim().toLowerCase());
@@ -78,15 +77,11 @@ function toJob(row: Record<string, string>): Job {
 }
 
 export async function loadJobs(): Promise<Job[]> {
-  const res = await fetch(CSV_URL);
+  const res = await fetch(JOBS_URL);
   if (!res.ok) throw new Error(`Could not load jobs (${res.status})`);
-  const text = await res.text();
 
-  const { data, errors } = Papa.parse<Record<string, string>>(text, {
-    header: true,
-    skipEmptyLines: true,
-  });
-  if (errors.length) throw new Error(errors[0].message);
+  const data = (await res.json()) as Record<string, string>[];
+  if (!Array.isArray(data)) throw new Error('jobs.json must be an array of jobs');
 
   return data.map(toJob).filter((job) => job.id && job.title);
 }

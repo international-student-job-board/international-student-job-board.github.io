@@ -3,13 +3,6 @@ export const REPO_URL =
 
 export const FEEDBACK_URL = `${REPO_URL}/issues/new?title=${encodeURIComponent('Feedback: ')}`;
 
-// Paste your Google Form's embed URL here to go live. In the form, click
-// Send → the < > (embed) tab and copy the src from the <iframe> — it looks like:
-// https://docs.google.com/forms/d/e/FORM_ID/viewform?embedded=true
-// Leave empty to show a placeholder on the "Post a job" page.
-export const JOB_FORM_EMBED_URL =
-  'https://docs.google.com/forms/d/e/1FAIpQLScM-scuB7kHyQU711N3Olhc0SqJiJbfG1AXOY8AfZ33fOnX7w/viewform?embedded=true';
-
 // Address startups can email their job brief to. Leave empty until you have one —
 // the page will say it's coming soon. Emails use the subject prefix below so
 // briefs are easy to triage into the CSV.
