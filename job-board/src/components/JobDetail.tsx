@@ -5,24 +5,24 @@ function mapEmbedUrl(query: string): string {
   return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&z=14&output=embed`;
 }
 
-const VISA_PALETTE = ['#e0aaff', '#c77dff', '#9d4edd', '#7b2cbf', '#5a189a', '#3c096c'];
+const VISA_PALETTE = ['#ffc078', '#f9a03f', '#e87825', '#d45113', '#a03e0a', '#813405'];
 
 // A fixed shade per visa code so the same visa always looks the same.
 const VISA_COLORS: Record<string, string> = {
-  '500': '#e0aaff',
-  '485': '#c77dff',
-  '189': '#9d4edd',
-  '190': '#7b2cbf',
-  '186': '#5a189a',
-  '482': '#3c096c',
+  '500': '#ffc078',
+  '485': '#f9a03f',
+  '482': '#e87825',
+  '189': '#d45113',
+  '190': '#a03e0a',
+  '186': '#813405',
 };
 
 // Lighter shades need dark text for contrast; darker shades take white.
-const LIGHT_VISA = new Set(['#e0aaff', '#c77dff', '#9d4edd']);
+const LIGHT_VISA = new Set(['#ffc078', '#f9a03f']);
 
 function visaChipStyle(code: string, index: number) {
   const background = VISA_COLORS[code] ?? VISA_PALETTE[index % VISA_PALETTE.length];
-  return { background, color: LIGHT_VISA.has(background) ? '#000103' : '#fffffa' };
+  return { background, color: LIGHT_VISA.has(background) ? '#813405' : '#fffffa' };
 }
 
 function Pills({ items }: { items: string[] }) {

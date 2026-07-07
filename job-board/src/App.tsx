@@ -44,7 +44,7 @@ function matches(job: Job, filters: FilterState): boolean {
 
 const uniqueSorted = (values: string[]) => Array.from(new Set(values)).sort();
 
-function routeFromHash(): 'jobs' | 'about' | 'post' {
+function routeFromHash(): 'jobs' | 'post' | 'about' {
   const hash = window.location.hash;
   if (hash.startsWith('#/about')) return 'about';
   if (hash.startsWith('#/post')) return 'post';
@@ -56,7 +56,10 @@ function App() {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [route, setRoute] = useState<'jobs' | 'about' | 'post'>(routeFromHash);
+  // On mobile the list and detail are separate "pages"; this flips to the
+  // detail page when a job is tapped. On desktop both always show side by side.
+  const [showDetail, setShowDetail] = useState(false);
+  const [route, setRoute] = useState<'jobs' | 'post' | 'about'>(routeFromHash);
   const [page, setPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(true);
   const detailRef = useRef<HTMLElement>(null);
@@ -75,6 +78,17 @@ function App() {
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
+
+  // Leaving the jobs page (or switching routes) drops back to the list view.
+  useEffect(() => {
+    setShowDetail(false);
+  }, [route]);
+
+  const openJob = (id: string) => {
+    setSelectedId(id);
+    setShowDetail(true);
+    window.scrollTo({ top: 0 });
+  };
 
   // Back to page 1 whenever the filters change.
   useEffect(() => {
@@ -119,7 +133,7 @@ function App() {
   }
 
   return (
-    <div className="app" id="top">
+    <div className={`app${showDetail ? ' detail-open' : ''}`} id="top">
       <Header route={route} />
 
       <div className="filters-region">
@@ -148,7 +162,7 @@ function App() {
             Every role here welcomes international students &amp; graduates.
           </p>
 
-          {status === 'loading' && <p className="panel-note">Loading jobs…</p>}
+          {status === 'loading' && <p className="panel-note">Loading jobs . . .</p>}
           {status === 'error' && (
             <p className="panel-note" role="alert">
               Sorry, we couldn't load the jobs right now. Please try again later.
@@ -166,7 +180,7 @@ function App() {
                       key={job.id}
                       job={job}
                       selected={selected?.id === job.id}
-                      onSelect={setSelectedId}
+                      onSelect={openJob}
                     />
                   ))}
                 </ul>
@@ -199,6 +213,9 @@ function App() {
         </section>
 
         <main className="detail-panel" ref={detailRef}>
+          <button type="button" className="detail-back" onClick={() => setShowDetail(false)}>
+            ← Back to jobs
+          </button>
           {selected ? (
             <JobDetail job={selected} />
           ) : (

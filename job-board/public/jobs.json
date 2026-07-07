@@ -25,5 +25,31 @@
     "career_advancement": "Grow from Graduate to Software Engineer II within ~18 months with a dedicated mentor and clear progression framework.",
     "description": "A full-time graduate role for a recent Comp sci graduate. Ship real features from your first fortnight with regular pairing and mentorship. We offer employer-sponsored visas and the skilled work supports a 189, 190 or 186 pathway.",
     "apply_url": "https://www.example-company.com/careers"
+  }, {
+    "id": "2",
+    "title": "Example Mid Mechatronic Engineer",
+    "company": "Example Company",
+    "company_about": "Example company one-line summary.",
+    "company_url": "https://www.example-company.com",
+    "location": "CBD, Melbourne VIC",
+    "job_level": "Mid",
+    "type": "Casual",
+    "arrangement": "Remote",
+    "salary": "$105,000",
+    "education_level": "Bachelor's",
+    "visa_eligible": "485",
+    "visa_pathways": "189|190|186",
+    "skill_assessment": "Engineers Australia (233512 Mechatronics Engineer)",
+    "employer_sponsored": "yes",
+    "posted": "2026-08-20",
+    "closes": "2026-09-10",
+    "skills": "MatLab||Python",
+    "summary": "Build and ship product features.",
+    "day_to_day": "Pair with a senior engineer, pick up a ticket, write and review code, and deploy small changes to production most days.",
+    "daily_skills": "Python|React|Problem solving|Code review|Communication",
+    "company_values": "Git|Growth",
+    "career_advancement": "Grow from Mid to Engineer III within ~18 months with a dedicated mentor and clear progression framework.",
+    "description": "A casual engineer role. Ship real features from your first fortnight with regular pairing and mentorship. We offer employer-sponsored visas and the skilled work supports a 189, 190 or 186 pathway.",
+    "apply_url": "https://www.example-company.com/careers"
   }
 ]

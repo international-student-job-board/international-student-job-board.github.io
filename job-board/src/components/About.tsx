@@ -1,23 +1,23 @@
 import { FEEDBACK_URL } from '../links';
+import { VisaPathway, Resources } from './AboutSections';
 
-const HOW = [
+const HOW_STUDENTS = [
   { n: 1, title: 'Browse startup roles', body: 'Every job is open to international students and graduates.' },
-  { n: 2, title: 'Check your visa fit', body: 'See the visa you can apply on, where it can lead, and the skills assessment.' },
+  { n: 2, title: 'Check your visa fit', body: 'See the visa you can apply on, where it can lead, and if the role actually matches your skills.' },
   { n: 3, title: 'Apply on the employer’s site', body: 'We link you to the startup’s preferred hiring method.' },
 ];
 
-const PATHWAY = [
-  { step: 'Study', tag: 'visa 500', body: 'Study a STEM course on a Student visa.' },
-  { step: 'Graduate', tag: 'visa 485', body: 'Move to a Temporary Graduate visa and start skilled work.' },
-  { step: 'Skilled work', tag: 'ACS', body: 'Build local experience and complete a skills assessment.' },
-  { step: 'Permanent residency', tag: 'visa 189 / 190 / 186', body: 'Progress to a skilled or employer-sponsored visa.' },
+const HOW_STARTUPS = [
+  { n: 1, title: 'Tell us about the role', body: 'Email a PDF job advert, a link, or fill in the form with the job and visa details.' },
+  { n: 2, title: 'We review it', body: 'Your job details land in our inbox and currently, I manually go through them and add it to the site.' },
+  { n: 3, title: 'It goes live', body: 'Your role appears on the board and links applicants to your preferred site for applications.' },
 ];
 
 const NOW = [
   'Every role shown here accepts international students and graduates',
   'See which visa you need to be on to apply',
   'See which visas you can apply for with this job',
-  'The visa pathway, including the skills assessment to get',
+  'Possible visa pathway mapped out, including the skills assessment to get',
   'Whether the role offers an employer-sponsored visa',
   'Salary, employer details, job level, type and location',
   'Filter by every one of these fields',
@@ -25,15 +25,10 @@ const NOW = [
 
 const NEXT = [
   'A map view of jobs by location, coz that\'s easier to find where to work',
-  'Create a resume once and apply on the spot; one resume, many job applications',
+  'Create one resume and use that to apply to many job applications (bye bye bye to forms!)',
   'Track how your application is progressing',
-  'Interview tips and reviews from international students who applied before',
-  'Contact the hiring manager directly',
-];
-
-const REFERENCES = [
-  { label: 'Study Melbourne', url: 'https://www.studymelbourne.vic.gov.au/' },
-  { label: 'Victoria’s international education', url: 'https://www.study.vic.gov.au/' },
+  'Interview tips and reviews from international students who applied to these startups before',
+  'Events',
 ];
 
 export function About() {
@@ -41,21 +36,37 @@ export function About() {
     <div className="about">
       <header className="about-hero">
         <p className="about-eyebrow">International student job board</p>
-        <h1>Bringing international students to local startups!</h1>
+        <h1>International students 🤝🏾local startups</h1>
         <p className="about-lede">
-          We connect international students and graduates studying STEM with early-career roles at
+          I've created this website to connect international students and graduates studying STEM with early-career roles at
           Melbourne startups.
           </p>
+          <br></br>
           <p className="about-lede">
-          International students and graduates get a chance to build their career in Melbourne. Local startups gain
+          This way international students and graduates get a chance to build their career here in Melbourne + local startups gain
           access to a diverse talent pool who are eager to learn, grow and contribute to their new community.
         </p>
       </header>
 
       <section className="about-section" aria-labelledby="how-heading">
         <h2 id="how-heading">How it works</h2>
+
+        <h3 className="about-track">For students &amp; graduates</h3>
         <ol className="how-grid">
-          {HOW.map((h) => (
+          {HOW_STUDENTS.map((h) => (
+            <li key={h.n} className="how-card">
+              <span className="how-n" aria-hidden="true">
+                {h.n}
+              </span>
+              <h3>{h.title}</h3>
+              <p>{h.body}</p>
+            </li>
+          ))}
+        </ol>
+
+        <h3 className="about-track">For startups hiring</h3>
+        <ol className="how-grid">
+          {HOW_STARTUPS.map((h) => (
             <li key={h.n} className="how-card">
               <span className="how-n" aria-hidden="true">
                 {h.n}
@@ -67,30 +78,7 @@ export function About() {
         </ol>
       </section>
 
-      <section className="about-section" aria-labelledby="pathway-heading">
-        <h2 id="pathway-heading">Example visa pathway</h2>
-        <ol className="pathway">
-          {PATHWAY.map((p, i) => (
-            <li key={p.step} className="pathway-card">
-              <span className="pathway-tag">{p.tag}</span>
-              <div className="pathway-head">
-                <span className="pathway-n" aria-hidden="true">
-                  {i + 1}
-                </span>
-                <h3>{p.step}</h3>
-              </div>
-              <p>{p.body}</p>
-            </li>
-          ))}
-        </ol>
-        <p className="about-note">
-          This is general information to help you plan, not immigration advice. Always check the{' '}
-          <a href="https://immi.homeaffairs.gov.au/" target="_blank" rel="noopener noreferrer">
-            Department of Home Affairs
-          </a>{' '}
-          and work with a registered migration agent for your situation.
-        </p>
-      </section>
+      <VisaPathway />
 
       <div className="about-columns">
         <section className="about-section" aria-labelledby="now-heading">
@@ -115,32 +103,22 @@ export function About() {
       <section className="about-section" aria-labelledby="scope-heading">
         <h2 id="scope-heading">Where we start</h2>
         <p>
-          For now we focus on <strong>international students and graduates in STEM, in Melbourne,
-          Victoria</strong>. Starting narrow lets us get the visas, skills assessments and
-          pathways right. We’ll expand to more fields, cities and countries over time.
+          Starting small by focusing on <strong>international students and graduates in STEM, in Melbourne,
+          Victoria</strong> and then expand to more fields, cities and countries over time.
+        </p>
+        <p>
+          Plus, gotta get my s**t together to build a proper backend to this GitHub pages website. Just thought of getting it out there whilst fleshing it out.
         </p>
         <p>
           Please submit a {' '}
           <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer">
             feedback or feature request
           </a>{' '}
-          if you'd like to reach us!
+          if you'd like to suggest anything to add to the site!
         </p>
       </section>
 
-      <section className="about-section" aria-labelledby="refs-heading">
-        <h2 id="refs-heading">Resources</h2>
-        <p>We build alongside the programs already supporting international students in Victoria.</p>
-        <ul className="ref-list">
-          {REFERENCES.map((ref) => (
-            <li key={ref.url}>
-              <a href={ref.url} target="_blank" rel="noopener noreferrer">
-                {ref.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <Resources />
     </div>
   );
 }

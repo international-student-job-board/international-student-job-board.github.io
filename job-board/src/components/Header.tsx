@@ -2,8 +2,8 @@ const base = process.env.PUBLIC_URL || '';
 
 const NAV = [
   { route: 'jobs', label: 'Jobs' },
-  { route: 'about', label: 'About' },
   { route: 'post', label: 'Post a job' },
+  { route: 'about', label: 'About' },
 ];
 
 export function Header({ route }: { route: string }) {

@@ -1,12 +1,6 @@
 import { useState } from 'react';
 import { JOB_EMAIL, JOB_EMAIL_SUBJECT_PREFIX } from '../links';
 
-const STEPS = [
-  { n: 1, title: 'Tell us about the role', body: 'Attach a PDF of the advert, or fill in the form with the job and visa details.' },
-  { n: 2, title: 'We review it', body: 'Your details land in our inbox and we check them before adding.' },
-  { n: 3, title: 'It goes live', body: 'Your role appears on the board and links applicants to your preferred site for applications.' },
-];
-
 type FieldType = 'text' | 'url' | 'date' | 'textarea' | 'select';
 
 interface Field {
@@ -29,7 +23,7 @@ const FIELDS: Field[] = [
   { key: 'type', label: 'Type', type: 'select', options: ['Full-time', 'Part-time', 'Casual', 'Contract', 'Internship'] },
   { key: 'arrangement', label: 'Work arrangement', type: 'select', options: ['On-site', 'Hybrid', 'Remote'] },
   { key: 'location', label: 'Location', type: 'text', placeholder: 'Richmond, Melbourne VIC' },
-  { key: 'salary', label: 'Salary or pay range', type: 'text', placeholder: '$85,000–$95,000 or $38/hr' },
+  { key: 'salary', label: 'Salary or pay range', type: 'text', placeholder: '$85,000–$95,000' },
   { key: 'posted', label: 'Application opens', type: 'date' },
   { key: 'closes', label: 'Application closes', type: 'date' },
   { key: 'education_level', label: 'Education needed', type: 'text', placeholder: "Bachelor's (can apply in your final year)" },
@@ -40,9 +34,9 @@ const FIELDS: Field[] = [
   { key: 'company_values', label: 'Company values', type: 'text', placeholder: 'Trust & transparency, Learning, Inclusion', hint: 'Separate with commas.' },
   { key: 'career_advancement', label: 'Career growth', type: 'textarea', placeholder: 'Where this role can lead.' },
   { key: 'description', label: 'Full description', type: 'textarea', placeholder: 'The full advert.' },
-  { key: 'visa_eligible', label: 'Visa(s) a candidate can apply on', type: 'text', placeholder: '485, 500', hint: 'Optional — leave blank if unsure. Separate with commas.' },
-  { key: 'visa_pathways', label: 'Visa(s) this role can lead to', type: 'text', placeholder: '189, 190, 186', hint: 'Optional. Separate with commas.' },
-  { key: 'skill_assessment', label: 'Skills assessment', type: 'text', placeholder: 'ACS (261313 Software Engineer)', hint: 'Optional.' },
+  { key: 'visa_eligible', label: 'Visa(s) a candidate can apply on', type: 'text', placeholder: '485, 500', hint: 'Optional : : Leave blank if unsure. Separate with commas.' },
+  { key: 'visa_pathways', label: 'Visa(s) this role can lead to', type: 'text', placeholder: '189, 190, 186', hint: 'Optional : : Separate with commas.' },
+  { key: 'skill_assessment', label: 'Skills assessment', type: 'text', placeholder: 'ACS (261313 Software Engineer)', hint: 'Optional' },
   { key: 'employer_sponsored', label: 'Offer employer-sponsored visas?', type: 'select', options: ['No', 'Yes'] },
 ];
 
@@ -148,29 +142,13 @@ export function PostJob() {
 
   return (
     <div className="about">
-      <header className="about-hero">
-        <p className="about-eyebrow">For startups</p>
-        <h1>Post a role and hire up-and-coming STEM talent.</h1>
-        <p className="about-lede">
+      <header className="about-intro">
+        <h1>Hire up-and-coming STEM talent</h1>
+        <p>
           List a role in minutes. Every job on the board is seen by international students
           and graduates in Melbourne who are eager to learn, grow and build a career here.
         </p>
       </header>
-
-      <section className="about-section" aria-labelledby="post-how-heading">
-        <h2 id="post-how-heading">How it works</h2>
-        <ol className="how-grid">
-          {STEPS.map((s) => (
-            <li key={s.n} className="how-card">
-              <span className="how-n" aria-hidden="true">
-                {s.n}
-              </span>
-              <h3>{s.title}</h3>
-              <p>{s.body}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
 
       <section className="about-section" aria-labelledby="post-form-heading">
         <h2 id="post-form-heading">Submit a role</h2>
