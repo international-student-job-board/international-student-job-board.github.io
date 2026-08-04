@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
 import { Job } from './types';
 import { loadJobs } from './jobs';
+import { resolveOccupation } from './references';
 import { Header } from './components/Header';
 import { Filters, FilterState, FilterOptions } from './components/Filters';
 import { JobCard } from './components/JobCard';
@@ -19,6 +20,8 @@ const EMPTY_FILTERS: FilterState = {
   arrangement: '',
   visa: '',
   pathwayVisa: '',
+  anzsco: '',
+  skillAssessment: '',
   salaryMin: 0,
   skills: [],
   sponsoredOnly: false,
@@ -33,6 +36,12 @@ function matches(job: Job, filters: FilterState): boolean {
   if (filters.salaryMin > 0 && job.salaryMaxAnnual < filters.salaryMin) return false;
   if (filters.sponsoredOnly && !job.employerSponsored) return false;
   if (filters.skills.length && !filters.skills.some((s) => job.skills.includes(s))) return false;
+
+  if (filters.anzsco || filters.skillAssessment) {
+    const occ = resolveOccupation(job.anzsco, job.skillAssessment);
+    if (filters.anzsco && occ.code !== filters.anzsco) return false;
+    if (filters.skillAssessment && occ.assessment !== filters.skillAssessment) return false;
+  }
 
   const q = filters.query.trim().toLowerCase();
   if (!q) return true;
@@ -102,6 +111,12 @@ function App() {
       arrangements: uniqueSorted(jobs.map((j) => j.arrangement)),
       visas: uniqueSorted(jobs.flatMap((j) => j.visaEligible)),
       pathwayVisas: uniqueSorted(jobs.flatMap((j) => j.visaPathways)),
+      anzscos: uniqueSorted(
+        jobs.map((j) => resolveOccupation(j.anzsco, j.skillAssessment).code).filter(Boolean)
+      ),
+      skillAssessments: uniqueSorted(
+        jobs.map((j) => resolveOccupation(j.anzsco, j.skillAssessment).assessment).filter(Boolean)
+      ),
       skills: uniqueSorted(jobs.flatMap((j) => j.skills)),
     }),
     [jobs]
@@ -145,7 +160,14 @@ function App() {
         >
           Filters
         </button>
-        {filtersOpen && <Filters filters={filters} options={options} onChange={setFilters} />}
+        {filtersOpen && (
+          <Filters
+            filters={filters}
+            options={options}
+            onChange={setFilters}
+            onClear={() => setFilters(EMPTY_FILTERS)}
+          />
+        )}
       </div>
 
       <div className="workspace">

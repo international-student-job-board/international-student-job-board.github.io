@@ -9,7 +9,7 @@ const NAV = [
 export function Header({ route }: { route: string }) {
   return (
     <header className="topbar">
-      <a className="brand" href="#/jobs" aria-label="International Student Job Board — home">
+      <a className="brand" href="#/jobs" aria-label="International Student Job Board - home">
         <img
           className="brand-logo"
           src={`${base}/icons/logo.svg`}

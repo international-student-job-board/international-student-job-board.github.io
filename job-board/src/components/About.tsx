@@ -2,7 +2,7 @@ import { FEEDBACK_URL } from '../links';
 import { VisaPathway, Resources } from './AboutSections';
 
 const HOW_STUDENTS = [
-  { n: 1, title: 'Browse startup roles', body: 'Every job is open to international students and graduates.' },
+  { n: 1, title: 'Browse local roles', body: 'Every job is open to international students and graduates.' },
   { n: 2, title: 'Check your visa fit', body: 'See the visa you can apply on, where it can lead, and if the role actually matches your skills.' },
   { n: 3, title: 'Apply on the employer’s site', body: 'We link you to the startup’s preferred hiring method.' },
 ];
@@ -35,8 +35,7 @@ export function About() {
   return (
     <div className="about">
       <header className="about-hero">
-        <p className="about-eyebrow">International student job board</p>
-        <h1>International students 🤝 local startups</h1>
+        <h1>International students 🤝🏿 local startups</h1>
         <p className="about-lede">
           I've created this website to connect international students and graduates studying STEM with early-career roles at
           Melbourne startups.

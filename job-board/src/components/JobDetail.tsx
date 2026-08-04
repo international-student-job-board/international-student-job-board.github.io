@@ -1,44 +1,126 @@
 import { Job } from '../types';
 import { formatDate } from '../format';
+import { visaUrl, resolveOccupation, VISA_DISCLAIMER } from '../references';
+import { InfoTooltip } from './InfoTooltip';
 
-function mapEmbedUrl(query: string): string {
-  return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&z=14&output=embed`;
-}
-
-const VISA_PALETTE = ['#ffc078', '#f9a03f', '#e87825', '#d45113', '#a03e0a', '#813405'];
-
-// A fixed shade per visa code so the same visa always looks the same.
-const VISA_COLORS: Record<string, string> = {
-  '500': '#ffc078',
-  '485': '#f9a03f',
-  '482': '#e87825',
-  '189': '#d45113',
-  '190': '#a03e0a',
-  '186': '#813405',
+const LIST_NAMES: Record<string, string> = {
+  MLTSSL: 'Medium and Long-term Strategic Skills List',
+  CSOL: 'Core Skills Occupation List',
+  STSOL: 'Short-term Skilled Occupation List',
+  ROL: 'Regional Occupation List',
 };
 
-// Lighter shades need dark text for contrast; darker shades take white.
-const LIGHT_VISA = new Set(['#ffc078', '#f9a03f']);
-
-function visaChipStyle(code: string, index: number) {
-  const background = VISA_COLORS[code] ?? VISA_PALETTE[index % VISA_PALETTE.length];
-  return { background, color: LIGHT_VISA.has(background) ? '#813405' : '#fffffa' };
-}
-
+// Each visa code links to its official Home Affairs listing when we know the
+// page; unknown codes stay as plain (unclickable) pills.
 function Pills({ items }: { items: string[] }) {
   if (!items.length) return <>Not specified</>;
   return (
     <span className="pill-list">
-      {items.map((v, i) => (
-        <span key={v} className="pill" style={visaChipStyle(v, i)}>
-          {v}
-        </span>
-      ))}
+      {items.map((v) => {
+        const href = visaUrl(v);
+        return href ? (
+          <a
+            key={v}
+            className="pill pill-link"
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={`Subclass ${v} - official Home Affairs page`}
+          >
+            {v}
+          </a>
+        ) : (
+          <span key={v} className="pill">
+            {v}
+          </span>
+        );
+      })}
     </span>
   );
 }
 
+// A single free-text value (skills assessor, ANZSCO occupation) that becomes a
+// link out to its official source when we can resolve one.
+function Reference({ text, href }: { text: string; href?: string }) {
+  if (!text) return <>Not specified</>;
+  if (!href) return <>{text}</>;
+  return (
+    <a
+      className="reference-link"
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {text}
+    </a>
+  );
+}
+
+// Tag an outbound apply URL with UTM parameters so the employer's analytics
+// attributes the visit to this board (belt-and-braces alongside the referrer
+// header). Left untouched for mailto: or non-http links.
+function applyHref(url: string): string {
+  const trimmed = url.trim();
+  if (!/^https?:\/\//i.test(trimmed)) return trimmed;
+  try {
+    const u = new URL(trimmed);
+    u.searchParams.set('utm_source', window.location.hostname);
+    u.searchParams.set('utm_medium', 'referral');
+    u.searchParams.set('utm_campaign', 'apply');
+    return u.toString();
+  } catch {
+    return trimmed;
+  }
+}
+
+// Apply action. When the employer takes applications by email (a mailto: link)
+// the button says so and opens the mail client in place; otherwise it opens the
+// employer's application page in a new tab.
+function ApplyButton({ url }: { url: string }) {
+  const isEmail = url.trim().toLowerCase().startsWith('mailto:');
+  return (
+    <a
+      className={`btn btn-primary${isEmail ? ' btn-email' : ''}`}
+      href={isEmail ? url : applyHref(url)}
+      {...(isEmail
+        ? {}
+        : {
+            target: '_blank',
+            // `noopener` (not `noreferrer`) so the employer site still receives
+            // our domain as the referrer; the policy sends our origin.
+            rel: 'noopener',
+            referrerPolicy: 'strict-origin-when-cross-origin' as const,
+          })}
+    >
+      {isEmail ? (
+        <>
+          <span className="btn-icon" aria-hidden="true">
+            ✉
+          </span>
+          Apply by email
+        </>
+      ) : (
+        <>
+          Apply on employer site
+          <span className="btn-icon btn-icon-end" aria-hidden="true">
+            ↗
+          </span>
+        </>
+      )}
+    </a>
+  );
+}
+
 export function JobDetail({ job }: { job: Job }) {
+  const occupation = resolveOccupation(job.anzsco, job.skillAssessment);
+  const occupationLabel = [occupation.code, occupation.name].filter(Boolean).join(' ');
+  const applyByEmail = job.applyUrl.trim().toLowerCase().startsWith('mailto:');
+  // "Can lead to" = the job's own pathway visas plus every visa the ANZSCO
+  // occupation can be used for, de-duplicated by subclass (occupations can list
+  // a code more than once for different streams).
+  const pathwayVisas = Array.from(
+    new Set([...job.visaPathways, ...occupation.visas.map((v) => v.code)])
+  );
   return (
     <article className="job-detail" aria-labelledby="job-detail-title">
       <p className="detail-company">
@@ -102,7 +184,10 @@ export function JobDetail({ job }: { job: Job }) {
       </section>
 
       <section className="visa-box" aria-labelledby="visa-heading">
-        <h2 id="visa-heading">Visa &amp; pathway</h2>
+        <h2 id="visa-heading">
+          Visa &amp; pathway{' '}
+          <InfoTooltip text={VISA_DISCLAIMER} label="Visa guidance disclaimer" />
+        </h2>
         <ul className="visa-facts">
           <li>
             <span className="fact-label">Apply if you're on</span>
@@ -110,80 +195,45 @@ export function JobDetail({ job }: { job: Job }) {
           </li>
           <li>
             <span className="fact-label">Can lead to</span>
-            <Pills items={job.visaPathways} />
+            <Pills items={pathwayVisas} />
           </li>
           <li>
             <span className="fact-label">Skills assessment</span>
-            {job.skillAssessment || 'Not specified'}
+            <Reference text={occupation.assessment} href={occupation.assessmentHref} />
           </li>
+          <li>
+            <span className="fact-label">ANZSCO occupation</span>
+            <Reference text={occupationLabel} href={occupation.anzscoHref} />
+          </li>
+          {occupation.lists.length > 0 && (
+            <li>
+              <span className="fact-label">
+                Occupation lists{' '}
+                <InfoTooltip
+                  label="What the occupation lists mean"
+                  text={occupation.lists
+                    .map((l) => `${l} - ${LIST_NAMES[l] ?? l}`)
+                    .join('\n')}
+                />
+              </span>
+              {occupation.lists.join(', ')}
+            </li>
+          )}
           <li>
             <span className="fact-label">Employer sponsorship</span>
             {job.employerSponsored ? 'Available' : 'Not offered'}
           </li>
         </ul>
+
         <div className="detail-actions">
-          <a
-            className="btn btn-primary"
-            href={job.applyUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Apply
-          </a>
+          <ApplyButton url={job.applyUrl} />
         </div>
       </section>
 
       {job.summary && (
         <section className="detail-section">
-          <h2>Job summary</h2>
+          <h2>Summary</h2>
           <p className="detail-description">{job.summary}</p>
-        </section>
-      )}
-
-      {job.dayToDay && (
-        <section className="detail-section">
-          <h2>A typical day</h2>
-          <p className="detail-description">{job.dayToDay}</p>
-        </section>
-      )}
-
-      {job.dailySkills.length > 0 && (
-        <section className="detail-section">
-          <h2>Must have skills</h2>
-          <ol className="skill-list">
-            {job.dailySkills.slice(0, 5).map((skill) => (
-              <li key={skill} className="skill">
-                {skill}
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
-
-      {job.description && (
-        <section className="detail-section">
-          <h2>About the role</h2>
-          <p className="detail-description">{job.description}</p>
-        </section>
-      )}
-
-      {job.companyValues.length > 0 && (
-        <section className="detail-section">
-          <h2>Company values</h2>
-          <ul className="value-list">
-            {job.companyValues.map((value) => (
-              <li key={value} className="value-chip">
-                {value}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {job.careerAdvancement && (
-        <section className="detail-section">
-          <h2>Where it can lead</h2>
-          <p className="detail-description">{job.careerAdvancement}</p>
         </section>
       )}
 
@@ -200,31 +250,12 @@ export function JobDetail({ job }: { job: Job }) {
         </section>
       )}
 
-      {job.location && (
-        <details className="map-box">
-          <summary>Location</summary>
-          <div className="map-frame">
-            <iframe
-              title={`Map showing ${job.company} in ${job.location}`}
-              src={mapEmbedUrl(job.location)}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
-          </div>
-        </details>
-      )}
-
       <div className="detail-actions">
-        <a
-          className="btn btn-primary"
-          href={job.applyUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Apply
-        </a>
+        <ApplyButton url={job.applyUrl} />
         <p className="apply-note">
-          Applications are handled on the employer's preferred website.
+          {applyByEmail
+            ? "Applications for this role are sent by email to the employer."
+            : "Applications are handled on the employer's preferred website."}
         </p>
       </div>
     </article>

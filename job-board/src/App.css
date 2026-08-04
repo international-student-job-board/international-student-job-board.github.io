@@ -1,42 +1,45 @@
 :root {
-  /* Palette: 813405 brown / d45113 orange / f9a03f amber */
-  --highlight: #d45113;
-  --bg: #fffffa;
-  --grey: #515052;
-  --focus: #d45113;
+  /* Palette: #00171f ink, #ffffff white, and greys in between. No other hues. */
+  --highlight: #00171f;
+  --bg: #ffffff;
+  --grey: #5c6b70;
+  --focus: #00171f;
+  /* Accent reserved ONLY for visa-sponsorship UI (filter toggle + the
+     "sponsorship available" tag). Not used for anything else. */
   --sponsor: #d45113;
 
   /* Semantic aliases mapped onto the palette */
-  --blue: #d45113;
-  --indigo: #813405;
-  --violet: #d45113;
-  --magenta: #f9a03f;
-  --rose: #d45113;
-  --pink: #d45113;
-  --amber: #f9a03f;
+  --blue: #00171f;
+  --indigo: #00171f;
+  --violet: #00171f;
+  --magenta: #00171f;
+  --rose: #00171f;
+  --pink: #00171f;
+  --amber: #00171f;
 
-  --primary: #d45113;
-  --primary-dark: #813405;
-  --grad: linear-gradient(135deg, #813405 0%, #d45113 100%);
+  --primary: #00171f;
+  --primary-dark: #00171f;
+  --grad: #00171f;
 
-  --ink: #813405;
-  --panel: #813405;
-  --card: #813405;
+  --ink: #00171f;
+  --panel: #00171f;
+  --card: #00171f;
   --card-border: rgba(255, 255, 250, 0.28);
-  --body: #515052;
-  --muted: #515052;
-  --line: #e4e3e2;
-  --lavender: #ecebea;
-  --chip: #ecebea;
-  --lavender-bar: #f5f4f1;
-  --on-dark: rgba(255, 255, 250, 0.72);
-  --white: #fffffa;
+  --body: #00171f;
+  --muted: #5c6b70;
+  --line: #d7dcde;
+  --lavender: #eef1f2;
+  --chip: #eef1f2;
+  --lavender-bar: #eef1f2;
+  --soft: #f4f6f7;
+  --on-dark: rgba(255, 255, 255, 0.72);
+  --white: #ffffff;
 
   --radius: 15px;
   --ctrl-radius: 12px;
   --border: 2px;
   --topbar-h: 57px;
-  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%23813405' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E");
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%2300171f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E");
   --font: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     Helvetica, Arial, sans-serif;
   --list-w: 480px;
@@ -112,7 +115,7 @@ body {
   font-size: clamp(15px, 1.8vw, 18px);
   font-weight: 800;
   line-height: 1.15;
-  color: #d45113;
+  color: var(--ink);
 }
 
 .topnav {
@@ -181,18 +184,56 @@ body {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  padding: 18px clamp(20px, 4vw, 44px);
+  gap: 12px 16px;
+  padding: 16px clamp(16px, 4vw, 44px) 20px;
   background: var(--bg);
   border-bottom: 1px solid var(--line);
+}
+
+.filter-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  margin-left: auto;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--grey);
+}
+
+.filter-clear:hover,
+.filter-clear:focus-visible {
+  text-decoration-color: var(--ink);
+}
+
+.filter-clear-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--white);
+  font-size: 11px;
+  text-decoration: none;
 }
 
 .filter-search {
   position: relative;
   display: flex;
   align-items: center;
-  flex: 1 1 240px;
-  min-width: 210px;
+  flex: 1 1 260px;
+  min-width: 200px;
 }
 
 .search-icon {
@@ -224,7 +265,7 @@ body {
   width: 14px;
   height: 14px;
   cursor: pointer;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none' stroke='%23813405' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M2 2l10 10M12 2L2 12'/%3E%3C/svg%3E")
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none' stroke='%2300171f' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M2 2l10 10M12 2L2 12'/%3E%3C/svg%3E")
     no-repeat center;
 }
 
@@ -241,8 +282,13 @@ body {
   cursor: pointer;
 }
 
+.filter-field {
+  flex: 0 1 auto;
+}
+
 .filter-field select {
-  padding: 0 44px 0 18px;
+  min-width: 158px;
+  padding: 0 44px 0 16px;
   appearance: none;
   -webkit-appearance: none;
   background-image: var(--chevron);
@@ -421,14 +467,14 @@ body {
 }
 
 .panel-banner {
-  margin: 16px 0 22px;
+  margin: 16px 0 20px;
   font-size: 13px;
   font-weight: 600;
   color: var(--ink);
-  background: rgba(249, 160, 63, 0.18);
-  border: 1px solid var(--amber);
-  padding: 10px 16px;
-  border-radius: var(--radius);
+  background: var(--soft);
+  border-left: 3px solid var(--ink);
+  padding: 12px 16px;
+  border-radius: 8px;
 }
 
 .panel-note {
@@ -463,7 +509,7 @@ body {
 }
 
 .job-card:hover {
-  background: rgba(249, 160, 63, 0.22);
+  background: rgba(0, 23, 31, 0.22);
 }
 
 .job-card.is-selected {
@@ -474,7 +520,7 @@ body {
 /* Keep the sponsor badge visible on the orange selected card. */
 .job-card.is-selected .flag-sponsor {
   background: var(--white);
-  color: var(--highlight);
+  color: var(--sponsor);
 }
 
 .job-card-company {
@@ -762,6 +808,33 @@ body {
   font-weight: 700;
 }
 
+/* A visa pill that links out to its official Home Affairs page. */
+.pill-link {
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+
+.pill-link:hover,
+.pill-link:focus-visible {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+/* Free-text reference values (skills assessor, ANZSCO) linking to their source. */
+.reference-link {
+  color: var(--indigo);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+
+.reference-link:hover,
+.reference-link:focus-visible {
+  text-decoration-thickness: 2px;
+}
+
 /* Tags */
 .detail-tags {
   list-style: none;
@@ -831,7 +904,9 @@ body {
 
 /* Buttons */
 .btn {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 16px 30px;
   border: var(--border) solid var(--ink);
   border-radius: var(--radius);
@@ -854,6 +929,32 @@ body {
   color: var(--white);
 }
 
+/* Email applications get a filled accent button so they read differently from
+   the outline "Apply on website" button. */
+.btn-email.btn-primary {
+  background: var(--highlight);
+  border-color: var(--highlight);
+  color: var(--white);
+}
+
+.btn-email.btn-primary:hover {
+  background: var(--indigo);
+  border-color: var(--indigo);
+  color: var(--white);
+}
+
+.btn-icon {
+  font-size: 20px;
+  line-height: 1;
+  margin-right: 10px;
+}
+
+.btn-icon-end {
+  margin-right: 0;
+  margin-left: 10px;
+  font-size: 16px;
+}
+
 .detail-actions {
   margin-top: 36px;
 }
@@ -861,6 +962,136 @@ body {
 .apply-note {
   margin: 14px 0 0;
   font-size: 13px;
+  color: var(--muted);
+}
+
+/* Local-only "add a job" panel (dev builds only). */
+.admin-panel {
+  border: 2px dashed var(--highlight);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  background: var(--lavender-bar);
+}
+
+/* Info "i" affordance with hover/focus tooltip bubble. */
+.info-tip {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.info-tip-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: italic 700 10px/1 Georgia, 'Times New Roman', serif;
+  cursor: help;
+}
+
+.info-tip-bubble {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  width: max-content;
+  max-width: min(320px, 80vw);
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--white);
+  font: 500 12.5px/1.6 var(--font);
+  letter-spacing: normal;
+  text-align: left;
+  text-transform: none;
+  white-space: pre-line;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  pointer-events: none;
+}
+
+/* Little pointer under the bubble. */
+.info-tip-bubble::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--ink);
+}
+
+.info-tip-btn:hover + .info-tip-bubble,
+.info-tip-btn:focus-visible + .info-tip-bubble {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Occupation → eligible visas (collapsible). */
+.occ-visas {
+  margin: 4px 0 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.occ-visas summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.occ-visa-list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.occ-visa-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.occ-visa-code {
+  flex: 0 0 auto;
+  min-width: 42px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--indigo);
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+}
+
+a.occ-visa-code:hover,
+a.occ-visa-code:focus-visible {
+  filter: brightness(1.08);
+}
+
+.occ-visa-name {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.occ-visa-note {
+  margin: 14px 0 0;
+  font-size: 12px;
   color: var(--muted);
 }
 
@@ -881,19 +1112,8 @@ body {
 }
 
 .about-hero {
-  background: #d45113;
-  color: var(--white);
-  border-radius: var(--radius);
-  padding: clamp(32px, 5vw, 56px);
-}
-
-.about-eyebrow {
-  margin: 0 0 14px;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 250, 0.85);
+  padding: 8px 0 0;
+  margin-bottom: 8px;
 }
 
 .about-hero h1 {
@@ -901,13 +1121,14 @@ body {
   font-size: clamp(28px, 4vw, 44px);
   font-weight: 800;
   line-height: 1.12;
+  color: var(--ink);
 }
 
 .about-lede {
   margin: 0;
   font-size: clamp(16px, 2.1vw, 19px);
   line-height: 1.65;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--body);
 }
 
 .about-section {
@@ -1041,8 +1262,8 @@ body {
   margin: 0 0 12px auto;
   padding: 3px 11px;
   border-radius: 999px;
-  background: var(--amber);
-  color: var(--ink);
+  background: var(--ink);
+  color: var(--white);
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
@@ -1063,7 +1284,30 @@ body {
 .about-note a,
 .about-section a:not(.btn),
 .about-lede a {
-  color: var(--indigo);
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--grey);
+  transition: text-decoration-color 0.12s ease;
+}
+
+.about-section a:not(.btn):hover,
+.about-section a:not(.btn):focus-visible,
+.about-lede a:hover {
+  text-decoration-color: var(--ink);
+}
+
+/* Outbound resource link with a clear external affordance (used for the
+   government/help links so they read as deliberate, not scattered). */
+.gov-link {
+  white-space: nowrap;
+}
+
+.gov-link::after {
+  content: ' ↗';
+  font-weight: 700;
 }
 
 /* Now / Next columns */
@@ -1072,7 +1316,7 @@ body {
   font-size: clamp(28px, 4vw, 40px);
   font-weight: 800;
   line-height: 1.15;
-  color: #d45113;
+  color: #00171f;
 }
 
 .about-intro p {
@@ -1195,7 +1439,8 @@ body {
 
 .post-back {
   display: inline-block;
-  margin-bottom: 8px;
+  align-self: flex-start;
+  margin-bottom: 0;
   padding: 6px 0;
   border: 0;
   background: none;
@@ -1218,19 +1463,34 @@ body {
 
 /* Post-a-job input form */
 .job-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   margin-top: 18px;
+}
+
+/* Uniform spacing between every block in the form (fields within a grid already
+   sit 24px apart, so grid sections don't crowd each other at the seams). */
+.job-form > p {
+  margin: 0;
 }
 
 .job-form-grid {
   display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+/* The dev-only admin keeps a dense two-column layout. */
+.admin-panel .job-form-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px 20px;
+  gap: 20px;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -1267,6 +1527,7 @@ body {
 
 .field textarea {
   resize: vertical;
+  min-height: 88px;
 }
 
 .field input::placeholder,
@@ -1274,17 +1535,232 @@ body {
   color: var(--muted);
 }
 
+.post-wip-note {
+  margin: 0 0 24px;
+  padding: 14px 16px;
+  border-left: 3px solid var(--ink);
+  border-radius: 8px;
+  background: var(--soft);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--body);
+}
+
+.field-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.field-count {
+  margin-left: auto;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
 .field-hint {
   font-size: 12px;
   color: var(--muted);
 }
 
-.job-form-error {
-  margin: 16px 0 0;
+.field-error-inline {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--highlight);
+}
+
+/* Label above a tag group / pick control (matches the input labels). */
+/* Matches .field label so every field label is the same size and spacing. */
+.label-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* Selectable list tags (e.g. MLTSSL / CSOL checkboxes). */
+.visa-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
   padding: 12px 14px;
-  border: var(--border) solid var(--sponsor);
+  border: 1px solid var(--line);
   border-radius: var(--ctrl-radius);
-  color: var(--sponsor);
+  background: var(--white);
+}
+
+/* Count badge next to a picker label. */
+.picker-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 8px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--highlight);
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* Visa toggle chips (multi-select). */
+.visa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.visa-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px 7px 8px;
+  border: 2px solid var(--indigo);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.visa-chip:hover {
+  background: var(--lavender-bar);
+}
+
+.visa-chip.is-on {
+  background: var(--indigo);
+  border-color: var(--indigo);
+  color: var(--white);
+}
+
+.visa-chip-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--indigo);
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.visa-chip.is-on .visa-chip-mark {
+  background: var(--white);
+  color: var(--indigo);
+}
+
+.visa-chip-code {
+  font-weight: 800;
+}
+
+.visa-chip-name {
+  font-weight: 600;
+}
+
+/* Tag multi-select (skills) - chips reuse .visa-chip; plus the add control. */
+.tag-select {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.tag-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 2px dashed var(--grey);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.tag-add-btn:hover,
+.tag-add-btn:focus-visible {
+  background: var(--soft);
+  border-color: var(--ink);
+}
+
+.tag-add-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tag-add-row input {
+  height: 36px;
+  min-width: 150px;
+  padding: 0 12px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--white);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+/* Pick-or-add inline "new value" row. */
+.pick-add-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pick-add-row input {
+  flex: 1 1 auto;
+}
+
+.btn-small {
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: var(--ctrl-radius);
+}
+
+.btn-ghost {
+  background: transparent;
+}
+
+/* Nested "add occupation" panel inside the admin. */
+.add-occ {
+  margin: 0;
+  padding: 18px 20px;
+  border: 1px solid var(--indigo);
+  border-radius: var(--radius);
+  background: var(--white);
+}
+
+.add-occ h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.job-form-error {
+  margin: 0;
+  padding: 12px 14px;
+  border: var(--border) solid var(--ink);
+  border-radius: var(--ctrl-radius);
+  background: var(--soft);
+  color: var(--ink);
   font-weight: 600;
 }
 
@@ -1292,11 +1768,12 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: 0;
 }
 
 @media (max-width: 640px) {
-  .job-form-grid {
+  .job-form-grid,
+  .admin-panel .job-form-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -1324,7 +1801,7 @@ body {
   gap: 12px;
 }
 
-.ref-list a {
+.about-section .ref-list a {
   display: inline-block;
   padding: 9px 18px;
   border: var(--border) solid var(--indigo);
@@ -1335,7 +1812,7 @@ body {
   color: var(--indigo);
 }
 
-.ref-list a:hover {
+.about-section .ref-list a:hover {
   background: var(--indigo);
   color: var(--white);
 }
@@ -1402,15 +1879,20 @@ body {
   }
 
   .filterbar {
-    gap: 8px;
+    gap: 10px 12px;
+    padding: 14px clamp(16px, 5vw, 44px) 16px;
   }
 
   .filter-field,
-  .filter-field select,
   .tags-filter,
-  .tags-filter summary,
   .chip-toggle {
-    flex: 1 1 auto;
+    flex: 1 1 140px;
+  }
+
+  .filter-field select,
+  .tags-filter summary {
+    width: 100%;
+    min-width: 0;
   }
 
   .workspace {
@@ -1429,7 +1911,7 @@ body {
     padding: 40px clamp(22px, 6vw, 44px);
   }
 
-  /* Mobile master–detail: show the list, or the detail "page", not both. */
+  /* Mobile master-detail: show the list, or the detail "page", not both. */
   .detail-panel {
     display: none;
   }

@@ -3,7 +3,7 @@ export const REPO_URL =
 
 export const FEEDBACK_URL = `${REPO_URL}/issues/new?title=${encodeURIComponent('Feedback: ')}`;
 
-// Address startups can email their job brief to. Leave empty until you have one —
+// Address startups can email their job brief to. Leave empty until you have one -
 // the page will say it's coming soon. Emails use the subject prefix below so
 // briefs are easy to triage into the CSV.
 export const JOB_EMAIL = 'milindi.beeloud@gmail.com';
@@ -13,18 +13,18 @@ export const JOB_EMAIL_SUBJECT_PREFIX = 'Job post: ';
 export const CONTACT_MAILTO = JOB_EMAIL ? `mailto:${JOB_EMAIL}` : '';
 
 // Fill-in-the-blanks brief pre-loaded into the email body. Visa fields are marked
-// optional so startups aren't put off — we help fill those in.
+// optional so startups aren't put off - we help fill those in.
 export const JOB_EMAIL_BODY = `Hi,
 
 Here's a role to list on the International Student Job Board.
 
-— Company —
+- Company -
 Company name:
 One-line description:
 Company link:
-Application link (Role advert on the company careers page / external job board link / email):
+Application link or email (careers page / job-board link, or mailto: for email applications):
 
-— The role —
+- The role -
 Job title:
 Level (Internship / Graduate / Junior / Mid / Senior / Other):
 Type (Full-time / Part-time / Casual / Contract):
@@ -34,20 +34,15 @@ Open and close dates:
 Salary or pay range:
 Education level needed:
 One-sentence summary:
-A typical day:
 Skills needed:
-Top 5 daily skills:
-Company values:
-Career growth:
-Full description:
 
-— Visa & pathway (optional — leave blank if you're not sure, we can help) —
-Visa(s) a candidate can apply on (e.g. 485, 500):
-Visa(s) this role can lead to (e.g. 189, 190, 186):
-Skills assessment (e.g. ACS):
+- Eligibility (optional - leave blank if you're not sure, we can help) -
+ANZSCO occupation (the closest match, e.g. 261313 Software Engineer):
+Can international students apply for this role? (Yes / No):
 Offer employer-sponsored visas? (Yes / No):
+  Compare options: https://immi.homeaffairs.gov.au/employer-subsite/Pages/compare-sponsored-skilled-visa-options.aspx
 
-— You —
+- You -
 Your name:
 Your email:
 

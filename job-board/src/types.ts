@@ -15,15 +15,11 @@ export interface Job {
   visaEligible: string[];
   visaPathways: string[];
   skillAssessment: string;
+  anzsco: string;
   employerSponsored: boolean;
   posted: string;
   closes: string;
   skills: string[];
   summary: string;
-  dayToDay: string;
-  dailySkills: string[];
-  companyValues: string[];
-  careerAdvancement: string;
-  description: string;
   applyUrl: string;
 }

@@ -12,7 +12,7 @@ const pipeList = (value: string) =>
     .filter(Boolean);
 
 // Roughly annualise a free-text salary so it can be range-filtered. Handles
-// annual ranges ("$85,000–$95,000"), "k" shorthand, and hourly ("$38/hr",
+// annual ranges ("$85,000-$95,000"), "k" shorthand, and hourly ("$38/hr",
 // annualised at 38h × 52 weeks). Returns { min, max } in dollars, or 0s if none.
 function parseSalaryAnnual(raw: string): { min: number; max: number } {
   const text = (raw ?? '').toLowerCase();
@@ -62,16 +62,12 @@ function toJob(row: Record<string, string>): Job {
     visaEligible: pipeList(row.visa_eligible ?? ''),
     visaPathways: pipeList(row.visa_pathways ?? ''),
     skillAssessment: row.skill_assessment?.trim() ?? '',
+    anzsco: row.anzsco?.trim() ?? '',
     employerSponsored: isTruthy(row.employer_sponsored ?? ''),
     posted: row.posted?.trim() ?? '',
     closes: row.closes?.trim() ?? '',
     skills: pipeList(row.skills ?? ''),
     summary: row.summary?.trim() ?? '',
-    dayToDay: row.day_to_day?.trim() ?? '',
-    dailySkills: pipeList(row.daily_skills ?? ''),
-    companyValues: pipeList(row.company_values ?? ''),
-    careerAdvancement: row.career_advancement?.trim() ?? '',
-    description: row.description?.trim() ?? '',
     applyUrl: row.apply_url?.trim() ?? '',
   };
 }

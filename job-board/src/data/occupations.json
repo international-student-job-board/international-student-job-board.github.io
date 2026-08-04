@@ -1,0 +1,42 @@
+{
+  "261313": {
+    "name": "Software Engineer",
+    "anzscoUrl": "https://www.abs.gov.au/statistics/classifications/anzsco-australian-and-new-zealand-standard-classification-occupations/2022/browse-classification/2/26/261/2613",
+    "assessment": "ACS",
+    "assessmentUrl": "https://www.acs.org.au/msa.html",
+    "lists": ["MLTSSL", "CSOL"],
+    "visas": [
+      { "code": "189", "name": "Skilled Independent", "stream": "Points-Tested" },
+      { "code": "190", "name": "Skilled Nominated" },
+      { "code": "407", "name": "Training visa" },
+      { "code": "485", "name": "Temporary Graduate" },
+      { "code": "489", "name": "Skilled Regional (Provisional)", "stream": "Family sponsored" },
+      { "code": "489", "name": "Skilled Regional (Provisional)", "stream": "State or Territory nominated" },
+      { "code": "494", "name": "Skilled Employer Sponsored Regional (provisional)", "stream": "Employer sponsored stream" },
+      { "code": "491", "name": "Skilled Work Regional (provisional)", "stream": "State or Territory nominated" },
+      { "code": "491", "name": "Skilled Work Regional (provisional)", "stream": "Family Sponsored" },
+      { "code": "482", "name": "Skills in Demand", "stream": "Core Skills stream" },
+      { "code": "186", "name": "Employer Nomination Scheme", "stream": "Direct Entry Pathway" }
+    ]
+  },
+  "233999": {
+    "name": "Engineering Professionals nec",
+    "anzscoUrl": "https://www.abs.gov.au/statistics/classifications/anzsco-australian-and-new-zealand-standard-classification-occupations/2022/browse-classification/2/23/233/2339",
+    "assessment": "Engineers Australia",
+    "assessmentUrl": "https://www.engineersaustralia.org.au/migration-skills-assessment",
+    "lists": ["MLTSSL", "CSOL"],
+    "visas": [
+      { "code": "189", "name": "Skilled Independent", "stream": "Points-Tested" },
+      { "code": "190", "name": "Skilled Nominated" },
+      { "code": "407", "name": "Training visa" },
+      { "code": "485", "name": "Temporary Graduate" },
+      { "code": "489", "name": "Skilled Regional (Provisional)", "stream": "State or Territory nominated" },
+      { "code": "489", "name": "Skilled Regional (Provisional)", "stream": "Family sponsored" },
+      { "code": "494", "name": "Skilled Employer Sponsored Regional (provisional)", "stream": "Employer sponsored stream" },
+      { "code": "491", "name": "Skilled Work Regional (provisional)", "stream": "State or Territory nominated" },
+      { "code": "491", "name": "Skilled Work Regional (provisional)", "stream": "Family Sponsored" },
+      { "code": "482", "name": "Skills in Demand", "stream": "Core Skills stream" },
+      { "code": "186", "name": "Employer Nomination Scheme", "stream": "Direct Entry Pathway" }
+    ]
+  }
+}
