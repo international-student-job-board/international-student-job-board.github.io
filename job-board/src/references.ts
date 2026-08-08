@@ -195,7 +195,7 @@ export const SKILL_OCCUPATION_LIST_URL =
   'https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list';
 
 export const VISA_DISCLAIMER =
-  'This is a general guide, not legal or immigration advice. The visa, pathway and ' +
+  'This is a general guide, not legal or immigration advice.\n\nThe visa, pathway and ' +
   'occupation details are compiled from the Department of Home Affairs skill occupation ' +
-  'list and can change at any time. Always get professional advice from a registered ' +
+  'list and can change at any time.\n\nAlways get professional advice from a registered ' +
   'migration agent or immigration lawyer about your own situation.';

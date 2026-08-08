@@ -244,10 +244,7 @@ function App() {
             status === 'ready' && (
               <div className="detail-empty">
                 <h1>Find work at a Melbourne startup</h1>
-                <p>
-                  Select a role to see the details. Every startup here hires international
-                  STEM students and graduates and can help you build a pathway to staying.
-                </p>
+                <p>Select a role to see the details . . .</p>
               </div>
             )
           )}

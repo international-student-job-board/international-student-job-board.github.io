@@ -1,4 +1,4 @@
-import { resolveOccupation } from '../references';
+import { resolveOccupation, VISA_NAMES } from '../references';
 
 const base = process.env.PUBLIC_URL || '';
 
@@ -20,6 +20,13 @@ export interface FilterState {
 const anzscoLabel = (code: string) => {
   const { name } = resolveOccupation(code, '');
   return name ? `${code} ${name}` : code;
+};
+
+// "189" -> "189 - Skilled Independent" for the two visa dropdowns. Codes with
+// no entry in VISA_NAMES fall back to the bare code.
+const visaLabel = (code: string) => {
+  const name = VISA_NAMES[code.trim()];
+  return name ? `${code} - ${name}` : code;
 };
 
 const SALARY_BANDS = [
@@ -80,8 +87,8 @@ export function Filters({ filters, options, onChange, onClear }: Props) {
     { key: 'type', label: 'Job type', all: 'Any type', values: options.types },
     { key: 'level', label: 'Level', all: 'Any level', values: options.levels },
     { key: 'arrangement', label: 'Arrangement', all: 'Anywhere', values: options.arrangements },
-    { key: 'visa', label: 'Apply on visa', all: 'Any current visa', values: options.visas },
-    { key: 'pathwayVisa', label: 'Leads to visa', all: 'Any pathway visa', values: options.pathwayVisas },
+    { key: 'visa', label: 'Apply on visa', all: 'Any current visa', values: options.visas, format: visaLabel },
+    { key: 'pathwayVisa', label: 'Leads to visa', all: 'Any pathway visa', values: options.pathwayVisas, format: visaLabel },
     { key: 'anzsco', label: 'ANZSCO occupation', all: 'Any occupation', values: options.anzscos, format: anzscoLabel },
     { key: 'skillAssessment', label: 'Skills assessment', all: 'Any assessor', values: options.skillAssessments },
   ];
@@ -94,11 +101,11 @@ export function Filters({ filters, options, onChange, onClear }: Props) {
         </label>
         <img
           className="search-icon"
-          src={`${base}/icons/search.svg`}
+          src={`${base}/icons/magifying-glass.svg`}
           alt=""
           aria-hidden="true"
           width={18}
-          height={22}
+          height={18}
         />
         <input
           id="job-search"

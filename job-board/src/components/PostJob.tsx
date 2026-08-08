@@ -86,7 +86,7 @@ function EligibilityFields({
           ))}
         </select>
         <span className="field-hint">
-          Optional - pick the closest match.{' '}
+          Optional : : pick the closest match.{' '}
           <a
             className="gov-link"
             href={SKILL_OCCUPATION_LIST_URL}
@@ -284,7 +284,7 @@ export function PostJob() {
       <header className="about-intro">
         <h1>Hire up-and-coming STEM talent</h1>
         <p>
-          List a role in minutes. Every job on the board is seen by international students
+          Every job on this board is seen by international students
           and graduates in Melbourne who are eager to learn, grow and build a career here.
         </p>
       </header>
@@ -295,8 +295,8 @@ export function PostJob() {
         <h2 id="post-form-heading">Submit a role</h2>
 
         <p className="post-wip-note">
-          We're still building out the Post a job experience, so for now roles come in by email.
-          Thanks for taking the time - we really appreciate you bearing with us while we flesh it out.
+          We're still building out the Post a job experience, so for now roles will have to be sent via email!
+          Thank you for taking the time, we really appreciate it c:
         </p>
 
         {mode === 'choose' && (

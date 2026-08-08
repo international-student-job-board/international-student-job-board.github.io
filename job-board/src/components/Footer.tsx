@@ -3,7 +3,7 @@ import { REPO_URL, FEEDBACK_URL, CONTACT_MAILTO } from '../links';
 
 // Stamped at build time by the `build:pages` / `build` scripts; falls back to a
 // fixed date during local dev where the env var isn't set.
-const LAST_UPDATED = process.env.REACT_APP_BUILD_DATE || '2026-07-05';
+const LAST_UPDATED = process.env.REACT_APP_BUILD_DATE || '2026-08-08';
 
 export function Footer() {
   return (

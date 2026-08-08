@@ -94,9 +94,7 @@ function ApplyButton({ url }: { url: string }) {
     >
       {isEmail ? (
         <>
-          <span className="btn-icon" aria-hidden="true">
-            ✉
-          </span>
+          <span className="btn-icon btn-icon-mail" aria-hidden="true" />
           Apply by email
         </>
       ) : (
@@ -123,6 +121,9 @@ export function JobDetail({ job }: { job: Job }) {
   );
   return (
     <article className="job-detail" aria-labelledby="job-detail-title">
+      <h1 id="job-detail-title" className="detail-title">
+        {job.title}
+      </h1>
       <p className="detail-company">
         {job.companyUrl ? (
           <a
@@ -137,9 +138,6 @@ export function JobDetail({ job }: { job: Job }) {
           job.company
         )}
       </p>
-      <h1 id="job-detail-title" className="detail-title">
-        {job.title}
-      </h1>
 
       <p className="detail-posted">
         Posted {formatDate(job.posted)} · Closes {formatDate(job.closes)}
@@ -150,8 +148,6 @@ export function JobDetail({ job }: { job: Job }) {
           <span className="flag flag-sponsor">Visa sponsorship available</span>
         </p>
       )}
-
-      {job.companyAbout && <p className="detail-about">{job.companyAbout}</p>}
 
       <section>
       <h2 className="detail-heading">In a nutshell</h2>
@@ -207,16 +203,13 @@ export function JobDetail({ job }: { job: Job }) {
           </li>
           {occupation.lists.length > 0 && (
             <li>
-              <span className="fact-label">
-                Occupation lists{' '}
-                <InfoTooltip
-                  label="What the occupation lists mean"
-                  text={occupation.lists
-                    .map((l) => `${l} - ${LIST_NAMES[l] ?? l}`)
-                    .join('\n')}
-                />
-              </span>
-              {occupation.lists.join(', ')}
+              <span className="fact-label">Occupation lists <InfoTooltip
+                label="What the occupation lists mean"
+                text={occupation.lists
+                  .map((l) => `${l} - ${LIST_NAMES[l] ?? l}`)
+                  .join('\n')}
+              /></span>
+              {occupation.lists.join(', ')}{' '}
             </li>
           )}
           <li>
@@ -230,9 +223,16 @@ export function JobDetail({ job }: { job: Job }) {
         </div>
       </section>
 
+      {job.companyAbout && (<section className="detail-section">
+          <h2>About the employer</h2>
+          <p className="detail-about">{job.companyAbout}</p>
+          </section>
+          )}
+
+
       {job.summary && (
         <section className="detail-section">
-          <h2>Summary</h2>
+          <h2>About the role</h2>
           <p className="detail-description">{job.summary}</p>
         </section>
       )}

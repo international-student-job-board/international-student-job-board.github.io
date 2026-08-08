@@ -94,13 +94,13 @@ export function PickOrAdd({
             else onChange(e.target.value);
           }}
         >
-          <option value="">Choose…</option>
+          <option value="">Choose . . .</option>
           {options.map((o) => (
             <option key={o} value={o}>
               {o}
             </option>
           ))}
-          {onAdd && <option value="__add__">＋ Add new…</option>}
+          {onAdd && <option value="__add__">＋ Add new . . .</option>}
         </select>
       )}
 

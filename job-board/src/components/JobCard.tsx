@@ -16,8 +16,9 @@ export function JobCard({ job, selected, onSelect }: Props) {
         aria-current={selected ? 'true' : undefined}
         onClick={() => onSelect(job.id)}
       >
-        <span className="job-card-company">{job.company}</span>
         <span className="job-card-title">{job.title}</span>
+        <span className="job-card-company">{job.company}</span>
+
         <span className="job-card-meta">
           {[job.jobLevel, job.type, job.arrangement].filter(Boolean).join(' · ')}
         </span>
