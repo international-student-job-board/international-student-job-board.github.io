@@ -25,6 +25,7 @@ const NOW = [
 ];
 
 const NEXT = [
+  'Newsletter of roles that match your visa and skills delivered to your inbox',
   'A map view of jobs by location, coz that\'s easier to find where to work',
   'Create one resume and use that to apply to many job applications (bye bye bye to forms!)',
   'Track how your application is progressing',
@@ -56,8 +57,12 @@ export function About() {
           {HOW_STUDENTS.map((h) => (
             <li key={h.n} className="how-step">
               <div className="how-head">
+                {/* Decorative: the <ol> already gives assistive tech the
+                    sequence, so the numeral is hidden from it and free to be
+                    styled as a graphic. Zero-padded so 1 and 10 occupy the
+                    same width and the columns line up. */}
                 <span className="how-n" aria-hidden="true">
-                  {h.n}
+                  {String(h.n).padStart(2, '0')}
                 </span>
                 <h3>{h.title}</h3>
               </div>
@@ -71,8 +76,12 @@ export function About() {
           {HOW_STARTUPS.map((h) => (
             <li key={h.n} className="how-step">
               <div className="how-head">
+                {/* Decorative: the <ol> already gives assistive tech the
+                    sequence, so the numeral is hidden from it and free to be
+                    styled as a graphic. Zero-padded so 1 and 10 occupy the
+                    same width and the columns line up. */}
                 <span className="how-n" aria-hidden="true">
-                  {h.n}
+                  {String(h.n).padStart(2, '0')}
                 </span>
                 <h3>{h.title}</h3>
               </div>

@@ -1,50 +1,123 @@
 :root {
-  /* Palette: #00171f ink, #ffffff white, and greys in between. No other hues. */
-  --highlight: #00171f;
-  --bg: #ffffff;
-  --grey: #5c6b70;
-  --focus: #00171f;
-  /* Accent reserved ONLY for visa-sponsorship UI (filter toggle + the
-     "sponsorship available" tag). Not used for anything else. */
-  --sponsor: #d45113;
-
-  /* Semantic aliases mapped onto the palette */
-  --blue: #00171f;
-  --indigo: #00171f;
-  --violet: #00171f;
-  --magenta: #00171f;
-  --rose: #00171f;
-  --pink: #00171f;
-  --amber: #00171f;
-
-  --primary: #00171f;
-  --primary-dark: #00171f;
-  --grad: #00171f;
-
-  --ink: #00171f;
-  --panel: #00171f;
-  --card: #00171f;
-  --card-border: rgba(255, 255, 250, 0.28);
-  --body: #00171f;
-  --muted: #5c6b70;
-  --line: #d7dcde;
-  --lavender: #eef1f2;
-  --chip: #eef1f2;
-  --lavender-bar: #eef1f2;
-  --soft: #f4f6f7;
-  --on-dark: rgba(255, 255, 255, 0.72);
+  /* ===================== Colour =====================
+     One grey ramp, nine steps, written in HSL so the relationship between
+     shades is legible in the code itself — 900 is the ink everything is built
+     from, 50 is the off-white the panels sit on. Every step shares a hue of
+     ~195°, which is what gives these greys their cool cast; the saturation
+     climbs at both ends so the lightest and darkest shades don't wash out.
+     Nothing in the UI may use a grey that isn't on this ramp. */
+  --grey-900: hsl(194, 100%, 6%); /* #00171f */
+  --grey-800: hsl(196, 30%, 17%);
+  --grey-700: hsl(196, 18%, 28%);
+  --grey-600: hsl(195, 12%, 40%);
+  --grey-500: hsl(195, 10%, 50%);
+  --grey-400: hsl(194, 10%, 62%);
+  --grey-300: hsl(193, 10%, 75%);
+  --grey-200: hsl(193, 11%, 86%);
+  --grey-100: hsl(192, 14%, 93%);
+  --grey-50: hsl(192, 20%, 97%);
   --white: #ffffff;
 
-  /* Type: one size and one weight for every piece of text on the site,
-     headings included. Hierarchy comes from spacing, colour and case only.
-     These two values are the single point of control for all typography. */
-  --fs: 16px;
-  --fw: 500;
+  /* The one accent, reserved ONLY for visa-sponsorship UI (the filter toggle
+     and the "sponsorship available" badge). Colour never carries that meaning
+     alone — the badge always says so in words too. Rotated 30° off pure green
+     towards teal: the greys on this site are saturated at ~195°, and a hue in
+     that direction sits with them instead of against them. Hue is doing the
+     work here, not lightness — white text on it still lands at 5.05:1, and the
+     inverted badge reads at the same ratio as text on white, so both
+     directions clear AA. */
+  --sponsor: hsl(150, 100%, 25%); /* #008040 */
+
+  /* Three levels of text, and no more. Primary carries the content, secondary
+     supports it, tertiary is for the things you only read when you go looking.
+     All three clear WCAG AA on white (18.4:1, 8.8:1, 5.5:1), so the hierarchy
+     never costs legibility. */
+  --ink: var(--grey-900);
+  --muted-strong: var(--grey-700);
+  --muted: var(--grey-600);
+
+  /* The same three levels again, hand-picked for the ink-filled selected card.
+     Greying text by dropping its opacity looks washed out and lets the fill
+     bleed through; these are solid colours chosen against that background
+     (7.1:1 and 4.8:1 on ink). */
+  --on-ink: var(--white);
+  --on-ink-muted: var(--grey-400);
+  --on-ink-faint: var(--grey-500);
+
+  /* Surfaces, from the page up. */
+  --line: var(--grey-200);
+  --line-strong: var(--grey-300);
+  --chip: var(--grey-100);
+  --soft: var(--grey-50);
+
+  /* ===================== Type =====================
+     Six steps, fluid between a 360px and a 1280px viewport, so one set of
+     tokens covers phone, tablet and desktop with no per-breakpoint overrides.
+     Sizes follow the standard web guidance: body 16px on mobile → 17px on
+     desktop, page titles 28 → 40px, secondary text 2px under body, and 13px as
+     the floor for micro-labels. Only four steps carry the page (display,
+     section heading, body, small); h3 and xs are the subhead and label
+     wildcards. Everything is in rem, so it still scales with the reader's own
+     browser font-size setting. */
+  --fs-display: clamp(1.75rem, 1.456rem + 1.3vw, 2.5rem); /* 28 → 40 */
+  --fs-h2: clamp(1.25rem, 1.103rem + 0.65vw, 1.625rem); /* 20 → 26 */
+  --fs-h3: clamp(1.0625rem, 0.989rem + 0.33vw, 1.25rem); /* 17 → 20 */
+  --fs-body: clamp(1rem, 0.976rem + 0.11vw, 1.0625rem); /* 16 → 17 */
+  --fs-sm: clamp(0.875rem, 0.851rem + 0.11vw, 0.9375rem); /* 14 → 15 */
+  --fs-xs: 0.8125rem; /* 13 */
+
+  /* Tight for display type, 1.6 for UI copy, 1.75 for long prose. WCAG asks
+     for at least 1.5 on body text. */
+  --lh-tight: 1.15;
+  --lh-heading: 1.3;
+  --lh-body: 1.6;
+  --lh-prose: 1.75;
+
+  /* Two working weights: regular to read, semibold for anything that leads.
+     Bold is reserved for the one page title on a screen. */
+  --fw: 400;
+  --fw-strong: 600;
+  --fw-bold: 700;
+
+  /* 45–75 characters is the comfortable line length for continuous text. */
+  --measure: 68ch;
+  --measure-lede: 58ch;
+
+  /* ===================== Space =====================
+     A non-linear scale: tight steps at the bottom where a couple of pixels
+     change everything, widening as it climbs where they stop being visible. No
+     two adjacent values are within 25% of each other, so there is never a
+     "somewhere between these two" decision to agonise over. Every margin,
+     padding and gap on the site comes from this scale. */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
+  --s8: 64px;
+  --s9: 96px;
+
+  /* The page gutter, shared by every full-width band (top bar, filter bar,
+     footer) so their content edges line up all the way down the page. */
+  --gutter: clamp(var(--s4), 4vw, var(--s7));
 
   --radius: 15px;
   --ctrl-radius: 12px;
-  --border: 2px;
   --topbar-h: 57px;
+
+  /* Elevation, in three steps: resting, raised, floating. Each is two shadows
+     — a large soft one for the cast shadow, and a tight dark one for the
+     ambient shadow right under the edge. The tight one fades as things rise,
+     because in the real world it does. Shadows are ink at low alpha rather
+     than black, so they tint with the palette instead of greying it. */
+  --shadow-sm: 0 1px 1px rgba(0, 23, 31, 0.08), 0 1px 3px rgba(0, 23, 31, 0.06);
+  --shadow-md: 0 1px 2px rgba(0, 23, 31, 0.06), 0 6px 16px rgba(0, 23, 31, 0.09);
+  --shadow-lg: 0 1px 2px rgba(0, 23, 31, 0.03), 0 20px 44px rgba(0, 23, 31, 0.16);
+
+  /* One easing curve everywhere, so nothing moves in a different accent. */
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
   --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%2300171f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E");
   /* Path data from public/icons/check-mark.svg. Inlined (like --chevron above)
      because it is used as a mask, which lets the tick take the surrounding
@@ -52,6 +125,9 @@
   /* Path data from public/icons/email.svg, inlined for the same reason. */
   --email: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 640'%3E%3Cpath d='M125.4 128C91.5 128 64 155.5 64 189.4C64 190.3 64 191.1 64.1 192L64 192L64 448C64 483.3 92.7 512 128 512L512 512C547.3 512 576 483.3 576 448L576 192L575.9 192C575.9 191.1 576 190.3 576 189.4C576 155.5 548.5 128 514.6 128L125.4 128zM528 256.3L528 448C528 456.8 520.8 464 512 464L128 464C119.2 464 112 456.8 112 448L112 256.3L266.8 373.7C298.2 397.6 341.7 397.6 373.2 373.7L528 256.3zM112 189.4C112 182 118 176 125.4 176L514.6 176C522 176 528 182 528 189.4C528 193.6 526 197.6 522.7 200.1L344.2 335.5C329.9 346.3 310.1 346.3 295.8 335.5L117.3 200.1C114 197.6 112 193.6 112 189.4z'/%3E%3C/svg%3E");
   --check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 640'%3E%3Cpath d='M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z'/%3E%3C/svg%3E");
+  /* Path data from public/icons/pending.svg, inlined and stripped of its own
+     fill for the same reason — it is masked, so it takes the colour around it. */
+  --pending: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 640'%3E%3Cpath d='M272 112C272 85.5 293.5 64 320 64C346.5 64 368 85.5 368 112C368 138.5 346.5 160 320 160C293.5 160 272 138.5 272 112zM272 528C272 501.5 293.5 480 320 480C346.5 480 368 501.5 368 528C368 554.5 346.5 576 320 576C293.5 576 272 554.5 272 528zM112 272C138.5 272 160 293.5 160 320C160 346.5 138.5 368 112 368C85.5 368 64 346.5 64 320C64 293.5 85.5 272 112 272zM480 320C480 293.5 501.5 272 528 272C554.5 272 576 293.5 576 320C576 346.5 554.5 368 528 368C501.5 368 480 346.5 480 320zM139 433.1C157.8 414.3 188.1 414.3 206.9 433.1C225.7 451.9 225.7 482.2 206.9 501C188.1 519.8 157.8 519.8 139 501C120.2 482.2 120.2 451.9 139 433.1zM139 139C157.8 120.2 188.1 120.2 206.9 139C225.7 157.8 225.7 188.1 206.9 206.9C188.1 225.7 157.8 225.7 139 206.9C120.2 188.1 120.2 157.8 139 139zM501 433.1C519.8 451.9 519.8 482.2 501 501C482.2 519.8 451.9 519.8 433.1 501C414.3 482.2 414.3 451.9 433.1 433.1C451.9 414.3 482.2 414.3 501 433.1z'/%3E%3C/svg%3E");
   --font: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     Helvetica, Arial, sans-serif;
   --list-w: 480px;
@@ -65,34 +141,65 @@ body {
   margin: 0;
 }
 
-/* Single-size, single-weight enforcement. The UA stylesheet bolds and resizes
-   headings, <strong>/<b> and form controls, so those defaults are neutralised
-   here. Everything else simply inherits from .app. */
+/* The UA stylesheet gives headings em-based sizes and form controls a font of
+   their own, so both are re-based onto the scale here. Class rules further
+   down override a heading where it needs a different step; this block is the
+   floor, so a heading added later is never left at a browser default.
+   Controls sit at body size deliberately: below 16px, iOS Safari zooms the
+   page when a text field takes focus. */
 h1,
 h2,
 h3,
 h4,
 h5,
-h6,
+h6 {
+  font-family: inherit;
+  font-weight: var(--fw-strong);
+  line-height: var(--lh-heading);
+}
+
+h1 {
+  font-size: var(--fs-display);
+  line-height: var(--lh-tight);
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  font-size: var(--fs-h2);
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-size: var(--fs-h3);
+}
+
 strong,
-b,
+b {
+  font-weight: var(--fw-strong);
+}
+
 button,
 input,
 select,
 textarea,
 optgroup {
-  font-size: inherit;
-  font-weight: inherit;
   font-family: inherit;
+  font-size: var(--fs-body);
+  font-weight: inherit;
 }
 
 .app {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  /* No grey flash on tap; the elements carry their own pressed states. */
+  -webkit-tap-highlight-color: transparent;
   font-family: var(--font);
-  font-size: var(--fs);
+  font-size: var(--fs-body);
   font-weight: var(--fw);
+  line-height: var(--lh-body);
   color: var(--ink);
   background: var(--white);
 }
@@ -109,10 +216,17 @@ optgroup {
   white-space: nowrap;
 }
 
+/* One ring for the whole site. It deliberately sets no border-radius: the
+   outline already follows each element's own corners, and forcing a radius
+   here squared off every pill the moment it took focus. */
 :focus-visible {
-  outline: 3px solid var(--indigo);
+  outline: 2px solid var(--ink);
   outline-offset: 2px;
-  border-radius: 4px;
+}
+
+::selection {
+  background: var(--ink);
+  color: var(--white);
 }
 
 /* ================= Top bar ================= */
@@ -124,8 +238,8 @@ optgroup {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 8px clamp(16px, 3vw, 36px);
+  gap: var(--s4);
+  padding: var(--s2) var(--gutter);
   background: var(--white);
   border-bottom: 1px solid var(--line);
 }
@@ -133,7 +247,7 @@ optgroup {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 14px;
+  gap: var(--s3);
   text-decoration: none;
   color: var(--ink);
 }
@@ -147,33 +261,43 @@ optgroup {
 }
 
 .brand-title {
-  font-size: var(--fs);
-  line-height: 1.15;
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-strong);
+  line-height: var(--lh-tight);
   color: var(--ink);
 }
 
 .topnav {
   display: flex;
   align-items: center;
-  gap: clamp(16px, 3vw, 32px);
+  gap: clamp(var(--s4), 3vw, var(--s6));
 }
 
+/* Nav, filter and section labels share one treatment: the small step, uppercase
+   and tracked out. Caps read a size larger than they measure, so 14–15px is the
+   right step for them. */
+/* The current page is emphasised by de-emphasising the others: inactive links
+   sit back in grey, so the active one leads without needing a louder treatment
+   of its own. */
 .topnav-link {
-  padding: 4px 2px;
-  font-size: var(--fs);
+  padding: var(--s1) 2px;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-strong);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   text-decoration: none;
-  color: var(--ink);
-  border-bottom: 3px solid transparent;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s var(--ease), border-color 0.15s var(--ease);
 }
 
 .topnav-link:hover {
-  color: var(--indigo);
+  color: var(--ink);
 }
 
 .topnav-link.is-active {
-  border-bottom-color: var(--pink);
+  color: var(--ink);
+  border-bottom-color: var(--ink);
 }
 
 /* ================= Filter bar (SEEK-style) ================= */
@@ -184,14 +308,15 @@ optgroup {
 .filters-toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--s2);
   width: 100%;
-  padding: 12px clamp(20px, 4vw, 44px);
+  padding: var(--s3) var(--gutter);
   border: 0;
   border-bottom: 1px solid var(--line);
-  background: var(--bg);
+  background: var(--white);
   font-family: inherit;
-  font-size: var(--fs);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-strong);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink);
@@ -211,33 +336,52 @@ optgroup {
   transform: rotate(180deg);
 }
 
+.filters-toggle-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--white);
+  font-size: var(--fs-xs);
+  letter-spacing: normal;
+}
+
 .filterbar {
   flex-shrink: 0;
+  padding: var(--s4) var(--gutter) var(--s5);
+  background: var(--white);
+  border-bottom: 1px solid var(--line);
+}
+
+/* The controls themselves; anything currently applied is summarised in the
+   chip row underneath. */
+.filter-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px 16px;
-  padding: 16px clamp(16px, 4vw, 44px) 20px;
-  background: var(--bg);
-  border-bottom: 1px solid var(--line);
+  gap: var(--s3);
 }
 
 .filter-clear {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 40px;
+  height: 32px;
   margin-left: auto;
-  padding: 0 8px;
+  padding: 0 4px;
   border: 0;
   background: transparent;
   font-family: inherit;
-  font-size: var(--fs);
+  font-size: var(--fs-sm);
   color: var(--ink);
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 3px;
-  text-decoration-color: var(--grey);
+  text-decoration-color: var(--muted);
 }
 
 .filter-clear:hover,
@@ -255,7 +399,8 @@ optgroup {
   border-radius: 999px;
   background: var(--ink);
   color: var(--white);
-  font-size: var(--fs);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
   text-decoration: none;
 }
 
@@ -263,8 +408,9 @@ optgroup {
   position: relative;
   display: flex;
   align-items: center;
-  flex: 1 1 260px;
+  flex: 1 1 240px;
   min-width: 200px;
+  max-width: 340px;
 }
 
 /* The asset is a square 640x640 viewBox, so lock both axes to keep it round. */
@@ -280,12 +426,21 @@ optgroup {
   width: 100%;
   height: 40px;
   padding: 0 16px 0 42px;
-  border: var(--border) solid var(--indigo);
+  border: 1px solid var(--line);
   border-radius: var(--ctrl-radius);
   background: var(--white);
   font-family: inherit;
-  font-size: var(--fs);
+  font-size: var(--fs-body);
   color: var(--ink);
+  transition: border-color 0.15s var(--ease);
+}
+
+.filter-search input:hover {
+  border-color: var(--line-strong);
+}
+
+.filter-search input:focus {
+  border-color: var(--ink);
 }
 
 .filter-search input::placeholder {
@@ -303,52 +458,232 @@ optgroup {
     no-repeat center;
 }
 
-.filter-field select,
-.chip-toggle,
-.tags-filter summary {
+/* ---- Multi-select filter control ----------------------------------------
+   Every dimension holds a list, so each control is a trigger pill plus a panel
+   of checkboxes. The trigger always shows the name of the dimension, never the
+   chosen values: the row keeps a stable width as selections change, and the
+   values themselves are spelled out in the chip row below. */
+.fselect {
+  position: relative;
+}
+
+.fselect-trigger,
+.chip-toggle {
   height: 40px;
-  border: var(--border) solid var(--indigo);
+  border: 1px solid var(--line);
   border-radius: var(--ctrl-radius);
   background: var(--white);
   font-family: inherit;
-  font-size: var(--fs);
+  font-size: var(--fs-sm);
   color: var(--ink);
   cursor: pointer;
+  transition: border-color 0.15s var(--ease), background 0.15s var(--ease),
+    color 0.15s var(--ease);
 }
 
-.filter-field {
-  flex: 0 1 auto;
+.fselect-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 260px;
+  padding: 0 14px;
 }
 
-/* A native select auto-sizes to its widest option, and the visa/ANZSCO labels
-   carry a full name ("494 - Skilled Employer Sponsored Regional
-   (Provisional)"). Cap the closed control and ellipsize; the open dropdown
-   still shows each option in full. */
-.filter-field select {
-  min-width: 158px;
-  max-width: 240px;
-  padding: 0 44px 0 16px;
-  appearance: none;
-  -webkit-appearance: none;
+.fselect-trigger::after {
+  content: '';
+  flex-shrink: 0;
+  width: 12px;
+  height: 8px;
+  background: var(--chevron) no-repeat center;
+  background-size: 12px 8px;
+  transition: transform 0.2s var(--ease);
+}
+
+.fselect.is-open .fselect-trigger::after {
+  transform: rotate(180deg);
+}
+
+.fselect-trigger:hover,
+.chip-toggle:hover {
+  border-color: var(--line-strong);
+}
+
+/* Open and applied are different states and look different: an open control is
+   outlined, an applied one is filled. */
+.fselect.is-open .fselect-trigger {
+  border-color: var(--ink);
+}
+
+.fselect.is-active .fselect-trigger {
+  border-color: var(--ink);
+  background: var(--chip);
+  font-weight: var(--fw-strong);
+}
+
+.fselect-label {
+  overflow: hidden;
   text-overflow: ellipsis;
-  background-image: var(--chevron);
-  background-repeat: no-repeat;
-  background-position: right 16px center;
+  white-space: nowrap;
+}
+
+.fselect-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--white);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+}
+
+.fselect-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 300px;
+  max-width: calc(100vw - 32px);
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
+  box-shadow: var(--shadow-lg);
+  animation: panel-in 0.16s var(--ease);
+}
+
+/* Anchored to whichever edge keeps the panel on screen — set by the component,
+   since the row wraps and a control can end up anywhere across the width. */
+.fselect-panel[data-align='left'] {
+  left: 0;
+}
+
+.fselect-panel[data-align='right'] {
+  right: 0;
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+.fselect-search {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--white);
+  font-family: inherit;
+  font-size: var(--fs-body);
+  color: var(--ink);
+}
+
+.fselect-search::placeholder {
+  color: var(--muted);
+}
+
+.fselect-options {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: min(304px, 46vh);
+  overflow-y: auto;
+  /* Bleed the hover fill out to the panel padding, then pay it back inside. */
+  margin: 0 -6px;
+  padding: 0 6px;
+  overscroll-behavior: contain;
+}
+
+.fselect-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.12s var(--ease);
+}
+
+.fselect-option:hover {
+  background: var(--soft);
+}
+
+/* Single-choice controls get round boxes, so the one-of-many rule is visible
+   before you click rather than after. */
+.fselect-option input[type='radio'] {
+  border-radius: 50%;
+}
+
+.fselect-empty {
+  margin: 2px 4px 6px;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+.fselect-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+
+.fselect-reset {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  color: var(--ink);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.fselect-reset:disabled {
+  color: var(--muted);
+  text-decoration: none;
+  cursor: default;
 }
 
 .chip-toggle {
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  padding: 0 18px;
+  padding: 0 16px;
   color: var(--ink);
+  /* The pill is a fixed 40px tall, so its label must never wrap — a second
+     line would spill straight out of it. */
+  white-space: nowrap;
+}
+
+/* Only one of the two labels is ever in the document; display:none keeps the
+   other out of the accessibility tree as well as off the screen. */
+.chip-label-short {
+  display: none;
 }
 
 /* Custom checkbox shared by every filter control. The tick is --check masked
    over a background colour, and inset:0 + mask-position:center puts it dead
    centre of the box on both axes at any size. */
 .chip-toggle input,
-.tag-check input {
+.tag-check input,
+.fselect-option input {
   -webkit-appearance: none;
   appearance: none;
   position: relative;
@@ -363,7 +698,8 @@ optgroup {
 }
 
 .chip-toggle input::after,
-.tag-check input::after {
+.tag-check input::after,
+.fselect-option input::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -380,12 +716,14 @@ optgroup {
 }
 
 .chip-toggle input:checked,
-.tag-check input:checked {
+.tag-check input:checked,
+.fselect-option input:checked {
   background: var(--ink);
 }
 
 .chip-toggle input:checked::after,
-.tag-check input:checked::after {
+.tag-check input:checked::after,
+.fselect-option input:checked::after {
   opacity: 1;
 }
 
@@ -404,7 +742,7 @@ optgroup {
   color: var(--white);
 }
 
-/* On the filled orange chip the box inverts: white box, orange tick. */
+/* On the filled accent chip the box inverts: white box, accent tick. */
 .chip-sponsor input:checked {
   border-color: var(--white);
   background: var(--white);
@@ -414,77 +752,91 @@ optgroup {
   background-color: var(--sponsor);
 }
 
-/* Tags multi-select popover */
-.tags-filter {
-  position: relative;
+/* ---- Applied filters ----------------------------------------------------
+   Counts on the triggers say how much is applied; these say what. Each chip
+   removes just itself, so narrowing too far is one click to undo rather than a
+   hunt back through the dropdowns. */
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2) var(--s3);
+  margin-top: var(--s4);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--line);
 }
 
-.tags-filter summary {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 18px;
+.active-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
   list-style: none;
 }
 
-.tags-filter summary::-webkit-details-marker {
-  display: none;
+.active-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 280px;
+  padding: 5px 10px 5px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--soft);
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
 }
 
-.tags-filter summary::after {
-  content: '';
-  margin-left: 4px;
-  width: 12px;
-  height: 8px;
-  background: var(--chevron) no-repeat center;
-  background-size: 12px 8px;
-  transition: transform 0.15s ease;
+.active-chip:hover {
+  border-color: var(--ink);
+  background: var(--chip);
 }
 
-.tags-filter[open] summary::after {
-  transform: rotate(180deg);
+.active-chip-field {
+  flex-shrink: 0;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
-.tags-count {
+.active-chip-value {
+  overflow: hidden;
+  font-weight: var(--fw-strong);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.active-chip-x {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 7px;
-  border-radius: 999px;
-  background: var(--indigo);
-  color: var(--white);
-  font-size: var(--fs);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  color: var(--muted);
 }
 
-.tags-options {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  left: auto;
-  z-index: 30;
-  min-width: 220px;
-  max-width: min(340px, calc(100vw - 32px));
-  max-height: min(320px, 60vh);
-  overflow-y: auto;
-  margin: 0;
-  padding: 14px 16px;
-  border: var(--border) solid var(--indigo);
-  border-radius: var(--ctrl-radius);
-  background: var(--white);
-  box-shadow: 0 14px 34px rgba(0, 1, 3, 0.18);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.active-chip-x::before {
+  content: '\00d7';
+  font-size: 15px;
+  line-height: 1;
+}
+
+.active-chip:hover .active-chip-x {
+  background: var(--ink);
+  color: var(--white);
 }
 
 .tag-check {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: var(--fs);
+  font-size: var(--fs-body);
   color: var(--ink);
   cursor: pointer;
 }
@@ -497,48 +849,125 @@ optgroup {
   grid-template-columns: minmax(340px, var(--list-w)) 1fr;
 }
 
-/* Jobs panel */
+/* Jobs panel. The list sits on the off-white step of the ramp while the cards
+   stay white: lighter reads as closer, so the cards lift off the column
+   without needing a border to say where they end. That also separates the two
+   panes without a heavy divider between them. */
 .jobs-panel {
-  background: var(--white);
+  background: var(--soft);
   color: var(--ink);
   height: 100%;
   overflow-y: auto;
-  padding: 30px 32px;
+  /* The two panes scroll independently; contain keeps a flick inside the one
+     under the cursor instead of running on into the page behind it. */
+  overscroll-behavior: contain;
+  padding: var(--s6);
   border-right: 1px solid var(--line);
 }
 
+/* Two font sizes on one line, aligned on the baseline they share rather than
+   centred — centring two different sizes offsets their baselines and reads as
+   a mistake. */
 .jobs-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--s3);
 }
 
 .panel-title {
   margin: 0;
-  font-size: var(--fs);
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-strong);
+  line-height: var(--lh-heading);
 }
 
 .result-count {
   margin: 0;
-  font-size: var(--fs);
+  font-size: var(--fs-sm);
   color: var(--muted);
 }
 
-/* Callout banner: soft fill with a rule down the left edge. */
+/* ---- Notices ------------------------------------------------------------
+   Three of these on the site — this one, the post-a-job notice and the form
+   error — and they share one shape: an accent rule down the left edge, no
+   fill. The fill they used to carry was a second separator doing the first
+   one's job, and on this column it also put a tint on a tint. What separates
+   the three is the weight of the rule and the colour of the text, not the
+   shape: quietest here (secondary grey), then the notice, then the error. */
 .panel-banner {
-  margin: 16px 0 20px;
-  font-size: var(--fs);
-  line-height: 1.6;
-  color: var(--ink);
-  background: var(--soft);
-  border-left: 3px solid var(--ink);
-  padding: 12px 16px;
-  border-radius: 8px;
+  margin: var(--s1) 0 var(--s5);
+  max-width: 44ch;
+  padding: 2px 0 2px var(--s4);
+  border-left: 2px solid var(--ink);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--muted);
 }
 
 .panel-note {
+  max-width: var(--measure);
+  font-size: var(--fs-sm);
   color: var(--muted);
+}
+
+/* Empty result set: say what happened, then offer the way out. Same white card
+   surface as a job would occupy, so the panel doesn't look broken. */
+.panel-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s2);
+  padding: var(--s6) var(--s5);
+  border-radius: var(--radius);
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+}
+
+.panel-empty-title {
+  margin: 0;
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-strong);
+  color: var(--ink);
+}
+
+.panel-empty .panel-note {
+  margin: 0;
+}
+
+.panel-empty .btn {
+  margin-top: var(--s2);
+}
+
+/* Placeholders while the jobs load — same footprint as the cards they become,
+   so the panel doesn't reflow when the data lands. */
+.job-skeletons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.job-skeleton {
+  height: 140px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  background: linear-gradient(
+    100deg,
+    var(--white) 30%,
+    var(--chip) 50%,
+    var(--white) 70%
+  );
+  background-size: 300% 100%;
+  animation: skeleton 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
 }
 
 /* Job list */
@@ -548,64 +977,96 @@ optgroup {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: var(--s3);
 }
 
+/* No border: the shadow already outlines the card against the off-white
+   column, and a border on top of that is one line too many. Resting cards sit
+   just off the page, hover raises them a step, and the selected one inverts. */
 .job-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--s1);
   width: 100%;
   text-align: left;
-  padding: 22px 24px;
+  padding: var(--s5);
   border: 0;
   border-radius: var(--radius);
   background: var(--white);
   color: var(--ink);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-sm);
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: box-shadow 0.18s var(--ease), transform 0.18s var(--ease),
+    background 0.18s var(--ease), color 0.18s var(--ease);
 }
 
 .job-card:hover {
-  background: rgba(0, 23, 31, 0.22);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+/* Pressing pushes it back down into the page — the shadow shrinks rather than
+   the card moving somewhere new. */
+.job-card:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
 }
 
 .job-card.is-selected {
-  background: var(--highlight);
-  color: var(--white);
+  background: var(--ink);
+  color: var(--on-ink);
+  box-shadow: var(--shadow-md);
 }
 
-/* Keep the sponsor badge visible on the orange selected card. */
+/* The badge inverts on the ink card — the accent on ink is too close in weight
+   to read, so the pill goes white and carries the accent in its text instead. */
 .job-card.is-selected .flag-sponsor {
   background: var(--white);
   color: var(--sponsor);
 }
 
+/* Card hierarchy: the role title leads, the company supports it, the meta line
+   sits back further and the date is the quietest thing on the card. Three
+   levels of grey do that work, so the title doesn't have to be large to win. */
 .job-card-company {
-  font-size: var(--fs);
+  font-size: var(--fs-sm);
+  color: var(--muted-strong);
 }
 
 .job-card-title {
-  font-size: var(--fs);
-  line-height: 1.2;
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-strong);
+  line-height: var(--lh-heading);
 }
 
 .job-card-meta {
-  font-size: var(--fs);
-  opacity: 0.85;
+  font-size: var(--fs-sm);
+  color: var(--muted);
 }
 
 .job-card-posted {
-  opacity: 0.7;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+
+/* On the ink card the same three levels are picked from the ramp against that
+   background. Fading white with opacity instead would look dull and let the
+   fill show through the letterforms. */
+.job-card.is-selected .job-card-company {
+  color: var(--on-ink-muted);
+}
+
+.job-card.is-selected .job-card-meta,
+.job-card.is-selected .job-card-posted {
+  color: var(--on-ink-faint);
 }
 
 .job-card-flags {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 12px;
+  gap: var(--s2);
+  margin-top: var(--s3);
 }
 
 /* Pagination */
@@ -613,41 +1074,47 @@ optgroup {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  margin-top: 24px;
+  gap: var(--s4);
+  margin-top: var(--s5);
 }
 
+/* Paging through results is a supporting action, not the point of the page —
+   a hairline control rather than a bordered button competing with the cards. */
 .page-btn {
-  padding: 8px 18px;
-  border: var(--border) solid var(--indigo);
+  padding: var(--s2) var(--s4);
+  border: 1px solid var(--line);
   border-radius: var(--ctrl-radius);
-  background: transparent;
+  background: var(--white);
   color: var(--ink);
   font-family: inherit;
-  font-size: var(--fs);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-strong);
   cursor: pointer;
+  transition: border-color 0.15s var(--ease), color 0.15s var(--ease);
 }
 
 .page-btn:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.05);
+  border-color: var(--ink);
 }
 
 .page-btn:disabled {
-  opacity: 0.4;
+  color: var(--line-strong);
   cursor: default;
 }
 
 .page-status {
-  font-size: var(--fs);
+  font-size: var(--fs-sm);
   color: var(--muted);
 }
 
 /* Badges */
 .flag {
   display: inline-block;
-  padding: 4px 12px;
+  padding: var(--s1) var(--s3);
   border-radius: 999px;
-  font-size: var(--fs);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  line-height: var(--lh-heading);
   white-space: nowrap;
 }
 
@@ -660,7 +1127,8 @@ optgroup {
 .detail-panel {
   height: 100%;
   overflow-y: auto;
-  padding: 48px clamp(32px, 6vw, 88px);
+  overscroll-behavior: contain;
+  padding: var(--s6) clamp(var(--s5), 4vw, var(--s7));
 }
 
 /* Back button only appears on the mobile detail page (shown via media query). */
@@ -675,57 +1143,78 @@ optgroup {
 
 .detail-empty h1 {
   color: var(--ink);
-  font-size: var(--fs);
-  margin: 0 0 12px;
+  font-size: var(--fs-h2);
+  margin: 0 0 var(--s3);
 }
 
+/* Wider than the text inside it. The paragraphs carry their own 68ch measure,
+   so the container doesn't have to be the thing that protects line length —
+   and holding the whole article to reading width left the facts rows, chips
+   and buttons squeezed into a column with dead space beside it. */
 .job-detail {
-  max-width: 720px;
+  max-width: 880px;
 }
 
 .detail-company {
   margin: 0;
-  font-size: var(--fs);
-  color: var(--muted);
+  font-size: var(--fs-body);
+  color: var(--muted-strong);
 }
 
 .company-link {
-  color: var(--muted);
+  color: var(--muted-strong);
   text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .company-link:hover {
   color: var(--ink);
 }
 
+/* The one piece of display type on this screen. Four pixels under the company
+   name, because the two are one unit — the next gap down is three times that,
+   so the grouping reads without a divider. */
 .detail-title {
-  margin: 4px 0 8px;
-  font-size: var(--fs);
+  margin: var(--s1) 0 0;
+  font-size: var(--fs-display);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
   color: var(--ink);
 }
 
+/* Status line: when it was posted, when it closes, and whether sponsorship is
+   on offer — one row, baseline-aligned so the pill sits on the same line the
+   dates rest on rather than being centred against them. */
+.detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s2) var(--s3);
+  margin: var(--s3) 0 var(--s5);
+}
+
 .detail-posted {
-  margin: 0 0 18px;
-  font-size: var(--fs);
+  margin: 0;
+  font-size: var(--fs-sm);
   color: var(--muted);
 }
 
-.detail-flags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin: 0 0 22px;
-}
-
-.detail-flags .flag {
-  font-size: var(--fs);
-  padding: 8px 18px;
+/* Sized down from the standalone badge: on a shared line a filled pill still
+   covers more ground than the text beside it, so it takes the smallest step to
+   sit level with the dates instead of shouting over them. */
+.detail-meta .flag {
+  font-size: var(--fs-xs);
+  padding: 3px var(--s3);
 }
 
 .detail-about {
-  margin: 0 0 8px;
-  font-size: var(--fs);
-  color: var(--body);
+  margin: 0 0 var(--s2);
+  max-width: var(--measure);
+  font-size: var(--fs-body);
+  line-height: var(--lh-prose);
+  color: var(--ink);
 }
 
 /* Facts wrap like the filter bar: a flex row that reflows by available width. */
@@ -735,58 +1224,67 @@ optgroup {
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 16px 32px;
+  justify-content: flex-start;
+  gap: var(--s5) var(--s6);
 }
 
 .detail-facts {
-  margin: 10px 0 28px;
+  margin: var(--s3) 0 var(--s6);
 }
 
 /* Each fact stacks its label above its value and is sized by its own content
    (flex-basis: auto), not a shared column width — so a narrow "Type" and a wide
    "ANZSCO occupation" each take only what they need and as many as fit land on
-   a row. flex-grow shares out the leftover space so the row still reaches the
-   full width; min-width:0 lets a long value wrap inside the item instead of
-   pushing the row wider. */
+   a row.
+
+   No flex-grow: letting the items absorb the leftover space meant the gap
+   between two facts on a short row was several times the gap between four on a
+   full one, so the same spacing said something different on every row. Packed
+   to the start, one gap value holds everywhere. min-width:0 still lets a long
+   value wrap inside its own item rather than pushing the row wider. */
 .detail-facts li,
 .visa-facts li {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  /* Label and value are one unit: 2px apart inside, a whole scale step apart
+     from the next fact, so there is never a question which label owns which
+     value. */
   gap: 2px;
-  font-size: var(--fs);
-  line-height: 1.6;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
   color: var(--ink);
 }
 
+/* Micro-label above its value: the smallest step, uppercase and tracked, so the
+   pair reads as label-then-fact without needing a second colour or weight. */
 .fact-label {
-  font-size: var(--fs);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--muted);
 }
 
 .detail-summary {
-  font-size: var(--fs);
-  line-height: 1.55;
+  max-width: var(--measure);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
   color: var(--ink);
 }
 
 .detail-description {
-  font-size: var(--fs);
-  line-height: 1.75;
-  color: var(--body);
+  max-width: var(--measure);
+  font-size: var(--fs-body);
+  line-height: var(--lh-prose);
+  color: var(--ink);
 }
 
 /* Rich detail sections */
 .detail-section {
-  margin: 30px 0;
-}
-
-.detail-section h2 {
-  margin: 0 0 14px;
-  font-size: var(--fs);
-  color: var(--ink);
+  margin: var(--s6) 0;
 }
 
 .detail-section .detail-description {
@@ -799,17 +1297,17 @@ optgroup {
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--s2);
 }
 
 .skill {
   display: inline-flex;
   align-items: center;
-  padding: 6px 16px;
+  padding: var(--s1) var(--s3);
   border-radius: 999px;
-  background: var(--highlight);
-  color: var(--white);
-  font-size: var(--fs);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: var(--fs-sm);
 }
 
 .value-list {
@@ -818,30 +1316,39 @@ optgroup {
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--s2);
 }
 
 .value-chip {
-  padding: 7px 15px;
+  padding: var(--s1) var(--s3);
   border-radius: 999px;
-  border: var(--border) solid var(--indigo);
-  color: var(--indigo);
-  font-size: var(--fs);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  font-size: var(--fs-sm);
 }
 
 /* Visa & pathway box */
 .visa-box {
-  margin: 32px 0;
-  padding-bottom: 32px;
+  margin: var(--s6) 0;
+  padding-bottom: var(--s6);
   border-bottom: 1px solid var(--line);
 }
 
+/* Section titles inside a job listing are signposts, not headlines — the facts
+   under them are what the reader came for. They stay small and take the label
+   treatment instead of a heading size, which lets the role title above be the
+   only large thing on the page. They are still h2s in the markup; the document
+   outline and the visual hierarchy are allowed to disagree. */
+.detail-section h2,
 .visa-box h2,
 .map-box h2,
 .detail-heading {
-  margin: 0 0 18px;
-  font-size: var(--fs);
-  color: var(--ink);
+  margin: 0 0 var(--s3);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .visa-facts {
@@ -851,16 +1358,16 @@ optgroup {
 .pill-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--s1);
 }
 
 .pill {
   display: inline-block;
-  padding: 3px 12px;
+  padding: 2px var(--s3);
   border-radius: 999px;
-  background: var(--indigo);
-  color: var(--white);
-  font-size: var(--fs);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: var(--fs-sm);
 }
 
 /* A visa pill that links out to its official Home Affairs page. */
@@ -878,7 +1385,7 @@ optgroup {
 
 /* Free-text reference values (skills assessor, ANZSCO) linking to their source. */
 .reference-link {
-  color: var(--indigo);
+  color: var(--ink);
   text-decoration: underline;
   text-underline-offset: 2px;
   text-decoration-thickness: 1px;
@@ -894,29 +1401,29 @@ optgroup {
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--s2);
   margin: 0;
   padding: 0;
 }
 
 .tag {
-  padding: 6px 14px;
+  padding: var(--s1) var(--s3);
   border-radius: 999px;
-  background: var(--highlight);
-  color: var(--white);
-  font-size: var(--fs);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: var(--fs-sm);
 }
 
 /* Map */
 .map-box {
-  margin: 32px 0;
+  margin: var(--s6) 0;
 }
 
 .map-box summary {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: var(--fs);
+  gap: var(--s2);
+  font-size: var(--fs-body);
   color: var(--ink);
   cursor: pointer;
   list-style: none;
@@ -940,9 +1447,9 @@ optgroup {
 }
 
 .map-frame {
-  margin-top: 16px;
+  margin-top: var(--s4);
   aspect-ratio: 16 / 9;
-  border: var(--border) solid var(--indigo);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
 }
@@ -954,50 +1461,60 @@ optgroup {
   display: block;
 }
 
-/* Buttons */
+/* ---- Buttons ------------------------------------------------------------
+   Actions sit in a pyramid, and the styling says where. Solid ink is the one
+   true primary action on a screen (apply, submit); the bare outline is for
+   secondary actions; anything more incidental than that is styled as a link,
+   not a button. Which action is primary never depends on how it is delivered —
+   applying by email and applying on a website are the same action and get the
+   same button. */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 16px 30px;
-  border: var(--border) solid var(--ink);
+  padding: var(--s4) var(--s6);
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius);
-  font-size: var(--fs);
+  background: var(--white);
+  color: var(--ink);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-strong);
+  line-height: var(--lh-heading);
   font-family: inherit;
   text-decoration: none;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  box-shadow: var(--shadow-sm);
+  transition: background 0.15s var(--ease), color 0.15s var(--ease),
+    border-color 0.15s var(--ease), box-shadow 0.15s var(--ease),
+    transform 0.1s var(--ease);
+}
+
+.btn:hover {
+  border-color: var(--ink);
+}
+
+/* Pressed buttons sink back into the page: the shadow goes, rather than the
+   button sliding somewhere it wasn't. */
+.btn:active {
+  transform: translateY(1px);
+  box-shadow: none;
 }
 
 .btn-primary {
-  background: var(--bg);
-  color: var(--ink);
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--on-ink);
 }
 
 .btn-primary:hover {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--white);
-}
-
-/* Email applications get a filled accent button so they read differently from
-   the outline "Apply on website" button. */
-.btn-email.btn-primary {
-  background: var(--highlight);
-  border-color: var(--highlight);
-  color: var(--white);
-}
-
-.btn-email.btn-primary:hover {
-  background: var(--indigo);
-  border-color: var(--indigo);
-  color: var(--white);
+  background: var(--grey-800);
+  border-color: var(--grey-800);
 }
 
 .btn-icon {
-  font-size: var(--fs);
+  font-size: var(--fs-body);
   line-height: 1;
-  margin-right: 10px;
+  margin-right: var(--s2);
 }
 
 /* Envelope drawn as a mask rather than an <img> so it inherits the button's
@@ -1020,26 +1537,28 @@ optgroup {
 
 .btn-icon-end {
   margin-right: 0;
-  margin-left: 10px;
-  font-size: var(--fs);
+  margin-left: var(--s2);
+  font-size: var(--fs-body);
 }
 
 .detail-actions {
-  margin-top: 36px;
+  margin-top: var(--s6);
 }
 
 .apply-note {
-  margin: 14px 0 0;
-  font-size: var(--fs);
+  margin: var(--s3) 0 0;
+  max-width: var(--measure);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
   color: var(--muted);
 }
 
 /* Local-only "add a job" panel (dev builds only). */
 .admin-panel {
-  border: 2px dashed var(--highlight);
+  border: 2px dashed var(--line-strong);
   border-radius: var(--radius);
-  padding: 22px 24px;
-  background: var(--lavender-bar);
+  padding: var(--s5);
+  background: var(--chip);
 }
 
 /* Info "i" affordance with hover/focus tooltip bubble. */
@@ -1049,12 +1568,13 @@ optgroup {
   vertical-align: middle;
 }
 
+/* Sized to sit inside a 13px uppercase label without pushing the line open. */
 .info-tip-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 21px;
-  height: 21px;
+  width: 17px;
+  height: 17px;
   padding: 0;
   border: 1.5px solid currentColor;
   border-radius: 999px;
@@ -1062,7 +1582,7 @@ optgroup {
   color: inherit;
   font-family: Georgia, 'Times New Roman', serif;
   font-style: italic;
-  font-size: var(--fs);
+  font-size: var(--fs-xs);
   line-height: 1;
   cursor: help;
 }
@@ -1080,8 +1600,9 @@ optgroup {
   background: var(--ink);
   color: var(--white);
   font-family: var(--font);
-  font-size: var(--fs);
-  line-height: 1.6;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw);
+  line-height: var(--lh-body);
   letter-spacing: normal;
   text-align: left;
   text-transform: none;
@@ -1112,41 +1633,45 @@ optgroup {
 
 /* Occupation → eligible visas (collapsible). */
 .occ-visas {
-  margin: 4px 0 8px;
-  padding-top: 16px;
+  margin: var(--s1) 0 var(--s2);
+  padding-top: var(--s4);
   border-top: 1px solid var(--line);
 }
 
 .occ-visas summary {
   cursor: pointer;
-  font-size: var(--fs);
+  font-size: var(--fs-body);
   color: var(--ink);
 }
 
+/* The row gap has to clear the leading inside a wrapped row, otherwise two
+   lines of one visa read as two visas. */
 .occ-visa-list {
   list-style: none;
-  margin: 14px 0 0;
+  margin: var(--s3) 0 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--s4);
 }
 
 .occ-visa-list li {
   display: flex;
   align-items: baseline;
-  gap: 10px;
-  font-size: var(--fs);
+  gap: var(--s2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
 }
 
 .occ-visa-code {
   flex: 0 0 auto;
   min-width: 42px;
-  padding: 2px 10px;
+  padding: 2px var(--s2);
   border-radius: 999px;
-  background: var(--indigo);
-  color: var(--white);
-  font-size: var(--fs);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
   text-align: center;
   text-decoration: none;
 }
@@ -1161,8 +1686,9 @@ a.occ-visa-code:focus-visible {
 }
 
 .occ-visa-note {
-  margin: 14px 0 0;
-  font-size: var(--fs);
+  margin: var(--s3) 0 0;
+  font-size: var(--fs-xs);
+  line-height: var(--lh-body);
   color: var(--muted);
 }
 
@@ -1174,7 +1700,7 @@ a.occ-visa-code:focus-visible {
 }
 
 .about-inner {
-  padding: 48px clamp(32px, 7vw, 96px);
+  padding: var(--s7) clamp(var(--s6), 7vw, var(--s9));
 }
 
 .about {
@@ -1183,45 +1709,65 @@ a.occ-visa-code:focus-visible {
 }
 
 .about-hero {
-  padding: 8px 0 0;
-  margin-bottom: 8px;
+  padding: var(--s2) 0 0;
+  margin-bottom: var(--s2);
 }
 
+/* No measure on a headline. The 45–75 character rule is for continuous text,
+   where a long line makes your eye lose its place tracking back — a title read
+   in one glance has no such problem, and capping it in `ch` forced a break at
+   a fixed character count regardless of the space available. Headlines get the
+   full container; only the paragraphs under them are held to a measure.
+   text-wrap: balance evens out the lines when it does have to wrap, instead of
+   leaving one word stranded on the last line. */
 .about-hero h1 {
-  margin: 0 0 18px;
-  font-size: var(--fs);
-  line-height: 1.12;
+  margin: 0 0 var(--s4);
+  font-size: var(--fs-display);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
   color: var(--ink);
 }
 
+/* An intro paragraph one step above body size — the classic lede. Held to a
+   narrower measure than body copy because the larger type covers more ground
+   per line, and to a shorter line-height because larger text needs less help
+   finding the next line. */
 .about-lede {
   margin: 0;
-  font-size: var(--fs);
-  line-height: 1.65;
-  color: var(--body);
+  max-width: var(--measure-lede);
+  font-size: var(--fs-h3);
+  line-height: var(--lh-body);
+  color: var(--ink);
 }
 
+/* Sections are pushed a whole step further apart than anything inside them,
+   so a heading always reads as belonging to what follows it rather than to
+   what it sits under. */
 .about-section {
-  margin-top: 56px;
+  margin-top: var(--s7);
 }
 
 .about-section > p {
-  font-size: var(--fs);
-  line-height: 1.75;
-  color: var(--body);
+  max-width: var(--measure);
+  font-size: var(--fs-body);
+  line-height: var(--lh-prose);
+  color: var(--ink);
 }
 
 .about-section h2 {
-  margin: 0 0 20px;
-  font-size: var(--fs);
+  margin: 0 0 var(--s4);
+  font-size: var(--fs-h2);
   color: var(--ink);
 }
 
 .about-collapse summary {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-size: var(--fs);
+  gap: var(--s2);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-strong);
   color: var(--ink);
   cursor: pointer;
   list-style: none;
@@ -1245,50 +1791,68 @@ a.occ-visa-code:focus-visible {
 }
 
 .about-collapse .check-list {
-  margin-top: 20px;
+  margin-top: var(--s4);
 }
 
-/* How it works */
+/* ---- How it works -------------------------------------------------------
+   Three short steps read as a long list when they're stacked, and leave the
+   width of the page unused. As columns they read as one process at a glance,
+   and each step gets the narrow measure it wants anyway. auto-fit means the
+   same rule gives three columns on a desktop, two on a tablet and one on a
+   phone without a breakpoint. */
 .how-grid {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 22px;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  /* The gap between columns has to be clearly wider than anything inside a
+     step, or two neighbouring columns read as one block of text. */
+  gap: var(--s6) var(--s7);
 }
 
-/* Bare step numbers — no disc behind them. */
+/* The numeral promoted into the graphic that structures the row — and pulled
+   right back in contrast to pay for it. Large and pale, it marks where each
+   step begins without competing with the title underneath; large and dark, it
+   would be the first thing you read in every column. */
 .how-n {
-  flex-shrink: 0;
-  color: var(--ink);
-  font-size: var(--fs);
+  display: block;
+  color: var(--line-strong);
+  font-size: var(--fs-display);
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 .how-head {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 0 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s2);
+  margin: 0 0 var(--s2);
 }
 
 .how-head h3 {
   margin: 0;
   min-width: 0;
-  font-size: var(--fs);
+  font-size: var(--fs-h3);
+  line-height: var(--lh-heading);
   color: var(--ink);
+  text-wrap: balance;
 }
 
 .how-step p {
   margin: 0;
-  font-size: var(--fs);
-  line-height: 1.55;
-  color: var(--body);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--muted-strong);
 }
 
 .about-note {
-  font-size: var(--fs);
-  line-height: 1.65;
+  max-width: var(--measure);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
   color: var(--muted);
 }
 
@@ -1299,7 +1863,7 @@ a.occ-visa-code:focus-visible {
   text-decoration: underline;
   text-underline-offset: 2px;
   text-decoration-thickness: 1px;
-  text-decoration-color: var(--grey);
+  text-decoration-color: var(--muted);
   transition: text-decoration-color 0.12s ease;
 }
 
@@ -1321,106 +1885,161 @@ a.occ-visa-code:focus-visible {
 
 /* Now / Next columns */
 .about-intro h1 {
-  margin: 0 0 16px;
-  font-size: var(--fs);
-  line-height: 1.15;
-  color: #00171f;
+  margin: 0 0 var(--s4);
+  font-size: var(--fs-display);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  color: var(--ink);
 }
 
 .about-intro p {
   margin: 0;
-  max-width: 60ch;
-  font-size: var(--fs);
-  line-height: 1.65;
-  color: var(--body);
-}
-
-/* Subheading. With size and weight fixed site-wide, only margin separates it
-   from the steps beneath it. */
-.about-track {
-  margin: 28px 0 14px;
-  font-size: var(--fs);
+  max-width: var(--measure-lede);
+  font-size: var(--fs-h3);
+  line-height: var(--lh-body);
   color: var(--ink);
 }
 
+/* Subheading between an h2 and the steps under it: the label treatment rather
+   than a third heading size, so the section keeps two levels, not three. */
+.about-track {
+  margin: var(--s5) 0 var(--s3);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-strong);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .about-track:first-of-type {
-  margin-top: 10px;
+  margin-top: var(--s2);
 }
 
 .about-columns {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 24px 48px;
+  gap: var(--s5) var(--s7);
 }
 
 .about-columns .about-section {
-  margin-top: 56px;
+  margin-top: var(--s7);
 }
 
+/* The gap between items has to beat the leading inside one, or a wrapped item
+   reads as two. */
 .check-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 14px;
+  gap: var(--s4);
 }
 
-/* Plain list — no disc marker, no tick. */
+/* The default disc is replaced with the same tick used by the checkboxes —
+   the list is a list of things you get, and the marker may as well say so. */
 .check-list li {
-  font-size: var(--fs);
-  line-height: 1.5;
+  position: relative;
+  padding-left: var(--s6);
+  max-width: var(--measure);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
   color: var(--ink);
+}
+
+.check-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  /* Centred on the first line's cap height rather than the whole item, so the
+     tick still lines up with the text when an item wraps. */
+  top: calc((1em * var(--lh-body) - 18px) / 2);
+  width: 18px;
+  height: 18px;
+  background-color: var(--muted);
+  -webkit-mask-image: var(--check);
+  mask-image: var(--check);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/* "What's next" is a list of things that don't exist yet, so it takes the
+   pending mark instead of the tick — the marker states the status, which saves
+   the copy from having to. Kept a step lighter than the done list for the same
+   reason: it's a promise, not a feature. */
+.check-list-next li::before {
+  -webkit-mask-image: var(--pending);
+  mask-image: var(--pending);
+  background-color: var(--line-strong);
 }
 
 /* Post-a-job: choose PDF vs form */
 .post-choice {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 18px;
-  margin-top: 18px;
+  gap: var(--s4);
+  margin-top: var(--s4);
 }
 
+/* Three ways to send a role: selectable cards rather than a stack of radios,
+   because the choice is the point of the step. */
 .choice-card {
   display: block;
   text-align: left;
-  padding: 24px;
-  border: var(--border) solid var(--indigo);
+  padding: var(--s5);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--white);
+  box-shadow: var(--shadow-sm);
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease),
+    box-shadow 0.15s var(--ease), transform 0.15s var(--ease);
 }
 
 .choice-card:hover {
   background: var(--ink);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .choice-card h3 {
-  margin: 0 0 6px;
-  font-size: var(--fs);
+  margin: 0 0 var(--s1);
+  font-size: var(--fs-h3);
   color: var(--ink);
 }
 
 .choice-card p {
   margin: 0;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
   color: var(--muted);
 }
 
-.choice-card:hover h3,
-.choice-card:hover p {
-  color: var(--white);
+.choice-card:hover h3 {
+  color: var(--on-ink);
 }
 
+.choice-card:hover p {
+  color: var(--on-ink-muted);
+}
+
+/* Tertiary action: styled as a link, not a button, so it never competes with
+   the submit at the bottom of the form. */
 .post-back {
   display: inline-block;
   align-self: flex-start;
   margin-bottom: 0;
-  padding: 6px 0;
+  padding: var(--s1) 0;
   border: 0;
   background: none;
   font-family: inherit;
-  font-size: var(--fs);
+  font-size: var(--fs-sm);
   color: var(--ink);
   cursor: pointer;
 }
@@ -1439,8 +2058,8 @@ a.occ-visa-code:focus-visible {
 .job-form {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  margin-top: 18px;
+  gap: var(--s5);
+  margin-top: var(--s4);
 }
 
 /* Uniform spacing between every block in the form (fields within a grid already
@@ -1452,19 +2071,21 @@ a.occ-visa-code:focus-visible {
 .job-form-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 24px;
+  gap: var(--s5);
 }
 
 /* The dev-only admin keeps a dense two-column layout. */
 .admin-panel .job-form-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
+  gap: var(--s4);
 }
 
+/* A label sits 8px from its own input and 24px from the next field, so the
+   pairing is never ambiguous. */
 .field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--s2);
   min-width: 0;
 }
 
@@ -1473,21 +2094,39 @@ a.occ-visa-code:focus-visible {
 }
 
 .field label {
-  font-size: var(--fs);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-strong);
   color: var(--ink);
 }
 
+/* Never below 16px: iOS Safari zooms the viewport when a smaller field takes
+   focus, which hides the rest of the form mid-entry. */
 .field input,
 .field select,
 .field textarea {
   width: 100%;
   padding: 12px 14px;
-  border: var(--border) solid var(--indigo);
+  border: 1px solid var(--line);
   border-radius: var(--ctrl-radius);
   background: var(--white);
   font-family: inherit;
-  font-size: var(--fs);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
   color: var(--ink);
+  transition: border-color 0.15s var(--ease);
+}
+
+.field input:hover,
+.field select:hover,
+.field textarea:hover {
+  border-color: var(--line-strong);
+}
+
+/* Darkened border on focus, on top of (not instead of) the shared focus ring. */
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--ink);
 }
 
 .field select {
@@ -1508,46 +2147,53 @@ a.occ-visa-code:focus-visible {
   color: var(--muted);
 }
 
+/* This one is a real notice — it changes what the reader is about to do — so
+   it keeps a marker. But an accent rule alone is enough; the fill on top of it
+   was the second separator doing the first one's job. */
 .post-wip-note {
-  margin: 0 0 24px;
-  padding: 14px 16px;
-  border-left: 3px solid var(--ink);
-  border-radius: 8px;
-  background: var(--soft);
-  font-size: var(--fs);
-  line-height: 1.5;
-  color: var(--body);
+  margin: 0 0 var(--s5);
+  padding: 2px 0 2px var(--s4);
+  max-width: var(--measure);
+  border-left: 2px solid var(--ink);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--muted-strong);
 }
 
 .field-foot {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--s3);
 }
 
 .field-count {
   margin-left: auto;
-  font-size: var(--fs);
+  font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
   color: var(--muted);
   white-space: nowrap;
 }
 
 .field-hint {
-  font-size: var(--fs);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-body);
   color: var(--muted);
 }
 
+/* Errors stay at the small step rather than the caption step — a message that
+   asks the reader to fix something should not be the quietest text on screen. */
 .field-error-inline {
-  font-size: var(--fs);
-  color: var(--highlight);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-strong);
+  color: var(--ink);
 }
 
 /* Label above a tag group / pick control (matches the input labels). */
 /* Matches .field label so every field label is the same size and spacing. */
 .label-text {
-  font-size: var(--fs);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-strong);
   color: var(--ink);
 }
 
@@ -1555,8 +2201,8 @@ a.occ-visa-code:focus-visible {
 .visa-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 18px;
-  padding: 12px 14px;
+  gap: var(--s2) var(--s4);
+  padding: var(--s3);
   border: 1px solid var(--line);
   border-radius: var(--ctrl-radius);
   background: var(--white);
@@ -1569,46 +2215,47 @@ a.occ-visa-code:focus-visible {
   justify-content: center;
   min-width: 22px;
   height: 22px;
-  margin-left: 8px;
+  margin-left: var(--s2);
   padding: 0 5px;
   border-radius: 999px;
-  background: var(--highlight);
-  color: var(--white);
-  font-size: var(--fs);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
 }
 
 /* Visa toggle chips (multi-select). */
 .visa-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 6px;
+  gap: var(--s2);
+  margin-top: var(--s2);
 }
 
 .visa-chip {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 14px 7px 8px;
-  border: 2px solid var(--indigo);
+  gap: var(--s2);
+  padding: 6px var(--s3) 6px 6px;
+  border: 1px solid var(--line-strong);
   border-radius: 999px;
   background: var(--white);
   color: var(--ink);
   font-family: inherit;
-  font-size: var(--fs);
+  font-size: var(--fs-sm);
   line-height: 1;
   cursor: pointer;
   transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 
 .visa-chip:hover {
-  background: var(--lavender-bar);
+  background: var(--chip);
 }
 
 .visa-chip.is-on {
-  background: var(--indigo);
-  border-color: var(--indigo);
-  color: var(--white);
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--on-ink);
 }
 
 .visa-chip-mark {
@@ -1619,14 +2266,14 @@ a.occ-visa-code:focus-visible {
   height: 22px;
   flex-shrink: 0;
   border-radius: 999px;
-  background: var(--indigo);
-  color: var(--white);
-  font-size: var(--fs);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: var(--fs-xs);
 }
 
 .visa-chip.is-on .visa-chip-mark {
   background: var(--white);
-  color: var(--indigo);
+  color: var(--ink);
 }
 
 /* Tag multi-select (skills) - chips reuse .visa-chip; plus the add control. */
@@ -1634,21 +2281,21 @@ a.occ-visa-code:focus-visible {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  margin-top: 8px;
+  gap: var(--s2);
+  margin-top: var(--s2);
 }
 
 .tag-add-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  border: 2px dashed var(--grey);
+  gap: var(--s1);
+  padding: 6px var(--s3);
+  border: 1px dashed var(--line-strong);
   border-radius: 999px;
   background: var(--white);
   color: var(--ink);
   font-family: inherit;
-  font-size: var(--fs);
+  font-size: var(--fs-sm);
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease;
 }
@@ -1662,25 +2309,25 @@ a.occ-visa-code:focus-visible {
 .tag-add-row {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--s1);
 }
 
 .tag-add-row input {
   height: 36px;
   min-width: 150px;
-  padding: 0 12px;
-  border: 2px solid var(--ink);
+  padding: 0 var(--s3);
+  border: 1px solid var(--line-strong);
   border-radius: 999px;
   background: var(--white);
   font-family: inherit;
-  font-size: var(--fs);
+  font-size: var(--fs-body);
   color: var(--ink);
 }
 
 /* Pick-or-add inline "new value" row. */
 .pick-add-row {
   display: flex;
-  gap: 8px;
+  gap: var(--s2);
   align-items: center;
 }
 
@@ -1689,8 +2336,8 @@ a.occ-visa-code:focus-visible {
 }
 
 .btn-small {
-  padding: 8px 14px;
-  font-size: var(--fs);
+  padding: var(--s2) var(--s3);
+  font-size: var(--fs-sm);
   border-radius: var(--ctrl-radius);
 }
 
@@ -1701,31 +2348,34 @@ a.occ-visa-code:focus-visible {
 /* Nested "add occupation" panel inside the admin. */
 .add-occ {
   margin: 0;
-  padding: 18px 20px;
-  border: 1px solid var(--indigo);
+  padding: var(--s4);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--white);
 }
 
 .add-occ h3 {
-  margin: 0 0 6px;
-  font-size: var(--fs);
+  margin: 0 0 var(--s1);
+  font-size: var(--fs-h3);
   color: var(--ink);
 }
 
+/* An error keeps the most emphasis of the three notices — full ink, semibold,
+   and the heaviest rule — but still no fill. */
 .job-form-error {
   margin: 0;
-  padding: 12px 14px;
-  border: var(--border) solid var(--ink);
-  border-radius: var(--ctrl-radius);
-  background: var(--soft);
+  padding: 2px 0 2px var(--s4);
+  border-left: 3px solid var(--ink);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-strong);
+  line-height: var(--lh-body);
   color: var(--ink);
 }
 
 .job-form-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--s3);
   margin-top: 0;
 }
 
@@ -1736,12 +2386,14 @@ a.occ-visa-code:focus-visible {
   }
 }
 
+/* Sized from the scale, not from its parent — an em here would compute to a
+   size that isn't on the scale at all. */
 .about code {
   background: var(--chip);
-  padding: 2px 6px;
+  padding: 2px var(--s1);
   border-radius: 6px;
   color: var(--ink);
-  font-size: var(--fs);
+  font-size: var(--fs-sm);
 }
 
 .post-email-soon {
@@ -1751,33 +2403,38 @@ a.occ-visa-code:focus-visible {
 /* References */
 .ref-list {
   list-style: none;
-  margin: 18px 0 0;
+  margin: var(--s4) 0 0;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--s2);
 }
 
 .about-section .ref-list a {
   display: inline-block;
-  padding: 9px 18px;
-  border: var(--border) solid var(--indigo);
+  padding: var(--s2) var(--s4);
+  border: 1px solid var(--line-strong);
   border-radius: 999px;
-  font-size: var(--fs);
+  font-size: var(--fs-sm);
   text-decoration: none;
-  color: var(--indigo);
+  color: var(--ink);
+  transition: background 0.15s var(--ease), color 0.15s var(--ease),
+    border-color 0.15s var(--ease);
 }
 
 .about-section .ref-list a:hover {
-  background: var(--indigo);
-  color: var(--white);
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--on-ink);
 }
 
 .about-disclaimer {
-  margin: 56px 0 0;
-  padding-top: 24px;
+  margin: var(--s7) 0 0;
+  padding-top: var(--s5);
   border-top: 1px solid var(--line);
-  font-size: var(--fs);
+  max-width: var(--measure);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
   color: var(--muted);
 }
 
@@ -1786,28 +2443,28 @@ a.occ-visa-code:focus-visible {
   flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  gap: 4px 20px;
-  padding: 9px clamp(18px, 3vw, 36px);
-  background: var(--bg);
+  gap: var(--s1) var(--s4);
+  padding: var(--s3) var(--gutter);
+  background: var(--white);
   border-top: 1px solid var(--line);
 }
 
 .footer-copy {
   margin: 0;
-  font-size: var(--fs);
+  font-size: var(--fs-xs);
   color: var(--muted);
 }
 
 .footer-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: var(--s4);
 }
 
 .footer-links a {
-  font-size: var(--fs);
+  font-size: var(--fs-sm);
   text-decoration: none;
   color: var(--ink);
   border-bottom: 2px solid transparent;
@@ -1826,28 +2483,47 @@ a.occ-visa-code:focus-visible {
 
   .topbar {
     flex-wrap: wrap;
-    gap: 12px 20px;
+    gap: var(--s3) var(--s4);
   }
 
+  /* The header wraps at this width, so the brand drops back to body size to
+     keep it on one line beside the logo. */
   .brand-title {
-    font-size: var(--fs);
+    font-size: var(--fs-body);
   }
 
   .filterbar {
-    gap: 10px 12px;
-    padding: 14px clamp(16px, 5vw, 44px) 16px;
+    padding: var(--s3) var(--gutter) var(--s4);
   }
 
-  .filter-field,
-  .tags-filter,
+  /* Two controls to a row on a phone rather than a ragged wrap, and each one
+     fills its share so the row stays a grid rather than a pile. */
+  .filter-search {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  .fselect,
   .chip-toggle {
     flex: 1 1 140px;
   }
 
-  .filter-field select,
-  .tags-filter summary {
+  .fselect-trigger {
     width: 100%;
-    min-width: 0;
+    max-width: none;
+    justify-content: space-between;
+  }
+
+  .chip-toggle {
+    justify-content: center;
+  }
+
+  .chip-label-long {
+    display: none;
+  }
+
+  .chip-label-short {
+    display: inline;
   }
 
   .workspace {
@@ -1863,7 +2539,15 @@ a.occ-visa-code:focus-visible {
 
   .detail-panel,
   .about-inner {
-    padding: 40px clamp(22px, 6vw, 44px);
+    padding: var(--s6) var(--gutter);
+  }
+
+  /* On a phone the list is the whole page, so it drops the tint and the cards
+     sit directly on white — a full-bleed grey column reads as a mistake. */
+  .jobs-panel {
+    background: var(--white);
+    padding: var(--s5) var(--gutter);
+    border-right: 0;
   }
 
   /* Mobile master-detail: show the list, or the detail "page", not both. */
@@ -1883,15 +2567,31 @@ a.occ-visa-code:focus-visible {
   .detail-back {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    margin-bottom: 20px;
-    padding: 10px 16px;
-    border: var(--border) solid var(--line);
+    gap: var(--s1);
+    margin-bottom: var(--s4);
+    padding: var(--s2) var(--s4);
+    border: 1px solid var(--line-strong);
     border-radius: var(--ctrl-radius);
     background: var(--white);
     font-family: inherit;
-    font-size: var(--fs);
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-strong);
     color: var(--ink);
     cursor: pointer;
+  }
+}
+
+/* ================= Motion =================
+   Every transition on the site is decorative — state is always carried by
+   colour, border or position as well — so a reader who asks for less motion
+   can lose all of it without losing meaning. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

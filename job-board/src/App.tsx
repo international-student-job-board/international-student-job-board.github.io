@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
 import { Job } from './types';
-import { loadJobs } from './jobs';
+import { loadJobs, isOpenOn } from './jobs';
+import { dateValue, todayISO } from './format';
 import { resolveOccupation } from './references';
 import { Header } from './components/Header';
-import { Filters, FilterState, FilterOptions } from './components/Filters';
+import { Filters, FilterState, FilterOptions, countActiveFilters } from './components/Filters';
 import { JobCard } from './components/JobCard';
 import { JobDetail } from './components/JobDetail';
 import { About } from './components/About';
@@ -15,32 +16,53 @@ const PAGE_SIZE = 10;
 
 const EMPTY_FILTERS: FilterState = {
   query: '',
-  type: '',
-  level: '',
-  arrangement: '',
-  visa: '',
-  pathwayVisa: '',
-  anzsco: '',
-  skillAssessment: '',
-  salaryMin: 0,
+  types: [],
+  levels: [],
+  arrangements: [],
+  visas: [],
+  pathwayVisas: [],
+  anzscos: [],
+  skillAssessments: [],
   skills: [],
+  salaryMin: 0,
+  postedWithinDays: 0,
   sponsoredOnly: false,
 };
 
-function matches(job: Job, filters: FilterState): boolean {
-  if (filters.type && job.type !== filters.type) return false;
-  if (filters.level && job.jobLevel !== filters.level) return false;
-  if (filters.arrangement && job.arrangement !== filters.arrangement) return false;
-  if (filters.visa && !job.visaEligible.includes(filters.visa)) return false;
-  if (filters.pathwayVisa && !job.visaPathways.includes(filters.pathwayVisa)) return false;
+/** An empty filter narrows nothing; otherwise the job's value has to be in it. */
+const allows = (selected: string[], value: string) =>
+  selected.length === 0 || selected.includes(value);
+
+/** Same, for the fields where the job itself holds a list (visas, skills). */
+const overlaps = (selected: string[], values: string[]) =>
+  selected.length === 0 || values.some((value) => selected.includes(value));
+
+/**
+ * `postedCutoff` is a timestamp resolved once per pass rather than per job, so
+ * every card in one run is measured against the same instant; 0 means the age
+ * filter is off.
+ */
+function matches(job: Job, filters: FilterState, postedCutoff: number): boolean {
+  if (!allows(filters.types, job.type)) return false;
+  if (!allows(filters.levels, job.jobLevel)) return false;
+  if (!allows(filters.arrangements, job.arrangement)) return false;
+  if (!overlaps(filters.visas, job.visaEligible)) return false;
+  if (!overlaps(filters.pathwayVisas, job.visaPathways)) return false;
+  if (!overlaps(filters.skills, job.skills)) return false;
   if (filters.salaryMin > 0 && job.salaryMaxAnnual < filters.salaryMin) return false;
   if (filters.sponsoredOnly && !job.employerSponsored) return false;
-  if (filters.skills.length && !filters.skills.some((s) => job.skills.includes(s))) return false;
 
-  if (filters.anzsco || filters.skillAssessment) {
+  // A role with no readable posting date can't be shown to be recent, so it
+  // drops out when the reader asks for recent ones.
+  if (postedCutoff > 0) {
+    const posted = dateValue(job.posted);
+    if (!Number.isFinite(posted) || posted < postedCutoff) return false;
+  }
+
+  if (filters.anzscos.length || filters.skillAssessments.length) {
     const occ = resolveOccupation(job.anzsco, job.skillAssessment);
-    if (filters.anzsco && occ.code !== filters.anzsco) return false;
-    if (filters.skillAssessment && occ.assessment !== filters.skillAssessment) return false;
+    if (!allows(filters.anzscos, occ.code)) return false;
+    if (!allows(filters.skillAssessments, occ.assessment)) return false;
   }
 
   const q = filters.query.trim().toLowerCase();
@@ -104,25 +126,44 @@ function App() {
     setPage(1);
   }, [filters]);
 
+  // Closed roles are dropped here rather than inside the filtering, so they are
+  // gone from everything downstream: the count, the default selection, and the
+  // filter dropdowns — which would otherwise offer a skill or a visa that no
+  // listed role has. Evaluated against the viewer's own date.
+  const openJobs = useMemo(() => {
+    const today = todayISO();
+    return jobs.filter((job) => isOpenOn(job, today));
+  }, [jobs]);
+
   const options: FilterOptions = useMemo(
     () => ({
-      types: uniqueSorted(jobs.map((j) => j.type)),
-      levels: uniqueSorted(jobs.map((j) => j.jobLevel)),
-      arrangements: uniqueSorted(jobs.map((j) => j.arrangement)),
-      visas: uniqueSorted(jobs.flatMap((j) => j.visaEligible)),
-      pathwayVisas: uniqueSorted(jobs.flatMap((j) => j.visaPathways)),
+      types: uniqueSorted(openJobs.map((j) => j.type)),
+      levels: uniqueSorted(openJobs.map((j) => j.jobLevel)),
+      arrangements: uniqueSorted(openJobs.map((j) => j.arrangement)),
+      visas: uniqueSorted(openJobs.flatMap((j) => j.visaEligible)),
+      pathwayVisas: uniqueSorted(openJobs.flatMap((j) => j.visaPathways)),
       anzscos: uniqueSorted(
-        jobs.map((j) => resolveOccupation(j.anzsco, j.skillAssessment).code).filter(Boolean)
+        openJobs.map((j) => resolveOccupation(j.anzsco, j.skillAssessment).code).filter(Boolean)
       ),
       skillAssessments: uniqueSorted(
-        jobs.map((j) => resolveOccupation(j.anzsco, j.skillAssessment).assessment).filter(Boolean)
+        openJobs
+          .map((j) => resolveOccupation(j.anzsco, j.skillAssessment).assessment)
+          .filter(Boolean)
       ),
-      skills: uniqueSorted(jobs.flatMap((j) => j.skills)),
+      skills: uniqueSorted(openJobs.flatMap((j) => j.skills)),
     }),
-    [jobs]
+    [openJobs]
   );
 
-  const visible = useMemo(() => jobs.filter((job) => matches(job, filters)), [jobs, filters]);
+  // loadJobs already sorted newest first, and filtering preserves that order.
+  const visible = useMemo(() => {
+    const postedCutoff =
+      filters.postedWithinDays > 0
+        ? Date.now() - filters.postedWithinDays * 24 * 60 * 60 * 1000
+        : 0;
+    return openJobs.filter((job) => matches(job, filters, postedCutoff));
+  }, [openJobs, filters]);
+  const activeFilters = countActiveFilters(filters);
 
   const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -132,7 +173,8 @@ function App() {
 
   // Scroll the (sticky) detail panel back to the top when a different job is shown.
   useEffect(() => {
-    detailRef.current?.scrollTo({ top: 0 });
+    // Optional call: jsdom (and older Safari) has no Element.scrollTo.
+    detailRef.current?.scrollTo?.({ top: 0 });
   }, [selected?.id]);
 
   if (route === 'about' || route === 'post') {
@@ -151,7 +193,9 @@ function App() {
     <div className={`app${showDetail ? ' detail-open' : ''}`} id="top">
       <Header route={route} />
 
-      <div className="filters-region">
+      {/* No point offering filters over an empty board — supporting UI that
+          can't do anything yet is just noise in front of the real message. */}
+      <div className="filters-region" hidden={status === 'ready' && openJobs.length === 0}>
         <button
           type="button"
           className="filters-toggle"
@@ -159,6 +203,12 @@ function App() {
           onClick={() => setFiltersOpen((o) => !o)}
         >
           Filters
+          {activeFilters > 0 && (
+            <span className="filters-toggle-count">
+              {activeFilters}
+              <span className="visually-hidden"> active</span>
+            </span>
+          )}
         </button>
         {filtersOpen && (
           <Filters
@@ -184,7 +234,18 @@ function App() {
             Every role here welcomes international students &amp; graduates.
           </p>
 
-          {status === 'loading' && <p className="panel-note">Loading jobs . . .</p>}
+          {/* Placeholder cards rather than a line of text: the list keeps its
+              shape while it loads, so nothing jumps when the jobs arrive. */}
+          {status === 'loading' && (
+            <div className="job-skeletons" aria-hidden="true">
+              {[0, 1, 2].map((n) => (
+                <div key={n} className="job-skeleton" />
+              ))}
+              <p className="visually-hidden" role="status">
+                Loading jobs
+              </p>
+            </div>
+          )}
           {status === 'error' && (
             <p className="panel-note" role="alert">
               Sorry, we couldn't load the jobs right now. Please try again later.
@@ -193,7 +254,23 @@ function App() {
 
           {status === 'ready' &&
             (visible.length === 0 ? (
-              <p className="panel-note">No roles match your filters yet.</p>
+              <div className="panel-empty">
+                <p className="panel-empty-title">No roles match these filters</p>
+                <p className="panel-note">
+                  {activeFilters > 0
+                    ? 'Try widening the search filters.'
+                    : 'New roles are added as startups send them in. Check back soon.'}
+                </p>
+                {activeFilters > 0 && (
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-small"
+                    onClick={() => setFilters(EMPTY_FILTERS)}
+                  >
+                    Clear all filters
+                  </button>
+                )}
+              </div>
             ) : (
               <>
                 <ul className="job-list">

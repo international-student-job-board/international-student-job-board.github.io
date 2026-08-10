@@ -121,9 +121,11 @@ export function JobDetail({ job }: { job: Job }) {
   );
   return (
     <article className="job-detail" aria-labelledby="job-detail-title">
-      <h1 id="job-detail-title" className="detail-title">
-        {job.title}
-      </h1>
+      {/* Who, then what, then when — the company and title read as one unit
+          and the dates and sponsorship badge as another. The badge sits with
+          the dates rather than above the title: a solid pill is the heaviest
+          thing in this block, and ahead of the headline it takes the lead
+          away from it. */}
       <p className="detail-company">
         {job.companyUrl ? (
           <a
@@ -139,15 +141,18 @@ export function JobDetail({ job }: { job: Job }) {
         )}
       </p>
 
-      <p className="detail-posted">
-        Posted {formatDate(job.posted)} · Closes {formatDate(job.closes)}
-      </p>
+      <h1 id="job-detail-title" className="detail-title">
+        {job.title}
+      </h1>
 
-      {job.employerSponsored && (
-        <p className="detail-flags">
+      <div className="detail-meta">
+        <span className="detail-posted">
+          Posted {formatDate(job.posted)} · Closes {formatDate(job.closes)}
+        </span>
+        {job.employerSponsored && (
           <span className="flag flag-sponsor">Visa sponsorship available</span>
-        </p>
-      )}
+        )}
+      </div>
 
       <section>
       <h2 className="detail-heading">In a nutshell</h2>

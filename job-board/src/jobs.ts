@@ -1,4 +1,5 @@
 import { Job } from './types';
+import { dateValue } from './format';
 
 const JOBS_URL = `${process.env.PUBLIC_URL || ''}/jobs.json`;
 
@@ -72,6 +73,23 @@ function toJob(row: Record<string, string>): Job {
   };
 }
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Whether a role is still open on a given day, both dates being YYYY-MM-DD in
+ * the viewer's timezone — ISO dates compare correctly as plain strings, which
+ * sidesteps the timezone trap in parsing them.
+ *
+ * A role stays listed through its closing date and drops off the day after.
+ * A missing or unreadable date means no deadline was given, so the role stays:
+ * a blank field is not evidence that something has closed.
+ */
+export function isOpenOn(job: Job, today: string): boolean {
+  const closes = job.closes.trim();
+  if (!ISO_DATE.test(closes)) return true;
+  return closes >= today;
+}
+
 export async function loadJobs(): Promise<Job[]> {
   const res = await fetch(JOBS_URL);
   if (!res.ok) throw new Error(`Could not load jobs (${res.status})`);
@@ -79,5 +97,12 @@ export async function loadJobs(): Promise<Job[]> {
   const data = (await res.json()) as Record<string, string>[];
   if (!Array.isArray(data)) throw new Error('jobs.json must be an array of jobs');
 
-  return data.map(toJob).filter((job) => job.id && job.title);
+  // Newest first, once, here — the list, the filtered views and the job picked
+  // by default all inherit it, so there is one answer to "what order is this
+  // in". A missing or unreadable date scores 0 and sinks to the bottom rather
+  // than jumping the queue.
+  return data
+    .map(toJob)
+    .filter((job) => job.id && job.title)
+    .sort((a, b) => (dateValue(b.posted) || 0) - (dateValue(a.posted) || 0));
 }

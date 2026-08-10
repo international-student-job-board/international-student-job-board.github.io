@@ -1,42 +1,16 @@
 import { resolveOccupation, VISA_NAMES } from '../references';
+import { FilterSelect, SelectOption } from './FilterSelect';
 
 const base = process.env.PUBLIC_URL || '';
 
+/**
+ * Every dimension holds a list, so a student can ask for (say) two pathway
+ * visas and three occupations at once. Values inside one filter are OR'd;
+ * separate filters are AND'd — pick "485" and "482" and you see roles matching
+ * either, but a job type on top of that still has to match as well.
+ */
 export interface FilterState {
   query: string;
-  type: string;
-  level: string;
-  arrangement: string;
-  visa: string;
-  pathwayVisa: string;
-  anzsco: string;
-  skillAssessment: string;
-  salaryMin: number;
-  skills: string[];
-  sponsoredOnly: boolean;
-}
-
-// "261313" -> "261313 Software Engineer" for the ANZSCO dropdown labels.
-const anzscoLabel = (code: string) => {
-  const { name } = resolveOccupation(code, '');
-  return name ? `${code} ${name}` : code;
-};
-
-// "189" -> "189 - Skilled Independent" for the two visa dropdowns. Codes with
-// no entry in VISA_NAMES fall back to the bare code.
-const visaLabel = (code: string) => {
-  const name = VISA_NAMES[code.trim()];
-  return name ? `${code} - ${name}` : code;
-};
-
-const SALARY_BANDS = [
-  { value: 40000, label: '$40k+' },
-  { value: 60000, label: '$60k+' },
-  { value: 80000, label: '$80k+' },
-  { value: 100000, label: '$100k+' },
-];
-
-export interface FilterOptions {
   types: string[];
   levels: string[];
   arrangements: string[];
@@ -45,6 +19,78 @@ export interface FilterOptions {
   anzscos: string[];
   skillAssessments: string[];
   skills: string[];
+  salaryMin: number;
+  /** Only roles posted within this many days; 0 means any age. */
+  postedWithinDays: number;
+  sponsoredOnly: boolean;
+}
+
+/** The list-valued keys, which are exactly the keys of FilterOptions. */
+export type FilterListKey =
+  | 'types'
+  | 'levels'
+  | 'arrangements'
+  | 'visas'
+  | 'pathwayVisas'
+  | 'anzscos'
+  | 'skillAssessments'
+  | 'skills';
+
+export type FilterOptions = Record<FilterListKey, string[]>;
+
+// "261313" -> "261313 Software Engineer" for the occupation options.
+const anzscoLabel = (code: string) => {
+  const { name } = resolveOccupation(code, '');
+  return name ? `${code} ${name}` : code;
+};
+
+// "189" -> "189 - Skilled Independent" for the two visa filters. Codes with no
+// entry in VISA_NAMES fall back to the bare code.
+const visaLabel = (code: string) => {
+  const name = VISA_NAMES[code.trim()];
+  return name ? `${code} - ${name}` : code;
+};
+
+const SALARY_BANDS = [
+  { value: '40000', label: '$40k+' },
+  { value: '60000', label: '$60k+' },
+  { value: '80000', label: '$80k+' },
+  { value: '100000', label: '$100k+' },
+];
+
+/* Windows measured back from today, so they stay true whenever the page is
+   open. Single-choice for the same reason as salary: asking for the past week
+   and the past month at once only ever means the past month. */
+const POSTED_WINDOWS = [
+  { value: '7', label: 'Past week' },
+  { value: '14', label: 'Past 2 weeks' },
+  { value: '30', label: 'Past month' },
+  { value: '60', label: 'Past 2 months' },
+];
+
+const FIELDS: { key: FilterListKey; label: string; format?: (value: string) => string }[] = [
+  { key: 'types', label: 'Job type' },
+  { key: 'levels', label: 'Level' },
+  { key: 'arrangements', label: 'Arrangement' },
+  { key: 'visas', label: 'Apply on visa', format: visaLabel },
+  { key: 'pathwayVisas', label: 'Leads to visa', format: visaLabel },
+  { key: 'anzscos', label: 'Occupation', format: anzscoLabel },
+  { key: 'skillAssessments', label: 'Skills assessment' },
+  { key: 'skills', label: 'Skills' },
+];
+
+/**
+ * How many filters are narrowing the list right now. The collapsed filter bar
+ * shows this, so hiding the controls never hides the fact that they are on.
+ */
+export function countActiveFilters(filters: FilterState): number {
+  return (
+    FIELDS.reduce((total, field) => total + filters[field.key].length, 0) +
+    (filters.salaryMin > 0 ? 1 : 0) +
+    (filters.postedWithinDays > 0 ? 1 : 0) +
+    (filters.sponsoredOnly ? 1 : 0) +
+    (filters.query.trim() ? 1 : 0)
+  );
 }
 
 interface Props {
@@ -54,134 +100,157 @@ interface Props {
   onClear: () => void;
 }
 
+/** One removable summary of something the reader has narrowed by. */
+interface ActiveChip {
+  id: string;
+  field: string;
+  value: string;
+  remove: () => void;
+}
+
 export function Filters({ filters, options, onChange, onClear }: Props) {
   const set = (patch: Partial<FilterState>) => onChange({ ...filters, ...patch });
 
-  const activeCount =
-    (filters.query ? 1 : 0) +
-    (filters.type ? 1 : 0) +
-    (filters.level ? 1 : 0) +
-    (filters.arrangement ? 1 : 0) +
-    (filters.visa ? 1 : 0) +
-    (filters.pathwayVisa ? 1 : 0) +
-    (filters.anzsco ? 1 : 0) +
-    (filters.skillAssessment ? 1 : 0) +
-    (filters.salaryMin > 0 ? 1 : 0) +
-    filters.skills.length +
-    (filters.sponsoredOnly ? 1 : 0);
+  const toOptions = (values: string[], format?: (v: string) => string): SelectOption[] =>
+    values.map((value) => ({ value, label: format ? format(value) : value }));
 
-  const toggleSkill = (skill: string) => {
-    const skills = filters.skills.includes(skill)
-      ? filters.skills.filter((s) => s !== skill)
-      : [...filters.skills, skill];
-    set({ skills });
-  };
+  // Rather than a bare count, each selection gets its own chip below the row,
+  // so what is currently narrowing the list is readable at a glance and can be
+  // undone one at a time.
+  const chips: ActiveChip[] = [];
 
-  const selects: {
-    key: keyof FilterState;
-    label: string;
-    all: string;
-    values: string[];
-    format?: (value: string) => string;
-  }[] = [
-    { key: 'type', label: 'Job type', all: 'Any type', values: options.types },
-    { key: 'level', label: 'Level', all: 'Any level', values: options.levels },
-    { key: 'arrangement', label: 'Arrangement', all: 'Anywhere', values: options.arrangements },
-    { key: 'visa', label: 'Apply on visa', all: 'Any current visa', values: options.visas, format: visaLabel },
-    { key: 'pathwayVisa', label: 'Leads to visa', all: 'Any pathway visa', values: options.pathwayVisas, format: visaLabel },
-    { key: 'anzsco', label: 'ANZSCO occupation', all: 'Any occupation', values: options.anzscos, format: anzscoLabel },
-    { key: 'skillAssessment', label: 'Skills assessment', all: 'Any assessor', values: options.skillAssessments },
-  ];
+  FIELDS.forEach((field) => {
+    filters[field.key].forEach((value) => {
+      chips.push({
+        id: `${field.key}:${value}`,
+        field: field.label,
+        value: field.format ? field.format(value) : value,
+        remove: () =>
+          set({ [field.key]: filters[field.key].filter((v) => v !== value) } as Partial<FilterState>),
+      });
+    });
+  });
+
+  if (filters.salaryMin > 0) {
+    chips.push({
+      id: 'salary',
+      field: 'Salary',
+      value: SALARY_BANDS.find((b) => b.value === String(filters.salaryMin))?.label ?? '',
+      remove: () => set({ salaryMin: 0 }),
+    });
+  }
+
+  if (filters.postedWithinDays > 0) {
+    chips.push({
+      id: 'posted',
+      field: 'Posted',
+      value:
+        POSTED_WINDOWS.find((w) => w.value === String(filters.postedWithinDays))?.label ?? '',
+      remove: () => set({ postedWithinDays: 0 }),
+    });
+  }
+
+  if (filters.sponsoredOnly) {
+    chips.push({
+      id: 'sponsored',
+      field: 'Visa',
+      value: 'Sponsorship available',
+      remove: () => set({ sponsoredOnly: false }),
+    });
+  }
 
   return (
     <div className="filterbar" role="search">
-      <div className="filter-search">
-        <label className="visually-hidden" htmlFor="job-search">
-          Search jobs
+      <div className="filter-row">
+        <div className="filter-search">
+          <label className="visually-hidden" htmlFor="job-search">
+            Search jobs
+          </label>
+          <img
+            className="search-icon"
+            src={`${base}/icons/magifying-glass.svg`}
+            alt=""
+            aria-hidden="true"
+            width={18}
+            height={18}
+          />
+          <input
+            id="job-search"
+            type="search"
+            placeholder="Search company, title or skill"
+            value={filters.query}
+            onChange={(e) => set({ query: e.target.value })}
+          />
+        </div>
+
+        {FIELDS.map((field) => (
+          <FilterSelect
+            key={field.key}
+            label={field.label}
+            options={toOptions(options[field.key], field.format)}
+            selected={filters[field.key]}
+            onChange={(next) => set({ [field.key]: next } as Partial<FilterState>)}
+          />
+        ))}
+
+        <FilterSelect
+          label="Salary"
+          multiple={false}
+          options={SALARY_BANDS}
+          selected={filters.salaryMin > 0 ? [String(filters.salaryMin)] : []}
+          onChange={(next) => set({ salaryMin: Number(next[0] ?? 0) })}
+        />
+
+        <FilterSelect
+          label="Posted"
+          multiple={false}
+          options={POSTED_WINDOWS}
+          selected={filters.postedWithinDays > 0 ? [String(filters.postedWithinDays)] : []}
+          onChange={(next) => set({ postedWithinDays: Number(next[0] ?? 0) })}
+        />
+
+        {/* Two labels, one per breakpoint: the full phrase doesn't fit a
+            half-width chip on a phone. The aria-label keeps the long wording
+            in the accessibility tree at every size, so what a screen reader
+            announces never depends on the viewport. */}
+        <label className="chip-toggle chip-sponsor">
+          <input
+            type="checkbox"
+            aria-label="Visa sponsorship available"
+            checked={filters.sponsoredOnly}
+            onChange={(e) => set({ sponsoredOnly: e.target.checked })}
+          />
+          <span className="chip-label-long">Visa sponsorship available</span>
+          <span className="chip-label-short">Sponsorship</span>
         </label>
-        <img
-          className="search-icon"
-          src={`${base}/icons/magifying-glass.svg`}
-          alt=""
-          aria-hidden="true"
-          width={18}
-          height={18}
-        />
-        <input
-          id="job-search"
-          type="search"
-          placeholder="Search company, title or skill"
-          value={filters.query}
-          onChange={(e) => set({ query: e.target.value })}
-        />
       </div>
 
-      {selects.map((s) => (
-        <label key={s.key} className="filter-field">
-          <span className="visually-hidden">{s.label}</span>
-          <select
-            value={filters[s.key] as string}
-            onChange={(e) => set({ [s.key]: e.target.value } as Partial<FilterState>)}
-          >
-            <option value="">{s.all}</option>
-            {s.values.map((v) => (
-              <option key={v} value={v}>
-                {s.format ? s.format(v) : v}
-              </option>
+      {chips.length > 0 && (
+        <div className="active-filters">
+          <h2 className="visually-hidden">Active filters</h2>
+          <ul className="active-chips">
+            {chips.map((chip) => (
+              <li key={chip.id}>
+                <button
+                  type="button"
+                  className="active-chip"
+                  onClick={chip.remove}
+                  title={`${chip.field}: ${chip.value}`}
+                >
+                  <span className="active-chip-field">{chip.field}</span>
+                  <span className="active-chip-value">{chip.value}</span>
+                  <span className="active-chip-x" aria-hidden="true" />
+                  <span className="visually-hidden">Remove filter</span>
+                </button>
+              </li>
             ))}
-          </select>
-        </label>
-      ))}
+          </ul>
 
-      <label className="filter-field">
-        <span className="visually-hidden">Minimum annual salary</span>
-        <select
-          value={String(filters.salaryMin)}
-          onChange={(e) => set({ salaryMin: Number(e.target.value) })}
-        >
-          <option value="0">Any salary</option>
-          {SALARY_BANDS.map((b) => (
-            <option key={b.value} value={b.value}>
-              {b.label}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <details className="tags-filter">
-        <summary>
-          Skills
-          {filters.skills.length > 0 && <span className="tags-count">{filters.skills.length}</span>}
-        </summary>
-        <fieldset className="tags-options">
-          <legend className="visually-hidden">Filter by skills</legend>
-          {options.skills.map((skill) => (
-            <label key={skill} className="tag-check">
-              <input
-                type="checkbox"
-                checked={filters.skills.includes(skill)}
-                onChange={() => toggleSkill(skill)}
-              />
-              {skill}
-            </label>
-          ))}
-        </fieldset>
-      </details>
-
-      <label className="chip-toggle chip-sponsor">
-        <input
-          type="checkbox"
-          checked={filters.sponsoredOnly}
-          onChange={(e) => set({ sponsoredOnly: e.target.checked })}
-        />
-        Visa sponsorship available
-      </label>
-
-      {activeCount > 0 && (
-        <button type="button" className="filter-clear" onClick={onClear}>
-          Clear filters
-          <span className="filter-clear-count">{activeCount}</span>
-        </button>
+          <button type="button" className="filter-clear" onClick={onClear}>
+            Clear all
+            <span className="filter-clear-count">{chips.length}</span>
+          </button>
+        </div>
       )}
     </div>
   );

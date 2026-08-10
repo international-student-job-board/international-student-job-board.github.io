@@ -295,7 +295,7 @@ export function PostJob() {
         <h2 id="post-form-heading">Submit a role</h2>
 
         <p className="post-wip-note">
-          We're still building out the Post a job experience, so for now roles will have to be sent via email!
+          We're currently refactoring our <i>Post a job</i> section, so for now roles will have to be sent via email!
           Thank you for taking the time, we really appreciate it c:
         </p>
 
@@ -325,13 +325,13 @@ export function PostJob() {
               ← Back
             </button>
             <p>
-              Hit <strong>Open email</strong> below, <strong>attach your PDF</strong> to the email
-              that opens, and press send. It’ll reach us at <code>{JOB_EMAIL}</code>.
+              Fill out the details below and click <i>Open email to attach PDF & send</i> button below, attach your PDF (or PDFs if multiple) to the email
+              that opens, and press send.
             </p>
 
             <div className="job-form-grid">
               <div className="field">
-                <label htmlFor="pdf-title">Role title (optional)</label>
+                <label htmlFor="pdf-title">Role title</label>
                 <input
                   id="pdf-title"
                   type="text"
@@ -373,14 +373,14 @@ export function PostJob() {
 
             <div className="job-form-actions">
               <button type="submit" className="btn btn-primary">
-                Open email to attach &amp; send
+                Open email to attach PDF &amp; send
               </button>
             </div>
 
             {sent && (
               <p className="about-note" role="status">
-                Your email app should have opened - <strong>attach your PDF</strong> and press send.
-                If nothing opened, email us at <code>{JOB_EMAIL}</code>.
+                Your email app should have opened, attach your PDF and press send.
+                If nothing opened, please email us at <code>{JOB_EMAIL}</code>.
               </p>
             )}
           </form>
@@ -392,8 +392,8 @@ export function PostJob() {
               ← Back
             </button>
             <p>
-              Paste the link to your advert and hit <strong>Submit</strong>. Your email app opens
-              with it filled in, addressed to us - just press send.
+              Paste the link to your advert and hit <i>Submit via email</i> button below. Your email app opens
+              with the body filled in, addressed to us, all you've gotta do is press send!
             </p>
 
             <div className="job-form-grid">
@@ -462,8 +462,8 @@ export function PostJob() {
               ← Back
             </button>
             <p>
-              Fill in the role details and hit <strong>Submit</strong>. Your email app opens with
-              everything filled in and addressed to us - just press send.
+              Fill in the role details and click <i>Submit via email</i>. Your email app opens with
+              everything filled in and addressed to us, all you've gotta do is just press send!
             </p>
 
             <EligibilityFields
