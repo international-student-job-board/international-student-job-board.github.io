@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { visaName, anzscoUrl, assessmentUrl } from '../references';
+import { AnzscoOccupation, loadAnzscoCodes } from '../anzsco';
 import { PickOrAdd } from './PickOrAdd';
 import { VisaTagPicker } from './VisaTagPicker';
 
@@ -22,20 +23,47 @@ export function AddOccupation({
   onCancel,
   assessmentOptions,
   onAddAssessment,
+  initialCode = '',
+  initialName = '',
 }: {
   onAdded: (occ: NewOccupation) => void;
   onCancel: () => void;
   assessmentOptions: string[];
   onAddAssessment: (value: string) => Promise<void>;
+  /** Prefilled from the ANZSCO list when a job needs an occupation writing up,
+      so only the parts that take judgement are left to enter. */
+  initialCode?: string;
+  initialName?: string;
 }) {
-  const [code, setCode] = useState('');
-  const [name, setName] = useState('');
+  const [code, setCode] = useState(initialCode);
+  const [name, setName] = useState(initialName);
+  const [anzscoRows, setAnzscoRows] = useState<AnzscoOccupation[]>([]);
   const [assessment, setAssessment] = useState('');
   const [lists, setLists] = useState<string[]>([]);
   const [visas, setVisas] = useState<string[]>([]);
   const [extraVisas, setExtraVisas] = useState('');
   const [status, setStatus] = useState<'idle' | 'saving' | 'error'>('idle');
   const [message, setMessage] = useState('');
+
+  // The occupation name is not something to retype — it is already published
+  // against the code in the ANZSCO list, and typing it by hand is how a name
+  // ends up not matching the official one.
+  useEffect(() => {
+    loadAnzscoCodes()
+      .then(setAnzscoRows)
+      .catch(() => setAnzscoRows([]));
+  }, []);
+
+  const officialTitle = /^\d{6}$/.test(code.trim())
+    ? anzscoRows.find((row) => row.code === code.trim())?.title
+    : undefined;
+
+  // Fills the name in as soon as a code resolves, and keeps it in step if the
+  // code is edited. Still editable afterwards: an entry can need a clearer
+  // name than the classification gives it.
+  useEffect(() => {
+    if (officialTitle) setName(officialTitle);
+  }, [officialTitle]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +97,17 @@ export function AddOccupation({
     for (const c of visas) byCode.set(c, { code: c, name: visaName(c) });
     for (const v of extra) if (!byCode.has(v.code)) byCode.set(v.code, v);
     const visaList = Array.from(byCode.values());
+
+    // The whole point of a reference entry is the visa data: an occupation with
+    // none contributes nothing that the ANZSCO list doesn't already give us,
+    // and a job linked to it would show an empty "can lead to".
+    if (!visaList.length) {
+      setStatus('error');
+      setMessage(
+        'Add at least one visa this occupation can be used for — that is what the entry exists to record.'
+      );
+      return;
+    }
 
     const record = {
       code: code.trim(),
@@ -105,8 +144,9 @@ export function AddOccupation({
     <div className="add-occ">
       <h3>Add an occupation to occupations.json</h3>
       <p className="field-hint">
-        This writes a new entry into the reference file so it becomes selectable and links its
-        visas, assessor and ANZSCO page automatically.
+        Enter the code and the rest fills in: the name comes from the ANZSCO list, and the ABS
+        and assessor links are built for you. The visas are the part only you can supply, and the
+        entry won't save without them.
       </p>
 
       <div className="job-form-grid">
@@ -136,6 +176,11 @@ export function AddOccupation({
             placeholder="Software Engineer"
             onChange={(e) => setName(e.target.value)}
           />
+          <span className="field-hint">
+            {officialTitle
+              ? 'Filled from the ANZSCO list — edit only if it needs to read differently.'
+              : 'Fills in automatically once the code matches the ANZSCO list.'}
+          </span>
         </div>
 
         <PickOrAdd
@@ -166,7 +211,7 @@ export function AddOccupation({
         </div>
 
         <VisaTagPicker
-          legend="Visas this occupation can be used for"
+          legend="Visas this occupation can be used for *"
           selected={visas}
           onToggle={(code) => setVisas((prev) => toggle(prev, code))}
         />

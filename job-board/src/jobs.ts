@@ -63,7 +63,7 @@ function toJob(row: Record<string, string>): Job {
     visaEligible: pipeList(row.visa_eligible ?? ''),
     visaPathways: pipeList(row.visa_pathways ?? ''),
     skillAssessment: row.skill_assessment?.trim() ?? '',
-    anzsco: row.anzsco?.trim() ?? '',
+    anzscos: pipeList(row.anzsco ?? ''),
     employerSponsored: isTruthy(row.employer_sponsored ?? ''),
     posted: row.posted?.trim() ?? '',
     closes: row.closes?.trim() ?? '',
@@ -90,12 +90,37 @@ export function isOpenOn(job: Job, today: string): boolean {
   return closes >= today;
 }
 
+/**
+ * jobs.json is grouped by company: each entry carries the company's details
+ * once and nests its roles under `jobs`. That keeps the blurb and link in a
+ * single place per employer instead of repeating them on every role, which is
+ * how they drift apart.
+ *
+ * A flat array of roles is still accepted, so the file can be edited either way
+ * and older copies keep working.
+ */
+interface CompanyGroup {
+  company?: string;
+  company_about?: string;
+  company_url?: string;
+  jobs?: Record<string, string>[];
+}
+
+function flatten(data: (CompanyGroup & Record<string, string>)[]): Record<string, string>[] {
+  return data.flatMap((entry) => {
+    if (!Array.isArray(entry.jobs)) return [entry as Record<string, string>];
+    const { jobs: roles, ...company } = entry;
+    return roles.map((role) => ({ ...(company as Record<string, string>), ...role }));
+  });
+}
+
 export async function loadJobs(): Promise<Job[]> {
   const res = await fetch(JOBS_URL);
   if (!res.ok) throw new Error(`Could not load jobs (${res.status})`);
 
-  const data = (await res.json()) as Record<string, string>[];
-  if (!Array.isArray(data)) throw new Error('jobs.json must be an array of jobs');
+  const raw = (await res.json()) as (CompanyGroup & Record<string, string>)[];
+  if (!Array.isArray(raw)) throw new Error('jobs.json must be an array');
+  const data = flatten(raw);
 
   // Newest first, once, here — the list, the filtered views and the job picked
   // by default all inherit it, so there is one answer to "what order is this

@@ -3,6 +3,7 @@
 // should link to its source - see the "always link gov resources" convention.
 
 import occupations from './data/occupations.json';
+import { Job } from './types';
 
 export const VISA_LISTING =
   'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing';
@@ -17,7 +18,8 @@ const VISA_LINKS: Record<string, string> = {
   '190': `${VISA_LISTING}/skilled-nominated-190`,
   '191': `${VISA_LISTING}/skilled-regional-191`,
   '400': `${VISA_LISTING}/temporary-work-short-stay-specialist-400`,
-  '407': `${VISA_LISTING}/training-visa-407`,
+  // Was `training-visa-407`, which 404s — the slug drops the word "visa".
+  '407': `${VISA_LISTING}/training-407`,
   '408': `${VISA_LISTING}/temporary-activity-408`,
   '417': `${VISA_LISTING}/work-holiday-417`,
   '462': `${VISA_LISTING}/work-and-holiday-462`,
@@ -190,9 +192,87 @@ export function resolveOccupation(
   };
 }
 
+/**
+ * Every occupation a role maps to. A job can sit across more than one ANZSCO
+ * code — a "Data Engineer" is plausibly 261313 and 261311 — and which one an
+ * applicant is assessed under changes their visa options, so the board keeps
+ * all of them rather than forcing a single choice.
+ */
+export function resolveOccupations(job: Job): ResolvedOccupation[] {
+  return job.anzscos
+    .map((entry) => resolveOccupation(entry, job.skillAssessment))
+    .filter((occ) => occ.code || occ.name);
+}
+
+/** The 6-digit codes a role maps to, skipping any entry we couldn't read. */
+export function occupationCodesFor(job: Job): string[] {
+  return Array.from(
+    new Set(resolveOccupations(job).map((occ) => occ.code).filter(Boolean))
+  );
+}
+
+/** The assessing authorities across all of a role's occupations. */
+export function assessmentsFor(job: Job): string[] {
+  return Array.from(
+    new Set(resolveOccupations(job).map((occ) => occ.assessment).filter(Boolean))
+  );
+}
+
+/**
+ * Every visa a role can lead to: the pathways named on the job itself, plus
+ * every visa any of its ANZSCO occupations can be used for. Deduplicated by
+ * subclass, since an occupation can list the same code more than once for
+ * different streams, and two occupations routinely share visas.
+ *
+ * This has to be the single answer to "what does this role lead to". The union
+ * used to be computed inside the detail page only, so the filter offered just
+ * the subclasses typed onto the job — a role whose occupation opened up a 482
+ * showed it on the page but could not be found by filtering for it.
+ */
+export function pathwayVisasFor(job: Job): string[] {
+  const fromOccupations = resolveOccupations(job).flatMap((occ) =>
+    occ.visas.map((v) => v.code)
+  );
+  return Array.from(new Set([...job.visaPathways, ...fromOccupations]));
+}
+
 // Where the occupation-list data comes from; surfaced in the on-page disclaimer.
 export const SKILL_OCCUPATION_LIST_URL =
   'https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list';
+
+// The skilled-migration lists an occupation can sit on. Names and links kept
+// together so they can't drift apart, the same way VISA_NAMES tracks
+// VISA_LINKS.
+export const OCCUPATION_LIST_NAMES: Record<string, string> = {
+  MLTSSL: 'Medium and Long-term Strategic Skills List',
+  CSOL: 'Core Skills Occupation List',
+  STSOL: 'Short-term Skilled Occupation List',
+  ROL: 'Regional Occupation List',
+};
+
+// All four point at the Home Affairs skilled-occupation-list index, which is
+// the page that carries every list and is known to resolve. Per-list deep
+// links can replace an entry here individually once the slug is confirmed
+// against the live site — guessing one is what left the 407 link pointing at a
+// 404. An unknown list renders as plain text rather than a broken link.
+const OCCUPATION_LIST_LINKS: Record<string, string> = {
+  MLTSSL: SKILL_OCCUPATION_LIST_URL,
+  CSOL: SKILL_OCCUPATION_LIST_URL,
+  STSOL: SKILL_OCCUPATION_LIST_URL,
+  ROL: SKILL_OCCUPATION_LIST_URL,
+};
+
+/** Official page for a skilled-occupation list, or undefined if unknown. */
+export function occupationListUrl(list: string): string | undefined {
+  return OCCUPATION_LIST_LINKS[list.trim().toUpperCase()];
+}
+
+/** "MLTSSL" -> "MLTSSL - Medium and Long-term Strategic Skills List". */
+export function occupationListLabel(list: string): string {
+  const key = list.trim().toUpperCase();
+  const name = OCCUPATION_LIST_NAMES[key];
+  return name ? `${key} - ${name}` : key;
+}
 
 export const VISA_DISCLAIMER =
   'This is a general guide, not legal or immigration advice.\n\nThe visa, pathway and ' +

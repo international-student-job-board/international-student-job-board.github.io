@@ -19,9 +19,11 @@ const NOW = [
   'See which visas you can apply for with this job',
   'Possible visa pathway mapped out, including the skills assessment to get',
   'Whether the role offers an employer-sponsored visa',
+  'Roles being mapped with their potential ANZSCO occupation',
   'Salary',
-  'The usual like the the employer details, job level, type and location',
-  'Filter by every one of these fields',
+  'The usual like the employer details, job level, type and location',
+  'Browse Melbourne startups that are hiring, as cards or on a map',
+  'A bomb search filter to find matching roles and startups!',
 ];
 
 const NEXT = [
@@ -114,18 +116,20 @@ export function About() {
       <section className="about-section" aria-labelledby="scope-heading">
         <h2 id="scope-heading">Where we start</h2>
         <p>
-          We're starting small by focusing on <strong>international students and graduates in STEM, in Melbourne,
+          We're starting small by focusing on <strong>STEM focused roles in Melbourne,
           Victoria</strong> and then expand to more fields, cities and countries over time.
         </p>
         <p>
-         We are not migration lawyers, please work with registered migration agents or lawyers for any visa advice. Always check the <a href="https://immi.homeaffairs.gov.au/" target="_blank" rel="noopener noreferrer"> Department of Home Affairs</a> for the latest information on visa requirements and eligibility.
+         We are not migration lawyers, please work with registered migration agents or lawyers for any visa advice. Always check the <a href="https://immi.homeaffairs.gov.au/" target="_blank" rel="noopener"
+            referrerPolicy="strict-origin-when-cross-origin"> Department of Home Affairs</a> for the latest information on visa requirements and eligibility.
         </p>
         <p>
           Plus, gotta get my s**t together to build a proper backend to this GitHub pages website. Just thought of getting it out there whilst fleshing it out.
         </p>
         <p>
           Please submit a {' '}
-          <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer">
+          <a href={FEEDBACK_URL} target="_blank" rel="noopener"
+            referrerPolicy="strict-origin-when-cross-origin">
             feedback or feature request
           </a>{' '}
           if you'd like to suggest anything to add to the site!

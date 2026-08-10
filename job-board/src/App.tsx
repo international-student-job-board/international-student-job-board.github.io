@@ -3,13 +3,18 @@ import './App.css';
 import { Job } from './types';
 import { loadJobs, isOpenOn } from './jobs';
 import { dateValue, todayISO } from './format';
-import { resolveOccupation } from './references';
+import {
+  pathwayVisasFor,
+  occupationCodesFor,
+  assessmentsFor,
+} from './references';
 import { Header } from './components/Header';
 import { Filters, FilterState, FilterOptions, countActiveFilters } from './components/Filters';
 import { JobCard } from './components/JobCard';
 import { JobDetail } from './components/JobDetail';
 import { About } from './components/About';
 import { PostJob } from './components/PostJob';
+import { Companies } from './components/Companies';
 import { Footer } from './components/Footer';
 
 const PAGE_SIZE = 10;
@@ -47,7 +52,9 @@ function matches(job: Job, filters: FilterState, postedCutoff: number): boolean 
   if (!allows(filters.levels, job.jobLevel)) return false;
   if (!allows(filters.arrangements, job.arrangement)) return false;
   if (!overlaps(filters.visas, job.visaEligible)) return false;
-  if (!overlaps(filters.pathwayVisas, job.visaPathways)) return false;
+  // The occupation's own visas count as pathways too, exactly as the detail
+  // page shows them — filtering has to match what the reader was told.
+  if (!overlaps(filters.pathwayVisas, pathwayVisasFor(job))) return false;
   if (!overlaps(filters.skills, job.skills)) return false;
   if (filters.salaryMin > 0 && job.salaryMaxAnnual < filters.salaryMin) return false;
   if (filters.sponsoredOnly && !job.employerSponsored) return false;
@@ -59,10 +66,15 @@ function matches(job: Job, filters: FilterState, postedCutoff: number): boolean 
     if (!Number.isFinite(posted) || posted < postedCutoff) return false;
   }
 
-  if (filters.anzscos.length || filters.skillAssessments.length) {
-    const occ = resolveOccupation(job.anzsco, job.skillAssessment);
-    if (!allows(filters.anzscos, occ.code)) return false;
-    if (!allows(filters.skillAssessments, occ.assessment)) return false;
+  // A role can map to several occupations, so it matches if any of them do.
+  if (filters.anzscos.length && !overlaps(filters.anzscos, occupationCodesFor(job))) {
+    return false;
+  }
+  if (
+    filters.skillAssessments.length &&
+    !overlaps(filters.skillAssessments, assessmentsFor(job))
+  ) {
+    return false;
   }
 
   const q = filters.query.trim().toLowerCase();
@@ -75,10 +87,13 @@ function matches(job: Job, filters: FilterState, postedCutoff: number): boolean 
 
 const uniqueSorted = (values: string[]) => Array.from(new Set(values)).sort();
 
-function routeFromHash(): 'jobs' | 'post' | 'about' {
+type Route = 'jobs' | 'companies' | 'post' | 'about';
+
+function routeFromHash(): Route {
   const hash = window.location.hash;
   if (hash.startsWith('#/about')) return 'about';
   if (hash.startsWith('#/post')) return 'post';
+  if (hash.startsWith('#/companies')) return 'companies';
   return 'jobs';
 }
 
@@ -90,7 +105,7 @@ function App() {
   // On mobile the list and detail are separate "pages"; this flips to the
   // detail page when a job is tapped. On desktop both always show side by side.
   const [showDetail, setShowDetail] = useState(false);
-  const [route, setRoute] = useState<'jobs' | 'post' | 'about'>(routeFromHash);
+  const [route, setRoute] = useState<Route>(routeFromHash);
   const [page, setPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(true);
   const detailRef = useRef<HTMLElement>(null);
@@ -141,15 +156,9 @@ function App() {
       levels: uniqueSorted(openJobs.map((j) => j.jobLevel)),
       arrangements: uniqueSorted(openJobs.map((j) => j.arrangement)),
       visas: uniqueSorted(openJobs.flatMap((j) => j.visaEligible)),
-      pathwayVisas: uniqueSorted(openJobs.flatMap((j) => j.visaPathways)),
-      anzscos: uniqueSorted(
-        openJobs.map((j) => resolveOccupation(j.anzsco, j.skillAssessment).code).filter(Boolean)
-      ),
-      skillAssessments: uniqueSorted(
-        openJobs
-          .map((j) => resolveOccupation(j.anzsco, j.skillAssessment).assessment)
-          .filter(Boolean)
-      ),
+      pathwayVisas: uniqueSorted(openJobs.flatMap(pathwayVisasFor)),
+      anzscos: uniqueSorted(openJobs.flatMap(occupationCodesFor)),
+      skillAssessments: uniqueSorted(openJobs.flatMap(assessmentsFor)),
       skills: uniqueSorted(openJobs.flatMap((j) => j.skills)),
     }),
     [openJobs]
@@ -177,12 +186,16 @@ function App() {
     detailRef.current?.scrollTo?.({ top: 0 });
   }, [selected?.id]);
 
-  if (route === 'about' || route === 'post') {
+  if (route !== 'jobs') {
     return (
       <div className="app" id="top">
         <Header route={route} />
-        <main className="about-panel">
-          <div className="about-inner">{route === 'about' ? <About /> : <PostJob />}</div>
+        <main className={`about-panel${route === 'companies' ? ' companies-panel' : ''}`}>
+          <div className="about-inner">
+            {route === 'about' && <About />}
+            {route === 'post' && <PostJob />}
+            {route === 'companies' && <Companies />}
+          </div>
         </main>
         <Footer />
       </div>

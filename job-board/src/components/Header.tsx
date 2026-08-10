@@ -2,6 +2,7 @@ const base = process.env.PUBLIC_URL || '';
 
 const NAV = [
   { route: 'jobs', label: 'Jobs' },
+  { route: 'companies', label: 'Startups hiring' },
   { route: 'post', label: 'Post a job' },
   { route: 'about', label: 'About' },
 ];

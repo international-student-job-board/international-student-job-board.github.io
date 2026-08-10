@@ -3,6 +3,9 @@ import { FIELDS, LIST_KEYS, emptyDraft, Draft } from './jobFields';
 import { listOccupations, resolveOccupation } from '../references';
 import { getConstants, ConstantKey } from '../constants';
 import { AddOccupation, NewOccupation } from './AddOccupation';
+import { AnzscoPicker } from './AnzscoPicker';
+import { CompanyPicker } from './CompanyPicker';
+import { Company } from '../companies';
 import { PickOrAdd } from './PickOrAdd';
 import { VisaTagPicker, pipeToList, toggleInPipe } from './VisaTagPicker';
 import { TagSelect } from './TagSelect';
@@ -18,6 +21,9 @@ const CONSTANT_JOB_FIELDS: { key: string; constant: ConstantKey; label: string }
 ];
 
 const CUSTOM_KEYS = [
+  'company',
+  'company_about',
+  'company_url',
   'anzsco',
   'skill_assessment',
   'visa_eligible',
@@ -51,11 +57,27 @@ export function AdminAddJob() {
   // Full visa lists for occupations added this session (the imported reference
   // only refreshes after a rebuild).
   const [sessionVisas, setSessionVisas] = useState<Record<string, string[]>>({});
-  const [occCode, setOccCode] = useState(''); // '' none, '__add__' add-mode, or a code
+  const [occEntries, setOccEntries] = useState<string[]>([]); // "code name" each
+  const [adding, setAdding] = useState(''); // code currently being written up
+  // Whether the typed company is on the Melbourne CSV. Undefined until the
+  // list has loaded and a name has been typed.
+  const [matchedCompany, setMatchedCompany] = useState<Company | undefined>();
   const [eligible, setEligible] = useState<string[]>([]);
   const [pathway, setPathway] = useState<string[]>([]);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [message, setMessage] = useState('');
+
+  // A company already on the list brings its own one-liner and website, so the
+  // admin doesn't retype what the CSV already says. Blanks only.
+  const onCompanyMatch = (company: Company | undefined) => {
+    setMatchedCompany(company);
+    if (!company) return;
+    setDraft((d) => ({
+      ...d,
+      company_about: d.company_about.trim() || company.tagline,
+      company_url: d.company_url.trim() || company.website,
+    }));
+  };
 
   const setField = (key: string, value: string) => {
     setDraft((d) => ({ ...d, [key]: value }));
@@ -79,13 +101,30 @@ export function AdminAddJob() {
     return Array.from(new Set(resolveOccupation(code, '').visas.map((v) => v.code)));
   };
 
-  const selectOccupation = (value: string) => {
-    setOccCode(value);
+  // Whether an occupation has a full write-up (visas, assessor, lists) in
+  // occupations.json, as opposed to merely being a code on the ANZSCO list.
+  const isFleshedOut = (code: string) => occupations.some((o) => o.code === code);
+
+  /**
+   * The picker takes any of the 1,400-odd ANZSCO occupations, so a chosen code
+   * may or may not have a reference entry yet. If it does, its visas prefill
+   * the pathway tags; if it doesn't, the add-occupation form opens with the
+   * code and name already filled from the list, leaving only the details a
+   * human has to judge — the assessor, the lists and the visas.
+   */
+  const codeOf = (entry: string) => entry.match(/\b(\d{6})\b/)?.[1] ?? '';
+  const occCodes = occEntries.map(codeOf).filter(Boolean);
+  const missing = occCodes.filter((code) => !isFleshedOut(code));
+
+  const selectOccupations = (entries: string[]) => {
+    setOccEntries(entries);
     setStatus('idle');
-    if (value && value !== '__add__') {
-      // Connect the occupation to the job: prefill "can lead to" from its visas.
-      setPathway(occupationVisaCodes(value));
-    }
+    // "Can lead to" is prefilled from the union of every chosen occupation's
+    // visas, which is what the job will end up offering anyway.
+    const codes = entries.map(codeOf).filter(Boolean);
+    setPathway(
+      Array.from(new Set(codes.filter(isFleshedOut).flatMap(occupationVisaCodes)))
+    );
   };
 
   const handleOccupationAdded = (occ: NewOccupation) => {
@@ -95,8 +134,11 @@ export function AdminAddJob() {
         : [...prev, { code: occ.code, name: occ.name }].sort((a, b) => a.code.localeCompare(b.code))
     );
     setSessionVisas((prev) => ({ ...prev, [occ.code]: occ.visaCodes }));
-    setOccCode(occ.code);
-    setPathway(occ.visaCodes);
+    setOccEntries((prev) =>
+      prev.some((e) => codeOf(e) === occ.code) ? prev : [...prev, `${occ.code} ${occ.name}`]
+    );
+    setPathway((prev) => Array.from(new Set([...prev, ...occ.visaCodes])));
+    setAdding('');
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -107,14 +149,22 @@ export function AdminAddJob() {
       setMessage(`Please fill in: ${missing.map((f) => f.label).join(', ')}.`);
       return;
     }
-    if (!occCode || occCode === '__add__') {
+    if (!occCodes.length) {
       setStatus('error');
-      setMessage('Please choose an occupation (or add one) first.');
+      setMessage('Please choose at least one occupation first.');
+      return;
+    }
+    if (missing.length) {
+      setStatus('error');
+      setMessage(
+        `${missing.join(', ')} ${missing.length > 1 ? 'are not' : "isn't"} in occupations.json ` +
+          `yet — write up the assessor, lists and visas first so the job can link them.`
+      );
       return;
     }
 
     const record = toJobRecord(draft);
-    record.anzsco = occCode;
+    record.anzsco = occCodes.join('|');
     if (eligible.length) record.visa_eligible = eligible.join('|');
     if (pathway.length) record.visa_pathways = pathway.join('|');
     if (draft.skills?.trim()) record.skills = draft.skills.trim();
@@ -134,7 +184,7 @@ export function AdminAddJob() {
       setDraft(emptyDraft());
       setEligible([]);
       setPathway([]);
-      setOccCode('');
+      setOccEntries([]);
     } catch (err) {
       setStatus('error');
       setMessage(
@@ -155,33 +205,94 @@ export function AdminAddJob() {
       </p>
 
       <form className="job-form" onSubmit={submit} noValidate>
-        {/* Occupation — the hub that connects the job to occupations.json */}
+        {/* Company — matched against the Melbourne CSV so its blurb and link
+            come from one place. */}
         <div className="job-form-grid">
+          <CompanyPicker
+            id="admin-company"
+            label="Company"
+            required
+            value={draft.company}
+            onChange={(v) => setField('company', v)}
+            onMatch={onCompanyMatch}
+            hint="Picking a listed company fills in its one-liner and link."
+          />
+          <div className="field">
+            <label htmlFor="admin-company-url">Company link</label>
+            <input
+              id="admin-company-url"
+              type="url"
+              value={draft.company_url}
+              placeholder="https://www.acme.com"
+              onChange={(e) => setField('company_url', e.target.value)}
+            />
+          </div>
           <div className="field field-wide">
-            <label htmlFor="admin-occupation">
-              Occupation (ANZSCO)<span aria-hidden="true"> *</span>
-            </label>
-            <select
-              id="admin-occupation"
-              value={occCode}
-              onChange={(e) => selectOccupation(e.target.value)}
-            >
-              <option value="">Choose an occupation…</option>
-              {occupations.map((o) => (
-                <option key={o.code} value={o.code}>
-                  {o.code} {o.name}
-                </option>
-              ))}
-              <option value="__add__">＋ Add a new occupation…</option>
-            </select>
-            <span className="field-hint">Pre-fills the visas and assessor below.</span>
+            <label htmlFor="admin-company-about">About the company</label>
+            <textarea
+              id="admin-company-about"
+              value={draft.company_about}
+              rows={2}
+              maxLength={300}
+              placeholder="One line on what the company does."
+              onChange={(e) => setField('company_about', e.target.value)}
+            />
           </div>
         </div>
 
-        {occCode === '__add__' && (
+        {/* The CSV is the source of truth for the startups page, so a company
+            that isn't in it needs adding there rather than only here — else it
+            has jobs on the board but never appears among the startups. */}
+        {draft.company.trim() && !matchedCompany && (
+          <p className="job-form-error" role="status">
+            {draft.company.trim()} isn't in melbourne_companies_hiring.csv yet. Add a row for it
+            (name, website, tagline, industries) so it shows up on the startups page too.
+          </p>
+        )}
+
+        {/* Occupation — the hub that connects the job to occupations.json */}
+        <div className="job-form-grid">
+          <AnzscoPicker
+            id="admin-occupation"
+            label="Occupations (ANZSCO)"
+            required
+            value={occEntries}
+            onChange={selectOccupations}
+            hint={
+              missing.length
+                ? `${missing.join(', ')} still needs writing up before this job can be saved.`
+                : 'Add every code the role could be assessed under. Pre-fills the visas below.'
+            }
+          />
+        </div>
+
+        {/* An occupation off the ANZSCO list has a code and a name but nothing
+            else; the rest is written up here, once, the first time a job needs
+            it. */}
+        {missing.length > 0 && !adding && (
+          <div className="job-form-actions">
+            {missing.map((code) => (
+              <button
+                key={code}
+                type="button"
+                className="btn btn-small"
+                onClick={() => setAdding(code)}
+              >
+                Write up {code} for occupations.json
+              </button>
+            ))}
+          </div>
+        )}
+
+        {adding && (
           <AddOccupation
+            initialCode={adding}
+            initialName={(occEntries.find((e) => codeOf(e) === adding) ?? '').replace(
+              /^\s*\d{6}\s*/,
+              ''
+            )}
             onAdded={handleOccupationAdded}
-            onCancel={() => setOccCode('')}
+            onCancel={() => setAdding('')}
             assessmentOptions={constants.assessment}
             onAddAssessment={(v) => addConstant('assessment', v)}
           />

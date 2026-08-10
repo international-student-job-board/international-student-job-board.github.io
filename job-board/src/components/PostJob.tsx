@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { JOB_EMAIL, JOB_EMAIL_SUBJECT_PREFIX } from '../links';
-import { listOccupations, resolveOccupation, SKILL_OCCUPATION_LIST_URL } from '../references';
+import { SKILL_OCCUPATION_LIST_URL } from '../references';
 import { getConstant } from '../constants';
 import { FIELDS, Draft, emptyDraft } from './jobFields';
 import { AdminAddJob } from './AdminAddJob';
 import { TagSelect } from './TagSelect';
+import { AnzscoPicker } from './AnzscoPicker';
+import { CompanyPicker } from './CompanyPicker';
+import { Company } from '../companies';
 import { pipeToList, toggleInPipe } from './VisaTagPicker';
 
 const IS_LOCAL = process.env.NODE_ENV === 'development';
@@ -20,6 +23,9 @@ type Mode = 'choose' | 'pdf' | 'link' | 'form';
 // the skills assessor (the board derives those from the occupation). These keys
 // are handled outside the generic field loop.
 const FORM_CUSTOM_KEYS = [
+  'company',
+  'company_about',
+  'company_url',
   'anzsco',
   'skill_assessment',
   'visa_eligible',
@@ -28,7 +34,6 @@ const FORM_CUSTOM_KEYS = [
   'skills',
 ];
 const FORM_FIELDS = FIELDS.filter((f) => !FORM_CUSTOM_KEYS.includes(f.key));
-const OCCUPATION_OPTIONS = listOccupations();
 const SKILL_OPTIONS = getConstant('skills');
 
 const openMailto = (subject: string, body: string) => {
@@ -41,16 +46,17 @@ const openMailto = (subject: string, body: string) => {
 // The three questions common to every submission route: occupation, whether
 // international students can apply, and whether the role is employer-sponsored.
 interface Eligibility {
-  anzsco: string;
+  anzsco: string[];
   intlApply: string;
   employerSponsored: string;
 }
 
 function eligibilityLines({ anzsco, intlApply, employerSponsored }: Eligibility): string[] {
-  const occ = resolveOccupation((anzsco ?? '').trim(), '');
-  const occLabel = [occ.code, occ.name].filter(Boolean).join(' ') || 'Not specified';
+  // Each entry is already "code name", so the email reads the same list the
+  // poster picked, one per line when there are several.
+  const occLabel = anzsco.length ? anzsco.join(', ') : 'Not specified';
   return [
-    `ANZSCO occupation: ${occLabel}`,
+    `ANZSCO occupation${anzsco.length > 1 ? 's' : ''}: ${occLabel}`,
     `Can international students apply for this role?: ${intlApply}`,
     `Offer employer-sponsored visas?: ${employerSponsored}`,
   ];
@@ -65,38 +71,37 @@ function EligibilityFields({
   onEmployer,
 }: {
   value: Eligibility;
-  onOccupation: (v: string) => void;
+  onOccupation: (v: string[]) => void;
   onIntl: (v: string) => void;
   onEmployer: (v: string) => void;
 }) {
   return (
     <div className="job-form-grid">
-      <div className="field field-wide">
-        <label htmlFor="elig-occupation">ANZSCO occupation</label>
-        <select
-          id="elig-occupation"
-          value={value.anzsco}
-          onChange={(e) => onOccupation(e.target.value)}
-        >
-          <option value="">Not sure / not listed</option>
-          {OCCUPATION_OPTIONS.map((o) => (
-            <option key={o.code} value={o.code}>
-              {o.code} {o.name}
-            </option>
-          ))}
-        </select>
-        <span className="field-hint">
-          Optional : : pick the closest match.{' '}
-          <a
-            className="gov-link"
-            href={SKILL_OCCUPATION_LIST_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Skilled occupation list
-          </a>
-        </span>
-      </div>
+      {/* Searches the whole ANZSCO list, not just the occupations already
+          written up in occupations.json — an employer's role is very unlikely
+          to be one of the handful we have detailed so far, and offering only
+          those made the field useless to almost everyone. */}
+      <AnzscoPicker
+        id="elig-occupation"
+        label="ANZSCO occupation(s)"
+        value={value.anzsco}
+        onChange={onOccupation}
+        hint={
+          <>
+            Optional : : add every occupation the role could be assessed under, or leave it blank
+            if you're not sure.{' '}
+            <a
+              className="gov-link"
+              href={SKILL_OCCUPATION_LIST_URL}
+              target="_blank"
+              rel="noopener"
+            referrerPolicy="strict-origin-when-cross-origin"
+            >
+              Skilled occupation list
+            </a>
+          </>
+        }
+      />
 
       <div className="field">
         <label htmlFor="elig-intl">
@@ -126,7 +131,8 @@ function EligibilityFields({
         </select>
         <span className="field-hint">
           Not sure which visa suits?{' '}
-          <a className="gov-link" href={EMPLOYER_VISA_URL} target="_blank" rel="noopener noreferrer">
+          <a className="gov-link" href={EMPLOYER_VISA_URL} target="_blank" rel="noopener"
+            referrerPolicy="strict-origin-when-cross-origin">
             Compare sponsored visa options
           </a>
         </span>
@@ -160,14 +166,14 @@ export function PostJob() {
   const [linkUrl, setLinkUrl] = useState('');
   const [linkTitle, setLinkTitle] = useState('');
   // Shared across all three submission routes.
-  const [anzsco, setAnzsco] = useState('');
+  const [anzsco, setAnzsco] = useState<string[]>([]);
   const [intlApply, setIntlApply] = useState('Yes');
   const [employerSponsored, setEmployerSponsored] = useState('Yes');
   const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
 
   const elig: Eligibility = { anzsco, intlApply, employerSponsored };
-  const onOccupation = (v: string) => {
+  const onOccupation = (v: string[]) => {
     setAnzsco(v);
     setSent(false);
   };
@@ -184,6 +190,19 @@ export function PostJob() {
     setMode(next);
     setError('');
     setSent(false);
+  };
+
+  // Filling in what the Melbourne list already knows: the company's own
+  // one-liner and website. Only ever fills blanks — anything the poster has
+  // typed themselves is theirs, and a company they know better than we do
+  // shouldn't be overwritten by our copy of it.
+  const onCompanyMatch = (company: Company | undefined) => {
+    if (!company) return;
+    setDraft((d) => ({
+      ...d,
+      company_about: d.company_about.trim() || company.tagline,
+      company_url: d.company_url.trim() || company.website,
+    }));
   };
 
   const setField = (key: string, value: string) => {
@@ -465,6 +484,39 @@ export function PostJob() {
               Fill in the role details and click <i>Submit via email</i>. Your email app opens with
               everything filled in and addressed to us, all you've gotta do is just press send!
             </p>
+
+            <div className="job-form-grid">
+              <CompanyPicker
+                id="f-company"
+                label="Company name"
+                required
+                value={draft.company}
+                onChange={(v) => setField('company', v)}
+                onMatch={onCompanyMatch}
+                hint="If you're on our Melbourne startup list we'll fill in the rest."
+              />
+              <div className="field">
+                <label htmlFor="f-company_url">Company link</label>
+                <input
+                  id="f-company_url"
+                  type="url"
+                  value={draft.company_url}
+                  placeholder="https://www.acme.com"
+                  onChange={(e) => setField('company_url', e.target.value)}
+                />
+              </div>
+              <div className="field field-wide">
+                <label htmlFor="f-company_about">About the company</label>
+                <textarea
+                  id="f-company_about"
+                  value={draft.company_about}
+                  placeholder="One line on what the company does."
+                  rows={2}
+                  maxLength={300}
+                  onChange={(e) => setField('company_about', e.target.value)}
+                />
+              </div>
+            </div>
 
             <EligibilityFields
               value={elig}

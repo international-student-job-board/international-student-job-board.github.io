@@ -3,7 +3,7 @@ import { REPO_URL, FEEDBACK_URL, CONTACT_MAILTO } from '../links';
 
 // Stamped at build time by the `build:pages` / `build` scripts; falls back to a
 // fixed date during local dev where the env var isn't set.
-const LAST_UPDATED = process.env.REACT_APP_BUILD_DATE || '2026-08-08';
+const LAST_UPDATED = process.env.REACT_APP_BUILD_DATE || '2026-08-10';
 
 export function Footer() {
   return (
@@ -13,10 +13,12 @@ export function Footer() {
       </p>
       <nav className="footer-links" aria-label="Footer">
         {CONTACT_MAILTO && <a href={CONTACT_MAILTO}>Contact us</a>}
-        <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer">
+        <a href={FEEDBACK_URL} target="_blank" rel="noopener"
+            referrerPolicy="strict-origin-when-cross-origin">
           Feedback &amp; feature requests
         </a>
-        <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
+        <a href={REPO_URL} target="_blank" rel="noopener"
+            referrerPolicy="strict-origin-when-cross-origin">
           View on GitHub
         </a>
       </nav>

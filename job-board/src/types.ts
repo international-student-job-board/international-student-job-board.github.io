@@ -15,7 +15,8 @@ export interface Job {
   visaEligible: string[];
   visaPathways: string[];
   skillAssessment: string;
-  anzsco: string;
+  /** One or more ANZSCO occupations; a role can map to several. */
+  anzscos: string[];
   employerSponsored: boolean;
   posted: string;
   closes: string;

@@ -1320,11 +1320,28 @@ optgroup {
 }
 
 .value-chip {
+  display: inline-block;
   padding: var(--s1) var(--s3);
   border-radius: 999px;
   border: 1px solid var(--line-strong);
   color: var(--ink);
   font-size: var(--fs-sm);
+}
+
+/* Outlined siblings of the filled visa pills, so the two kinds of code don't
+   read as one set. Same lift on hover as the pills for consistency. */
+.value-chip-link {
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease), background 0.15s var(--ease),
+    transform 0.15s var(--ease);
+}
+
+.value-chip-link:hover,
+.value-chip-link:focus-visible {
+  border-color: var(--ink);
+  background: var(--soft);
+  transform: translateY(-1px);
 }
 
 /* Visa & pathway box */
@@ -2594,4 +2611,467 @@ a.occ-visa-code:focus-visible {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ================= ANZSCO combobox =================
+   Search-as-you-type over the full occupation list. Borrows the filter
+   dropdown's panel so there is one floating-panel treatment on the site. */
+.combo {
+  position: relative;
+}
+
+.combo-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  margin-top: var(--s1);
+  padding: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
+  box-shadow: var(--shadow-lg);
+  animation: panel-in 0.16s var(--ease);
+}
+
+.combo-note {
+  margin: 0;
+  padding: var(--s2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--muted);
+}
+
+.combo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  /* Tall enough to scroll through comfortably; the whole matching list is in
+     here, so this is the only thing standing between you and 1,424 rows. */
+  max-height: min(420px, 55vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Says how much of the list is on screen, so a capped list never reads as a
+   short one. */
+.combo-count {
+  margin: 0;
+  padding: var(--s2) var(--s2) var(--s1);
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+
+/* content-visibility lets the browser skip laying out the rows scrolled out of
+   view, which is what makes rendering the entire list cheap; the intrinsic size
+   keeps the scrollbar honest while they're skipped. */
+.combo-option {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 37px;
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  width: 100%;
+  padding: var(--s2);
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+/* Keyboard and pointer share one highlight, so arrowing down and hovering
+   never disagree about which row is about to be chosen. */
+.combo-option.is-active {
+  background: var(--soft);
+}
+
+.combo-code {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.combo-title {
+  min-width: 0;
+}
+
+/* Several values under one fact label (a role can map to more than one
+   occupation, and each brings its own assessor). Stacked rather than run
+   together with commas, so each stays a distinct link. */
+.fact-values {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+/* Occupations already chosen, under the search box. Reuses the applied-filter
+   chip so "a thing you have picked, click to remove" looks the same everywhere
+   on the site. */
+.chosen-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin: var(--s2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ================= Startups currently hiring =================
+   Cards on the off-white surface, same raised-white treatment as the job
+   cards, so "a thing you can click through to" looks the same on both pages. */
+/* The same band as the jobs filter bar: controls sitting on white above the
+   results, separated by a rule rather than floating in the page. */
+.company-controls {
+  margin: 0 0 var(--s5);
+  padding: 0 0 var(--s5);
+  border-bottom: 1px solid var(--line);
+}
+
+.company-controls .filter-search {
+  flex: 1 1 240px;
+  max-width: 340px;
+}
+
+/* Count on the left, view toggle on the right, exactly as the jobs panel heads
+   its list. */
+.company-head {
+  margin: 0 0 var(--s4);
+}
+
+.company-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: var(--s4);
+}
+
+/* content-visibility keeps 400 cards cheap: the browser skips laying out the
+   ones scrolled off screen. */
+.company-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 200px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s4);
+  border-radius: var(--radius);
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.18s var(--ease), transform 0.18s var(--ease);
+}
+
+.company-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+/* In a grid where every card is a link, the underlined-link treatment is
+   overbearing — it belongs in prose, where a link has to stand out from the
+   text around it. Here the card itself is the affordance. */
+.about-section .company-card a {
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.company-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s2);
+}
+
+.company-card-name {
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-strong);
+  line-height: var(--lh-heading);
+}
+
+/* Stretched to cover the card, so a click anywhere opens the company site
+   while the markup keeps one link with a real name. */
+.company-card-name::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+}
+
+/* Says what it counts rather than leaving a bare number to be guessed at.
+   Not the accent colour, which means visa sponsorship everywhere else on the
+   site, and not a solid fill either: beside the company name a filled pill
+   covers more ground than the name does and would lead the card. */
+.company-card-openings {
+  flex-shrink: 0;
+  padding: 2px var(--s2);
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--muted-strong);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  white-space: nowrap;
+}
+
+/* The hand-checked visa flags. Only sponsorship carries the accent; "hires
+   international students" takes the ordinary badge, so the one colour on the
+   page keeps meaning exactly one thing. */
+.company-card-flags {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1);
+  margin: 0;
+  padding: 0;
+}
+
+.company-card-flags .flag {
+  background: var(--chip);
+  color: var(--ink);
+}
+
+.company-card-flags .flag-sponsor {
+  background: var(--sponsor);
+  color: var(--white);
+}
+
+.company-card-tagline {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  /* Shown in full and exactly as written in the CSV: it is the company's own
+     description of itself, and truncating it puts words in their mouth. */
+  color: var(--muted-strong);
+}
+
+.company-card-tags {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1);
+  margin: 0;
+  padding: 0;
+}
+
+.company-tag {
+  padding: 2px var(--s2);
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--muted-strong);
+  font-size: var(--fs-xs);
+}
+
+/* Pushed to the bottom so cards of different tagline lengths still line their
+   housekeeping up along the row. */
+.company-card-foot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin-top: auto;
+  padding-top: var(--s2);
+}
+
+.company-card-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s2);
+  margin: 0;
+}
+
+.company-tag-more {
+  color: var(--muted);
+}
+
+/* No text-transform: these values are printed as the CSV has them. */
+.company-card-meta,
+.company-card-meta span {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+
+/* Lifted above the stretched link so it stays clickable in its own right. */
+.about-section .company-card .company-linkedin {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  color: var(--muted);
+}
+
+.about-section .company-card .company-linkedin:hover {
+  color: var(--ink);
+}
+
+/* The companies page is a wall of cards, so it sits on the tinted surface the
+   job list uses rather than on white. */
+.about-panel.companies-panel {
+  background: var(--soft);
+}
+
+/* ---- Company views ------------------------------------------------------
+   Cards, map, or both. Split puts the map beside the list and pins it in
+   place, so scrolling the list keeps the map in view — the two halves are
+   meant to be read together. */
+.company-views.is-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--s5);
+  align-items: start;
+}
+
+.company-views.is-split .company-map {
+  position: sticky;
+  top: var(--s4);
+}
+
+.company-views.is-split .company-grid {
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 900px) {
+  .company-views.is-split {
+    grid-template-columns: 1fr;
+  }
+
+  .company-views.is-split .company-map {
+    position: static;
+  }
+}
+
+/* A segmented control: one filled option and two quiet ones, so which view
+   you are in is legible without labels shouting. */
+.view-toggle {
+  display: inline-flex;
+  margin-left: auto;
+  padding: 3px;
+  border-radius: var(--ctrl-radius);
+  background: var(--chip);
+}
+
+.view-toggle-btn {
+  padding: var(--s1) var(--s3);
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+}
+
+.view-toggle-btn:hover {
+  color: var(--ink);
+}
+
+.view-toggle-btn.is-on {
+  background: var(--white);
+  color: var(--ink);
+  font-weight: var(--fw-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ---- Map ---------------------------------------------------------------- */
+.company-map-canvas {
+  height: min(560px, 70vh);
+  border-radius: var(--radius);
+  background: var(--chip);
+  box-shadow: var(--shadow-sm);
+  /* Leaflet paints tiles in square corners; clip them to the card radius. */
+  overflow: hidden;
+  z-index: 0;
+}
+
+.company-map-note {
+  margin: var(--s2) 0 0;
+  font-size: var(--fs-xs);
+  line-height: var(--lh-body);
+  color: var(--muted);
+}
+
+/* Leaflet's own chrome, pulled onto the site's type and colour. */
+.company-map .leaflet-container {
+  font-family: var(--font);
+  font-size: var(--fs-xs);
+  background: var(--chip);
+}
+
+.company-map .leaflet-popup-content-wrapper {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+
+.company-map .leaflet-popup-content {
+  margin: var(--s3);
+  font-size: var(--fs-sm);
+}
+
+.map-pop-title {
+  margin: 0 0 var(--s2);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.map-pop-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+}
+
+/* No underline here either: in a list where every line is a link, the marker
+   adds noise rather than meaning. Hover moves the colour instead. */
+.company-map a,
+.map-pop-list a {
+  color: var(--ink);
+  font-weight: var(--fw-strong);
+  text-decoration: none;
+}
+
+.map-pop-list a:hover,
+.map-pop-list a:focus-visible {
+  color: var(--muted);
+}
+
+.map-pop-list em {
+  font-style: normal;
+  color: var(--sponsor);
+}
+
+.map-pop-more {
+  margin: var(--s2) 0 0;
+  color: var(--muted);
+}
+
+/* Holds the map's space while its code downloads, so choosing the map view
+   doesn't shove the page around when it arrives. */
+.company-map-canvas.is-loading {
+  animation: skeleton 1.4s ease-in-out infinite;
+  background: linear-gradient(100deg, var(--white) 30%, var(--chip) 50%, var(--white) 70%);
+  background-size: 300% 100%;
+}
+
+/* Leaflet underlines its attribution and any link in a popup by default. */
+.company-map .leaflet-container a {
+  text-decoration: none;
+}
+
+/* The banner sits above the results, at the width of the text rather than the
+   full grid, so it reads as a note and not as a heading. */
+.about-section .panel-banner {
+  margin: 0 0 var(--s5);
 }

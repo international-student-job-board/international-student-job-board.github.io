@@ -1,14 +1,49 @@
 import { Job } from '../types';
 import { formatDate } from '../format';
-import { visaUrl, resolveOccupation, VISA_DISCLAIMER } from '../references';
+import {
+  visaUrl,
+  resolveOccupations,
+  pathwayVisasFor,
+  occupationListUrl,
+  occupationListLabel,
+  VISA_DISCLAIMER,
+} from '../references';
 import { InfoTooltip } from './InfoTooltip';
+import { OUTBOUND, outboundHref, emailApplyHref } from '../outbound';
+import { SITE_NAME, SITE_URL } from '../links';
 
-const LIST_NAMES: Record<string, string> = {
-  MLTSSL: 'Medium and Long-term Strategic Skills List',
-  CSOL: 'Core Skills Occupation List',
-  STSOL: 'Short-term Skilled Occupation List',
-  ROL: 'Regional Occupation List',
-};
+// The skilled-migration lists an occupation sits on. Outlined chips rather than
+// the filled pills used for visa subclasses just above them: both are codes
+// that link out, but they answer different questions, and one shared style for
+// two different kinds of code would invite reading them as one set.
+function OccupationLists({ lists }: { lists: string[] }) {
+  if (!lists.length) return <>Not specified</>;
+  return (
+    <span className="value-list">
+      {lists.map((list) => {
+        const href = occupationListUrl(list);
+        const label = occupationListLabel(list);
+        return href ? (
+          <a
+            key={list}
+            className="value-chip value-chip-link"
+            href={href}
+            target="_blank"
+            rel="noopener"
+            referrerPolicy="strict-origin-when-cross-origin"
+            title={`${label} - official Home Affairs page`}
+          >
+            {list}
+          </a>
+        ) : (
+          <span key={list} className="value-chip" title={label}>
+            {list}
+          </span>
+        );
+      })}
+    </span>
+  );
+}
 
 // Each visa code links to its official Home Affairs listing when we know the
 // page; unknown codes stay as plain (unclickable) pills.
@@ -24,7 +59,8 @@ function Pills({ items }: { items: string[] }) {
             className="pill pill-link"
             href={href}
             target="_blank"
-            rel="noopener noreferrer"
+            rel="noopener"
+            referrerPolicy="strict-origin-when-cross-origin"
             title={`Subclass ${v} - official Home Affairs page`}
           >
             {v}
@@ -49,48 +85,28 @@ function Reference({ text, href }: { text: string; href?: string }) {
       className="reference-link"
       href={href}
       target="_blank"
-      rel="noopener noreferrer"
+      rel="noopener"
+            referrerPolicy="strict-origin-when-cross-origin"
     >
       {text}
     </a>
   );
 }
 
-// Tag an outbound apply URL with UTM parameters so the employer's analytics
-// attributes the visit to this board (belt-and-braces alongside the referrer
-// header). Left untouched for mailto: or non-http links.
-function applyHref(url: string): string {
-  const trimmed = url.trim();
-  if (!/^https?:\/\//i.test(trimmed)) return trimmed;
-  try {
-    const u = new URL(trimmed);
-    u.searchParams.set('utm_source', window.location.hostname);
-    u.searchParams.set('utm_medium', 'referral');
-    u.searchParams.set('utm_campaign', 'apply');
-    return u.toString();
-  } catch {
-    return trimmed;
-  }
-}
-
 // Apply action. When the employer takes applications by email (a mailto: link)
 // the button says so and opens the mail client in place; otherwise it opens the
 // employer's application page in a new tab.
-function ApplyButton({ url }: { url: string }) {
+function ApplyButton({ url, jobTitle }: { url: string; jobTitle: string }) {
   const isEmail = url.trim().toLowerCase().startsWith('mailto:');
   return (
     <a
       className={`btn btn-primary${isEmail ? ' btn-email' : ''}`}
-      href={isEmail ? url : applyHref(url)}
-      {...(isEmail
-        ? {}
-        : {
-            target: '_blank',
-            // `noopener` (not `noreferrer`) so the employer site still receives
-            // our domain as the referrer; the policy sends our origin.
-            rel: 'noopener',
-            referrerPolicy: 'strict-origin-when-cross-origin' as const,
-          })}
+      href={
+        isEmail
+          ? emailApplyHref(url, jobTitle, SITE_NAME, SITE_URL)
+          : outboundHref(url, 'apply')
+      }
+      {...(isEmail ? {} : OUTBOUND)}
     >
       {isEmail ? (
         <>
@@ -110,15 +126,19 @@ function ApplyButton({ url }: { url: string }) {
 }
 
 export function JobDetail({ job }: { job: Job }) {
-  const occupation = resolveOccupation(job.anzsco, job.skillAssessment);
-  const occupationLabel = [occupation.code, occupation.name].filter(Boolean).join(' ');
+  const occupations = resolveOccupations(job);
   const applyByEmail = job.applyUrl.trim().toLowerCase().startsWith('mailto:');
-  // "Can lead to" = the job's own pathway visas plus every visa the ANZSCO
-  // occupation can be used for, de-duplicated by subclass (occupations can list
-  // a code more than once for different streams).
-  const pathwayVisas = Array.from(
-    new Set([...job.visaPathways, ...occupation.visas.map((v) => v.code)])
+  const pathwayVisas = pathwayVisasFor(job);
+  // Assessors and lists are pooled across every occupation the role maps to,
+  // deduplicated — two occupations often share an assessor and a list.
+  const assessments = Array.from(
+    new Map(
+      occupations
+        .filter((o) => o.assessment)
+        .map((o) => [o.assessment, { text: o.assessment, href: o.assessmentHref }])
+    ).values()
   );
+  const lists = Array.from(new Set(occupations.flatMap((o) => o.lists)));
   return (
     <article className="job-detail" aria-labelledby="job-detail-title">
       {/* Who, then what, then when — the company and title read as one unit
@@ -130,9 +150,10 @@ export function JobDetail({ job }: { job: Job }) {
         {job.companyUrl ? (
           <a
             className="company-link"
-            href={job.companyUrl}
+            href={outboundHref(job.companyUrl, 'employer')}
             target="_blank"
-            rel="noopener noreferrer"
+            rel="noopener"
+            referrerPolicy="strict-origin-when-cross-origin"
           >
             {job.company}
           </a>
@@ -199,22 +220,47 @@ export function JobDetail({ job }: { job: Job }) {
             <Pills items={pathwayVisas} />
           </li>
           <li>
-            <span className="fact-label">Skills assessment</span>
-            <Reference text={occupation.assessment} href={occupation.assessmentHref} />
+            <span className="fact-label">
+              Skills assessment{assessments.length > 1 ? 's' : ''}
+            </span>
+            {assessments.length === 0 ? (
+              'Not specified'
+            ) : (
+              <span className="fact-values">
+                {assessments.map((a) => (
+                  <Reference key={a.text} text={a.text} href={a.href} />
+                ))}
+              </span>
+            )}
           </li>
           <li>
-            <span className="fact-label">ANZSCO occupation</span>
-            <Reference text={occupationLabel} href={occupation.anzscoHref} />
+            <span className="fact-label">
+              ANZSCO occupation{occupations.length > 1 ? 's' : ''}
+            </span>
+            {occupations.length === 0 ? (
+              'Not specified'
+            ) : (
+              <span className="fact-values">
+                {occupations.map((occ) => (
+                  <Reference
+                    key={occ.code || occ.name}
+                    text={[occ.code, occ.name].filter(Boolean).join(' ')}
+                    href={occ.anzscoHref}
+                  />
+                ))}
+              </span>
+            )}
           </li>
-          {occupation.lists.length > 0 && (
+          {lists.length > 0 && (
             <li>
-              <span className="fact-label">Occupation lists <InfoTooltip
-                label="What the occupation lists mean"
-                text={occupation.lists
-                  .map((l) => `${l} - ${LIST_NAMES[l] ?? l}`)
-                  .join('\n')}
-              /></span>
-              {occupation.lists.join(', ')}{' '}
+              <span className="fact-label">
+                Occupation lists{' '}
+                <InfoTooltip
+                  label="What the occupation lists mean"
+                  text={lists.map(occupationListLabel).join('\n')}
+                />
+              </span>
+              <OccupationLists lists={lists} />
             </li>
           )}
           <li>
@@ -224,7 +270,7 @@ export function JobDetail({ job }: { job: Job }) {
         </ul>
 
         <div className="detail-actions">
-          <ApplyButton url={job.applyUrl} />
+          <ApplyButton url={job.applyUrl} jobTitle={job.title} />
         </div>
       </section>
 
@@ -256,7 +302,7 @@ export function JobDetail({ job }: { job: Job }) {
       )}
 
       <div className="detail-actions">
-        <ApplyButton url={job.applyUrl} />
+        <ApplyButton url={job.applyUrl} jobTitle={job.title} />
         <p className="apply-note">
           {applyByEmail
             ? "Applications for this role are sent by email to the employer."

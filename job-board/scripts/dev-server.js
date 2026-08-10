@@ -43,12 +43,39 @@ function readConstants() {
   return data;
 }
 
-function nextId(jobs) {
-  const max = jobs.reduce((m, j) => {
+// jobs.json is grouped by company: [{ company, company_about, company_url,
+// jobs: [...] }]. Every role in the file, flat, for id allocation.
+function allRoles(groups) {
+  return groups.flatMap((g) => (Array.isArray(g.jobs) ? g.jobs : [g]));
+}
+
+function nextId(groups) {
+  const max = allRoles(groups).reduce((m, j) => {
     const n = parseInt(j.id, 10);
     return Number.isNaN(n) ? m : Math.max(m, n);
   }, 0);
   return String(max + 1);
+}
+
+// Adds a role under its company, creating the company group the first time it
+// posts. The company's blurb and link live on the group, not on the role, so a
+// second role for the same employer can't disagree with the first.
+function addRole(groups, incoming) {
+  const { company, company_about: about, company_url: url, ...role } = incoming;
+  const key = String(company).trim().toLowerCase();
+  let group = groups.find(
+    (g) => String(g.company || '').trim().toLowerCase() === key && Array.isArray(g.jobs)
+  );
+  if (!group) {
+    group = { company, company_about: about || '', company_url: url || '', jobs: [] };
+    groups.push(group);
+  } else {
+    // A later posting fills in details the first one left blank.
+    if (!group.company_about && about) group.company_about = about;
+    if (!group.company_url && url) group.company_url = url;
+  }
+  group.jobs.push(role);
+  return role;
 }
 
 function sendJson(res, status, body) {
@@ -160,10 +187,10 @@ const server = http.createServer((req, res) => {
         if (!incoming.title || !incoming.company) {
           return sendJson(res, 400, { error: 'title and company are required' });
         }
-        const jobs = readJobs();
-        const job = { id: nextId(jobs), ...incoming };
-        jobs.push(job);
-        fs.writeFileSync(JOBS_FILE, JSON.stringify(jobs, null, 2) + '\n');
+        const groups = readJobs();
+        const job = { id: nextId(groups), ...incoming };
+        addRole(groups, job);
+        fs.writeFileSync(JOBS_FILE, JSON.stringify(groups, null, 2) + '\n');
         console.log(`Added job #${job.id}: ${job.title} @ ${job.company}`);
         return sendJson(res, 201, { job });
       } catch (err) {
