@@ -35,3 +35,20 @@ export function formatDate(iso: string): string {
 export const NOT_SPECIFIED = 'Not specified';
 
 export const orNotSpecified = (value: string) => value.trim() || NOT_SPECIFIED;
+
+/**
+ * A role that starts as soon as someone is found. Stored in the start-date
+ * field rather than beside it: "when does this start" has one answer, and two
+ * fields could disagree — a date filled in with the ASAP box also ticked has
+ * no obvious winner.
+ */
+export const START_ASAP = 'asap';
+
+export const isStartAsap = (value: string) =>
+  value.trim().toLowerCase() === START_ASAP;
+
+/** How a start date reads: a date, as soon as possible, or nothing said. */
+export function formatStart(value: string): string {
+  if (isStartAsap(value)) return 'As soon as possible';
+  return value.trim() ? formatDate(value) : NOT_SPECIFIED;
+}

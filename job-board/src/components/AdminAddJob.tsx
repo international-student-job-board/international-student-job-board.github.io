@@ -6,6 +6,7 @@ import { AddOccupation, NewOccupation } from './AddOccupation';
 import { AnzscoPicker } from './AnzscoPicker';
 import { CompanyPicker } from './CompanyPicker';
 import { postJson } from '../devApi';
+import { isStartAsap, START_ASAP, todayISO } from '../format';
 import { Company } from '../companies';
 import { PickOrAdd } from './PickOrAdd';
 import { VisaTagPicker, pipeToList, toggleInPipe } from './VisaTagPicker';
@@ -64,21 +65,84 @@ const UNGROUPED = GENERIC_FIELDS.filter((f) => !GROUPED_KEYS.includes(f.key));
 const toggle = (arr: string[], value: string) =>
   arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
 
-// Build the jobs.json record: skip empty and custom fields, pipe-join lists.
-function toJobRecord(draft: Draft): Record<string, string> {
+/** The values held outside the draft, by their own controls. */
+export interface CustomValues {
+  occCodes: string[];
+  eligible: string[];
+  arrangements: string[];
+  /** Only the pathways the chosen occupations don't already supply. */
+  extraPathways: string[];
+}
+
+/**
+ * The jobs.json record: the plain fields, plus every value held by a control of
+ * its own.
+ *
+ * Both halves matter. A field listed in CUSTOM_KEYS is skipped by the loop
+ * below, so it has to be written back here explicitly — the company fields
+ * moved onto the CompanyPicker and were dropped from the record for exactly
+ * that reason, which the dev server reported as "title and company are
+ * required" on a form where both were plainly filled in.
+ */
+export function buildJobRecord(draft: Draft, custom: CustomValues): Record<string, string> {
   const record: Record<string, string> = {};
-  for (const field of GENERIC_FIELDS) {
+
+  // Every field the draft holds, whatever renders it. This used to walk
+  // GENERIC_FIELDS — the list of fields *without* a custom control — which
+  // silently dropped everything that had one: the company, and the level, type
+  // and education pickers. How a field is saved has nothing to do with which
+  // widget draws it, and tying the two together lost data twice.
+  for (const field of FIELDS) {
     const value = (draft[field.key] ?? '').trim();
     if (!value) continue;
     record[field.key] = LIST_KEYS.includes(field.key)
       ? value.split(/[|,]/).map((v) => v.trim()).filter(Boolean).join('|')
       : value;
   }
+
+  // Yes / no / never said, written the way jobs.json spells it. "Not
+  // specified" is stored by leaving the field out entirely, which is what the
+  // loader reads as "nobody said".
+  const sponsored = draft.employer_sponsored?.trim().toLowerCase();
+  delete record.employer_sponsored;
+  if (sponsored === 'yes' || sponsored === 'no') record.employer_sponsored = sponsored;
+
+  // The consent flag only needs recording when it was given.
+  const publish = draft.contact_public?.trim().toLowerCase();
+  delete record.contact_public;
+  if (publish === 'yes') record.contact_public = 'yes';
+
+  // The company: its own picker, and the key jobs.json is grouped by.
+  const company = draft.company?.trim();
+  if (company) record.company = company;
+  if (draft.company_about?.trim()) record.company_about = draft.company_about.trim();
+  if (draft.company_url?.trim()) record.company_url = draft.company_url.trim();
+
+  if (custom.occCodes.length) record.anzsco = custom.occCodes.join('|');
+  if (custom.eligible.length) record.visa_eligible = custom.eligible.join('|');
+  if (custom.arrangements.length) record.arrangement = custom.arrangements.join('|');
+  if (custom.extraPathways.length) record.visa_pathways = custom.extraPathways.join('|');
+  if (draft.skills?.trim()) record.skills = draft.skills.trim();
+
   return record;
 }
 
+/**
+ * A blank form. The pick-or-add fields are cleared because emptyDraft() seeds
+ * every select with its first option, and for these that would save whichever
+ * level, type or education happens to sit first in constants.json on a form
+ * nobody touched. Their control shows "Choose . . ." for an empty value.
+ */
+const blankDraft = (): Draft => ({
+  ...emptyDraft(),
+  ...Object.fromEntries(CONSTANT_JOB_FIELDS.map((c) => [c.key, ''])),
+  // Today, because that is when this listing is being added. Editable for a
+  // role transcribed later than it was found.
+  posted: todayISO(),
+});
+
 export function AdminAddJob() {
-  const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [draft, setDraft] = useState<Draft>(blankDraft);
   const [constants, setConstants] = useState(getConstants);
   const [occupations, setOccupations] = useState(() => listOccupations());
   // Full visa lists for occupations added this session (the imported reference
@@ -192,19 +256,17 @@ export function AdminAddJob() {
       return;
     }
 
-    const record = toJobRecord(draft);
-    record.anzsco = occCodes.join('|');
-    if (eligible.length) record.visa_eligible = eligible.join('|');
-    if (draft.skills?.trim()) record.skills = draft.skills.trim();
-    if (arrangements.length) record.arrangement = arrangements.join('|');
-
     // Only the pathways the occupations don't already provide. The tags above
     // are prefilled from the chosen occupations, so writing them back would
     // copy into every job a fact occupations.json already states once, and the
     // two would drift the moment the reference file is corrected.
     const fromOccupations = new Set(occCodes.flatMap(occupationVisaCodes));
-    const extraPathways = pathway.filter((code) => !fromOccupations.has(code));
-    if (extraPathways.length) record.visa_pathways = extraPathways.join('|');
+    const record = buildJobRecord(draft, {
+      occCodes,
+      eligible,
+      arrangements,
+      extraPathways: pathway.filter((code) => !fromOccupations.has(code)),
+    });
 
     setStatus('saving');
     setMessage('');
@@ -212,7 +274,7 @@ export function AdminAddJob() {
       const body = await postJson<{ job: { id: string } }>('/api/jobs', record);
       setStatus('saved');
       setMessage(`Saved as job #${body.job.id} in jobs.json. Reload to see it in the list.`);
-      setDraft(emptyDraft());
+      setDraft(blankDraft());
       setEligible([]);
       setArrangements([]);
       setPathway([]);
@@ -235,7 +297,28 @@ export function AdminAddJob() {
         {field.required && <span aria-hidden="true"> *</span>}
       </label>
 
-      {field.type === 'textarea' ? (
+      {field.type === 'date-asap' ? (
+        /* One field, two ways to answer it. Ticking the box replaces the date
+           rather than sitting beside it, so a date and "as soon as possible"
+           can never both be set and leave the reader guessing which won. */
+        <>
+          <input
+            id={`admin-${field.key}`}
+            type="date"
+            value={isStartAsap(draft[field.key]) ? '' : draft[field.key]}
+            disabled={isStartAsap(draft[field.key])}
+            onChange={(e) => setField(field.key, e.target.value)}
+          />
+          <label className="tag-check asap-check">
+            <input
+              type="checkbox"
+              checked={isStartAsap(draft[field.key])}
+              onChange={(e) => setField(field.key, e.target.checked ? START_ASAP : '')}
+            />
+            Starts as soon as possible
+          </label>
+        </>
+      ) : field.type === 'textarea' ? (
         <textarea
           id={`admin-${field.key}`}
           value={draft[field.key]}

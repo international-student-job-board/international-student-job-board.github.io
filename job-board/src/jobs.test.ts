@@ -125,6 +125,34 @@ describe('start date', () => {
   });
 });
 
+describe('employer sponsorship', () => {
+  const withSponsorship = async (value: string) => {
+    (global as unknown as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [
+        { id: 'x', title: 'Role', posted: '2026-01-01', employer_sponsored: value },
+      ],
+    });
+    return (await loadJobs())[0];
+  };
+
+  test('yes means yes', async () => {
+    expect((await withSponsorship('yes')).employerSponsored).toBe(true);
+    expect((await withSponsorship('Yes')).employerSponsored).toBe(true);
+  });
+
+  test('no means no', async () => {
+    expect((await withSponsorship('no')).employerSponsored).toBe(false);
+  });
+
+  test('nothing said is neither, not a no', async () => {
+    // The regression: blank used to read as false, so the detail page said
+    // "Not offered" about roles where nobody had been asked.
+    expect((await withSponsorship('')).employerSponsored).toBeUndefined();
+    expect((await withSponsorship('maybe')).employerSponsored).toBeUndefined();
+  });
+});
+
 describe('the hiring manager', () => {
   const withContact = async (row: Record<string, string>) => {
     (global as unknown as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({

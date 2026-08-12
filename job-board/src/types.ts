@@ -18,7 +18,13 @@ export interface Job {
   skillAssessment: string;
   /** One or more ANZSCO occupations; a role can map to several. */
   anzscos: string[];
-  employerSponsored: boolean;
+  /**
+   * Whether the employer sponsors visas: true, false, or undefined when the
+   * listing never said. Blank and "no" are different answers — one is a
+   * decision, the other is a gap — and collapsing them told readers a role
+   * had been ruled out when nobody had ruled anything.
+   */
+  employerSponsored: boolean | undefined;
   /**
    * Whether the poster asked for their details to appear on the listing. False
    * by default: publishing a person's name is something they opt into, not

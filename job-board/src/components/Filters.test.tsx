@@ -27,7 +27,7 @@ const EMPTY: FilterState = {
   salaryMin: 0,
   startsWithinDays: 0,
   postedWithinDays: 0,
-  sponsoredOnly: false,
+  sponsorship: [],
 };
 
 /** Holds the state the real page holds, so selections survive a re-render. */
@@ -96,9 +96,9 @@ test('salary is single-choice — picking again replaces, never accumulates', ()
   render(<Harness />);
   openFilter(/^salary/i);
 
-  fireEvent.click(screen.getByRole('radio', { name: '$60k+' }));
+  fireEvent.click(screen.getByRole('radio', { name: /^\$60k\+/ }));
   openFilter(/^salary/i);
-  fireEvent.click(screen.getByRole('radio', { name: '$80k+' }));
+  fireEvent.click(screen.getByRole('radio', { name: /^\$80k\+/ }));
 
   const chips = screen.getAllByRole('button', { name: /remove filter/i });
   expect(chips).toHaveLength(1);
@@ -109,9 +109,9 @@ test('starts-within is single-choice too, and chips itself', () => {
   render(<Harness />);
   openFilter(/^starts/i);
 
-  fireEvent.click(screen.getByRole('radio', { name: 'Within a month' }));
+  fireEvent.click(screen.getByRole('radio', { name: /^Within\ a\ month/ }));
   openFilter(/^starts/i);
-  fireEvent.click(screen.getByRole('radio', { name: 'Within 3 months' }));
+  fireEvent.click(screen.getByRole('radio', { name: /^Within\ 3\ months/ }));
 
   const chips = screen.getAllByRole('button', { name: /remove filter/i });
   expect(chips).toHaveLength(1);
@@ -143,11 +143,32 @@ describe('roles that don’t say', () => {
   test('salary offers it as a band and counts as an applied filter', () => {
     render(<Harness />);
     openFilter(/^salary/i);
-    fireEvent.click(screen.getByRole('radio', { name: 'Not specified' }));
+    fireEvent.click(screen.getByRole('radio', { name: /^Not\ specified/ }));
 
     const chips = screen.getAllByRole('button', { name: /remove filter/i });
     expect(chips).toHaveLength(1);
     expect(chips[0]).toHaveTextContent('Not specified');
+  });
+});
+
+describe('sponsorship', () => {
+  test('offers all three answers the data can hold', () => {
+    render(<Harness />);
+    openFilter(/^sponsorship/i);
+
+    ['Available', 'Not offered', 'Not specified'].forEach((label) =>
+      expect(screen.getByRole('checkbox', { name: new RegExp(`^${label}\\b`) })).toBeInTheDocument()
+    );
+  });
+
+  test('more than one answer can be asked for at once', () => {
+    render(<Harness />);
+    openFilter(/^sponsorship/i);
+    fireEvent.click(screen.getByRole('checkbox', { name: /^Available\b/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /^Not specified\b/ }));
+
+    const chips = screen.getAllByRole('button', { name: /remove filter/i });
+    expect(chips).toHaveLength(2);
   });
 });
 
@@ -164,21 +185,64 @@ describe('the two date filters', () => {
 
     ['Last 24 hours', 'Last 2 days', 'Last 7 days', 'Last 14 days', 'Last month', 'Last 2 months']
       .forEach((label) =>
-        expect(screen.getByRole('radio', { name: label })).toBeInTheDocument()
+        expect(
+          screen.getByRole('radio', { name: new RegExp(`^${label}`) })
+        ).toBeInTheDocument()
       );
   });
 
   test('each is single-choice and chips on its own', () => {
     render(<Harness />);
     openFilter(/^posted/i);
-    fireEvent.click(screen.getByRole('radio', { name: 'Last 7 days' }));
+    fireEvent.click(screen.getByRole('radio', { name: /^Last\ 7\ days/ }));
     openFilter(/^starts/i);
-    fireEvent.click(screen.getByRole('radio', { name: 'Within a month' }));
+    fireEvent.click(screen.getByRole('radio', { name: /^Within\ a\ month/ }));
 
     const chips = screen.getAllByRole('button', { name: /remove filter/i });
     expect(chips).toHaveLength(2);
     expect(chips.map((c) => c.textContent).join(' ')).toMatch(/Last 7 days/);
     expect(chips.map((c) => c.textContent).join(' ')).toMatch(/Within a month/);
+  });
+});
+
+describe('the threshold filters count too', () => {
+  const withThresholdCounts = () =>
+    render(
+      <Filters
+        filters={EMPTY}
+        options={OPTIONS}
+        counts={{
+          salaryMin: new Map([['40000', 4], ['-1', 3]]),
+          postedWithinDays: new Map([['7', 2]]),
+          startsWithinDays: new Map([['30', 5]]),
+        }}
+        onChange={() => {}}
+        onClear={() => {}}
+      />
+    );
+
+  test('salary says how many roles each band would leave', () => {
+    withThresholdCounts();
+    openFilter(/^salary/i);
+    expect(screen.getByRole('radio', { name: /^\$40k\+/ })).toHaveAccessibleName(/4 results/);
+  });
+
+  test('"Not specified" counts the roles with no salary, rather than nothing', () => {
+    // The regression: the threshold filters were left out of the count pass, so
+    // this option showed no number at all.
+    withThresholdCounts();
+    openFilter(/^salary/i);
+    expect(screen.getByRole('radio', { name: /^Not specified/ })).toHaveAccessibleName(
+      /3 results/
+    );
+  });
+
+  test('the date windows count as well', () => {
+    withThresholdCounts();
+    openFilter(/^posted/i);
+    expect(screen.getByRole('radio', { name: /^Last 7 days/ })).toHaveAccessibleName(
+      /2 results/
+    );
   });
 });
 

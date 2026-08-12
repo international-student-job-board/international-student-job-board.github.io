@@ -37,7 +37,7 @@ export function PostJob() {
           sponsor a visa.
         </p>
         <p>
-          For details on employer sponsored visas, please take a look at this Department of Home Affairs website {' '}
+          For details on employer sponsored visas, please take a look at this {' '}
           <a
             className="gov-link"
             href={EMPLOYER_VISA_COMPARISON_URL}

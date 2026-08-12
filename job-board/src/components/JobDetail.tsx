@@ -1,5 +1,5 @@
 import { Job } from '../types';
-import { formatDate, orNotSpecified, NOT_SPECIFIED } from '../format';
+import { formatDate, formatStart, orNotSpecified, NOT_SPECIFIED } from '../format';
 import {
   visaUrl,
   resolveOccupations,
@@ -196,7 +196,7 @@ export function JobDetail({ job }: { job: Job }) {
       <ul className="detail-facts">
         <li>
           <span className="fact-label">Start date</span>
-          {job.startDate ? formatDate(job.startDate) : NOT_SPECIFIED}
+          {formatStart(job.startDate)}
         </li>
         <li>
           <span className="fact-label">Location</span>
@@ -287,7 +287,11 @@ export function JobDetail({ job }: { job: Job }) {
           )}
           <li>
             <span className="fact-label">Employer sponsorship</span>
-            {job.employerSponsored ? 'Available' : 'Not offered'}
+            {job.employerSponsored === true
+              ? 'Available'
+              : job.employerSponsored === false
+                ? 'Not offered'
+                : NOT_SPECIFIED}
           </li>
         </ul>
 

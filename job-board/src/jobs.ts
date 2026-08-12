@@ -6,6 +6,16 @@ const JOBS_URL = `${process.env.PUBLIC_URL || ''}/jobs.json`;
 const isTruthy = (value: string) =>
   ['yes', 'true', '1', 'y'].includes(value.trim().toLowerCase());
 
+const isFalsy = (value: string) =>
+  ['no', 'false', '0', 'n'].includes(value.trim().toLowerCase());
+
+/** yes / no / never said. Anything unreadable counts as never said. */
+function triState(value: string): boolean | undefined {
+  if (isTruthy(value)) return true;
+  if (isFalsy(value)) return false;
+  return undefined;
+}
+
 const pipeList = (value: string) =>
   (value ?? '')
     .split('|')
@@ -64,7 +74,7 @@ function toJob(row: Record<string, string>): Job {
     visaPathways: pipeList(row.visa_pathways ?? ''),
     skillAssessment: row.skill_assessment?.trim() ?? '',
     anzscos: pipeList(row.anzsco ?? ''),
-    employerSponsored: isTruthy(row.employer_sponsored ?? ''),
+    employerSponsored: triState(row.employer_sponsored ?? ''),
     contactPublic: isTruthy(row.contact_public ?? ''),
     contactName: row.contact_name?.trim() ?? '',
     contactPosition: row.contact_position?.trim() ?? '',

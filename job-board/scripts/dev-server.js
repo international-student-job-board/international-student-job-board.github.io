@@ -68,10 +68,12 @@ function addRole(groups, incoming) {
   );
   if (!group) {
     // Only fields that carry a value: an empty string in the file is a row of
-    // noise that the loader treats exactly as a missing key anyway.
-    group = { company, jobs: [] };
+    // noise that the loader treats exactly as a missing key anyway. `jobs` is
+    // added last so the company's own details read first in the file.
+    group = { company };
     if (about) group.company_about = about;
     if (url) group.company_url = url;
+    group.jobs = [];
     groups.push(group);
   } else {
     // A later posting fills in details the first one left blank.

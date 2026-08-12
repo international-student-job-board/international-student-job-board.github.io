@@ -26,7 +26,8 @@ export interface FilterState {
   startsWithinDays: number;
   /** Only roles posted within this many days; 0 means any age. */
   postedWithinDays: number;
-  sponsoredOnly: boolean;
+  /** 'yes' | 'no' | '' (never said), any combination. */
+  sponsorship: string[];
 }
 
 /** The list-valued keys, which are exactly the keys of FilterOptions. */
@@ -89,6 +90,15 @@ const START_WINDOWS = [
   { value: '-1', label: NOT_SPECIFIED },
 ];
 
+/* The one filter this audience comes for, so it keeps the accent on its
+   trigger — but it is a filter like the others now, with the same three
+   answers the data actually holds. */
+const SPONSORSHIP = [
+  { value: 'yes', label: 'Available' },
+  { value: 'no', label: 'Not offered' },
+  { value: '', label: NOT_SPECIFIED },
+];
+
 const FIELDS: { key: FilterListKey; label: string; format?: (value: string) => string }[] = [
   { key: 'types', label: 'Job type' },
   { key: 'levels', label: 'Level' },
@@ -110,7 +120,7 @@ export function countActiveFilters(filters: FilterState): number {
     (filters.salaryMin !== 0 ? 1 : 0) +
     (filters.startsWithinDays !== 0 ? 1 : 0) +
     (filters.postedWithinDays > 0 ? 1 : 0) +
-    (filters.sponsoredOnly ? 1 : 0) +
+    filters.sponsorship.length +
     (filters.query.trim() ? 1 : 0)
   );
 }
@@ -119,7 +129,12 @@ interface Props {
   filters: FilterState;
   options: FilterOptions;
   /** How many roles each option would leave, keyed by filter then by value. */
-  counts?: Record<FilterListKey, Map<string, number>>;
+  counts?: Partial<
+    Record<
+      FilterListKey | 'sponsorship' | 'salaryMin' | 'postedWithinDays' | 'startsWithinDays',
+      Map<string, number>
+    >
+  >;
   onChange: (next: FilterState) => void;
   onClear: () => void;
 }
@@ -194,14 +209,15 @@ export function Filters({ filters, options, counts, onChange, onClear }: Props) 
     });
   }
 
-  if (filters.sponsoredOnly) {
+  filters.sponsorship.forEach((value) => {
     chips.push({
-      id: 'sponsored',
-      field: 'Visa',
-      value: 'Sponsorship available',
-      remove: () => set({ sponsoredOnly: false }),
+      id: `sponsorship:${value}`,
+      field: 'Sponsorship',
+      value: SPONSORSHIP.find((o) => o.value === value)?.label ?? NOT_SPECIFIED,
+      remove: () =>
+        set({ sponsorship: filters.sponsorship.filter((v) => v !== value) }),
     });
-  }
+  });
 
   return (
     <div className="filterbar" role="search">
@@ -240,7 +256,10 @@ export function Filters({ filters, options, counts, onChange, onClear }: Props) 
         <FilterSelect
           label="Salary"
           multiple={false}
-          options={SALARY_BANDS}
+          options={SALARY_BANDS.map((b) => ({
+            ...b,
+            count: counts?.salaryMin?.get(b.value) ?? 0,
+          }))}
           selected={filters.salaryMin !== 0 ? [String(filters.salaryMin)] : []}
           onChange={(next) => set({ salaryMin: Number(next[0] ?? 0) })}
         />
@@ -248,7 +267,10 @@ export function Filters({ filters, options, counts, onChange, onClear }: Props) 
         <FilterSelect
           label="Posted"
           multiple={false}
-          options={POSTED_WINDOWS}
+          options={POSTED_WINDOWS.map((w) => ({
+            ...w,
+            count: counts?.postedWithinDays?.get(w.value) ?? 0,
+          }))}
           selected={filters.postedWithinDays > 0 ? [String(filters.postedWithinDays)] : []}
           onChange={(next) => set({ postedWithinDays: Number(next[0] ?? 0) })}
         />
@@ -256,25 +278,25 @@ export function Filters({ filters, options, counts, onChange, onClear }: Props) 
         <FilterSelect
           label="Starts"
           multiple={false}
-          options={START_WINDOWS}
+          options={START_WINDOWS.map((w) => ({
+            ...w,
+            count: counts?.startsWithinDays?.get(w.value) ?? 0,
+          }))}
           selected={filters.startsWithinDays !== 0 ? [String(filters.startsWithinDays)] : []}
           onChange={(next) => set({ startsWithinDays: Number(next[0] ?? 0) })}
         />
 
-        {/* Two labels, one per breakpoint: the full phrase doesn't fit a
-            half-width chip on a phone. The aria-label keeps the long wording
-            in the accessibility tree at every size, so what a screen reader
-            announces never depends on the viewport. */}
-        <label className="chip-toggle chip-sponsor">
-          <input
-            type="checkbox"
-            aria-label="Visa sponsorship available"
-            checked={filters.sponsoredOnly}
-            onChange={(e) => set({ sponsoredOnly: e.target.checked })}
+        <div className={`fselect-sponsor${filters.sponsorship.length ? ' is-set' : ''}`}>
+          <FilterSelect
+            label="Sponsorship"
+            options={SPONSORSHIP.map((o) => ({
+              ...o,
+              count: counts?.sponsorship?.get(o.value) ?? 0,
+            }))}
+            selected={filters.sponsorship}
+            onChange={(next) => set({ sponsorship: next })}
           />
-          <span className="chip-label-long">Visa sponsorship available</span>
-          <span className="chip-label-short">Sponsorship</span>
-        </label>
+        </div>
       </div>
 
       {chips.length > 0 && (

@@ -3,7 +3,7 @@ import './App.css';
 import { Job } from './types';
 import { loadJobs, isOpenOn } from './jobs';
 import { loadCompanies } from './companies';
-import { dateValue, todayISO } from './format';
+import { dateValue, todayISO, isStartAsap } from './format';
 import {
   pathwayVisasFor,
   occupationCodesFor,
@@ -49,7 +49,7 @@ const EMPTY_FILTERS: FilterState = {
   salaryMin: 0,
   startsWithinDays: 0,
   postedWithinDays: 0,
-  sponsoredOnly: false,
+  sponsorship: [],
 };
 
 /**
@@ -99,7 +99,13 @@ function matches(job: Job, filters: FilterState, dates: DateCutoffs): boolean {
   // couldn't read a number from at all.
   if (filters.salaryMin < 0 && job.salaryMaxAnnual > 0) return false;
   if (filters.salaryMin > 0 && job.salaryMaxAnnual < filters.salaryMin) return false;
-  if (filters.sponsoredOnly && !job.employerSponsored) return false;
+  // '' is the answer for a role that never said, so a blank field matches
+  // "Not specified" and nothing else.
+  if (filters.sponsorship.length) {
+    const answer =
+      job.employerSponsored === true ? 'yes' : job.employerSponsored === false ? 'no' : '';
+    if (!filters.sponsorship.includes(answer)) return false;
+  }
 
   // A role we can't date can't be shown to be recent, so it drops out when the
   // reader asks for recent ones.
@@ -109,14 +115,17 @@ function matches(job: Job, filters: FilterState, dates: DateCutoffs): boolean {
   }
 
   // A role already under way counts as starting within any window: it is
-  // available now, which is the question the filter is really asking.
+  // available now, which is the question the filter is really asking. A role
+  // starting as soon as someone is found is the same answer, stated instead of
+  // dated — so it belongs in every window, and not under "not specified".
   const { startsBy } = dates;
   if (startsBy !== 0) {
+    const asap = isStartAsap(job.startDate);
     const starts = dateValue(job.startDate);
-    const known = Number.isFinite(starts);
+    const known = asap || Number.isFinite(starts);
     if (startsBy < 0) {
       if (known) return false;
-    } else if (!known || starts > startsBy) {
+    } else if (!known || (!asap && starts > startsBy)) {
       return false;
     }
   }
@@ -248,6 +257,10 @@ function App() {
       return counted;
     };
 
+    const sponsorshipOf = (job: Job) => [
+      job.employerSponsored === true ? 'yes' : job.employerSponsored === false ? 'no' : '',
+    ];
+
     const pickers: Record<FilterListKey, (job: Job) => string[]> = {
       types: (j) => [j.type],
       levels: (j) => [j.jobLevel],
@@ -259,12 +272,44 @@ function App() {
       skills: (j) => j.skills,
     };
 
-    return Object.fromEntries(
+    const byFilter = Object.fromEntries(
       (Object.keys(pickers) as FilterListKey[]).map((key) => [
         key,
         tally(without(key), pickers[key]),
       ])
     ) as Record<FilterListKey, Map<string, number>>;
+
+    // Sponsorship isn't one of the list filters, so it counts on its own — with
+    // its own selection lifted, like the rest.
+    const forSponsorship = openJobs.filter((job) =>
+      matches(job, { ...filters, sponsorship: [] }, dates)
+    );
+
+    /**
+     * The single-choice filters — salary and the two date windows — can't be
+     * tallied by walking a job's values, because their options are thresholds
+     * rather than things a job "has". Each option is counted by running the
+     * filter as if it were picked, with its own current choice lifted.
+     */
+    const countThresholds = (key: 'salaryMin' | 'postedWithinDays' | 'startsWithinDays', values: string[]) => {
+      const counted = new Map<string, number>();
+      values.forEach((value) => {
+        const asked = { ...filters, [key]: Number(value) };
+        counted.set(
+          value,
+          openJobs.filter((job) => matches(job, asked, cutoffs(asked))).length
+        );
+      });
+      return counted;
+    };
+
+    return {
+      ...byFilter,
+      sponsorship: tally(forSponsorship, sponsorshipOf),
+      salaryMin: countThresholds('salaryMin', ['40000', '60000', '80000', '100000', '-1']),
+      postedWithinDays: countThresholds('postedWithinDays', ['1', '2', '7', '14', '30', '60']),
+      startsWithinDays: countThresholds('startsWithinDays', ['30', '90', '180', '-1']),
+    };
   }, [openJobs, filters]);
 
   const options: FilterOptions = useMemo(() => {

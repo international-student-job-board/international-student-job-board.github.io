@@ -1003,7 +1003,7 @@ optgroup {
 
 .job-card:hover {
   box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 /* Pressing pushes it back down into the page — the shadow shrinks rather than
@@ -2569,10 +2569,12 @@ a.occ-visa-code:focus-visible {
     padding: var(--s6) var(--gutter);
   }
 
-  /* On a phone the list is the whole page, so it drops the tint and the cards
-     sit directly on white — a full-bleed grey column reads as a mistake. */
+  /* Keeps the tint. It was dropped here on the grounds that a full-bleed grey
+     column reads as a mistake — but on a phone this panel *is* the page, so it
+     reads as a page background, and white cards need a surface to sit on. On
+     white they had none, which took the hover and the resting elevation with
+     it: a white card cannot come forward off white. */
   .jobs-panel {
-    background: var(--white);
     padding: var(--s5) var(--gutter);
     border-right: 0;
   }
@@ -2782,7 +2784,7 @@ a.occ-visa-code:focus-visible {
 
 .company-card:hover {
   box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 /* In a grid where every card is a link, the underlined-link treatment is
@@ -3220,4 +3222,34 @@ a.occ-visa-code:focus-visible {
   flex-wrap: wrap;
   gap: var(--s2);
   margin-top: var(--s2);
+}
+
+/* The ASAP tick sits under the date it replaces, not beside it: it is an
+   answer to the same question, not a second question. */
+.asap-check {
+  margin-top: var(--s1);
+  font-size: var(--fs-sm);
+}
+
+/* The sponsorship filter keeps the accent it had as a chip: it is the one
+   control this audience comes for. The colour is on the edge only — the fill
+   stays neutral so the trigger still reads as one of the row. */
+.fselect-sponsor .fselect-trigger {
+  border-color: var(--sponsor);
+}
+
+.fselect-sponsor.is-set .fselect-trigger {
+  background: var(--sponsor);
+  border-color: var(--sponsor);
+  color: var(--white);
+}
+
+.fselect-sponsor.is-set .fselect-count {
+  background: var(--white);
+  color: var(--sponsor);
+}
+
+.fselect-sponsor.is-set .fselect-trigger::after {
+  /* The chevron is drawn in ink, which disappears on the filled state. */
+  filter: invert(1) brightness(2);
 }
