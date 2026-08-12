@@ -11,6 +11,28 @@
 // our origin but not the path, so the destination learns which site sent them
 // without learning which page the reader was on.
 
+/**
+ * Schemes a link is allowed to use. Everything on this site's pages is built
+ * from data files — jobs.json, the companies CSV, occupations.json — so a URL
+ * is only ever as trustworthy as whoever last edited those. A `javascript:`
+ * href in any of them would run on click, which is stored XSS; an allowlist
+ * costs nothing and closes it whatever the data says.
+ */
+const SAFE_SCHEMES = ['http:', 'https:', 'mailto:'];
+
+/** The URL if it is safe to link to, otherwise an empty string. */
+export function safeHref(url: string): string {
+  const trimmed = (url ?? '').trim();
+  if (!trimmed) return '';
+  // Our own routes and anchors.
+  if (/^[#/]/.test(trimmed)) return trimmed;
+  try {
+    return SAFE_SCHEMES.includes(new URL(trimmed).protocol) ? trimmed : '';
+  } catch {
+    return '';
+  }
+}
+
 export const OUTBOUND = {
   target: '_blank',
   rel: 'noopener',
@@ -24,7 +46,7 @@ export const OUTBOUND = {
  * that doesn't parse — a broken link is worse than an untagged one.
  */
 export function outboundHref(url: string, campaign: string): string {
-  const trimmed = url.trim();
+  const trimmed = safeHref(url);
   if (!/^https?:\/\//i.test(trimmed)) return trimmed;
   try {
     const parsed = new URL(trimmed);
@@ -60,7 +82,7 @@ export function emailApplyHref(
   siteName: string,
   siteUrl: string
 ): string {
-  const trimmed = mailto.trim();
+  const trimmed = safeHref(mailto);
   if (!/^mailto:/i.test(trimmed)) return trimmed;
 
   const [address, query = ''] = trimmed.slice('mailto:'.length).split('?');

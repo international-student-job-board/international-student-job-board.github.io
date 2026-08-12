@@ -2117,8 +2117,13 @@ a.occ-visa-code:focus-visible {
 }
 
 /* Never below 16px: iOS Safari zooms the viewport when a smaller field takes
-   focus, which hides the rest of the form mid-entry. */
-.field input,
+   focus, which hides the rest of the form mid-entry.
+   
+   Checkboxes and radios are excluded deliberately. They are drawn as 18px
+   boxes further up this file at the same specificity as this rule, so without
+   the exclusion the later rule won and stretched every tick box to the full
+   width of the field, covering the label beside it. */
+.field input:not([type='checkbox']):not([type='radio']),
 .field select,
 .field textarea {
   width: 100%;
@@ -2133,14 +2138,14 @@ a.occ-visa-code:focus-visible {
   transition: border-color 0.15s var(--ease);
 }
 
-.field input:hover,
+.field input:not([type='checkbox']):not([type='radio']):hover,
 .field select:hover,
 .field textarea:hover {
   border-color: var(--line-strong);
 }
 
 /* Darkened border on focus, on top of (not instead of) the shared focus ring. */
-.field input:focus,
+.field input:not([type='checkbox']):not([type='radio']):focus,
 .field select:focus,
 .field textarea:focus {
   border-color: var(--ink);
@@ -2520,12 +2525,17 @@ a.occ-visa-code:focus-visible {
     max-width: none;
   }
 
-  .fselect,
-  .chip-toggle {
+  /* Scoped to the filter row on purpose. The row is a horizontal flex, so a
+     flex-basis here means width — but the same control is also used inside
+     .field, which is a *column* flex, where the identical declaration means
+     height and left a 140px hole under the occupation picker with its panel
+     hanging off the bottom of it. */
+  .filter-row .fselect,
+  .filter-row .chip-toggle {
     flex: 1 1 140px;
   }
 
-  .fselect-trigger {
+  .filter-row .fselect-trigger {
     width: 100%;
     max-width: none;
     justify-content: space-between;
@@ -3074,4 +3084,140 @@ a.occ-visa-code:focus-visible {
    full grid, so it reads as a note and not as a heading. */
 .about-section .panel-banner {
   margin: 0 0 var(--s5);
+}
+
+/* ---- Occupation picker --------------------------------------------------
+   Reuses the filter dropdown wholesale, so choosing occupations on a form and
+   filtering jobs by them are the same control learned once. These are the few
+   places it differs. */
+
+/* The trigger fills the field rather than sizing to its label, since it sits
+   in a form column and not in a row of filter pills. */
+.field .fselect,
+.field .fselect-trigger {
+  width: 100%;
+  max-width: none;
+}
+
+.field .fselect-trigger {
+  justify-content: space-between;
+}
+
+/* Long lists get the same treatment as the standalone occupation list: the
+   browser skips laying out rows scrolled out of view. */
+.fselect-options .fselect-option {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 34px;
+}
+
+/* The code sits ahead of the title in a fixed column so the names line up. */
+.fselect-option .combo-code {
+  min-width: 4.5em;
+}
+
+/* "Add what I typed" is an action, not an option, so it reads as a button
+   rather than another tick box. */
+.fselect-add {
+  width: 100%;
+  border: 0;
+  font-family: inherit;
+  font-weight: var(--fw-strong);
+  text-align: left;
+  color: var(--ink);
+  background: var(--soft);
+  cursor: pointer;
+}
+
+.fselect-add:hover {
+  background: var(--chip);
+}
+
+/* The provenance tag carries a tooltip, so it holds the "i" inline rather than
+   being plain text like the other flags. */
+.flag .info-tip {
+  margin-left: 2px;
+}
+
+/* ---- Who's hiring -------------------------------------------------------
+   The person behind the listing. Plain text rather than a card: it is one or
+   two lines, and boxing it would give it more weight than the role itself. */
+.hiring-contact-name {
+  margin: 0;
+  font-size: var(--fs-body);
+  font-weight: var(--fw-strong);
+  color: var(--ink);
+}
+
+/* Under the name, and a step down in both size and colour: it answers "in what
+   capacity", which nobody reads before they have read the name. */
+.hiring-contact-role {
+  margin: 0 0 var(--s2);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+/* How many results an option would leave. Pushed to the far edge and dropped
+   to the quiet grey: it answers "is this worth clicking", which is a question
+   you only ask after reading the label, so it must never be read first. */
+.fselect-option-count {
+  margin-left: auto;
+  padding-left: var(--s2);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+/* A dead end is worth showing rather than hiding — it says "we have this
+   field, nothing matches it right now" instead of leaving you wondering. */
+.fselect-option:has(input:not(:checked)) .fselect-option-count:empty::before {
+  content: '0';
+}
+
+/* ================= Local admin =================
+   A page, not a panel bolted onto the employer one. It only exists in a dev
+   build, so it borrows the ordinary form styling rather than shouting about
+   being a tool. */
+.admin-page .job-form {
+  margin-top: var(--s5);
+}
+
+/* Steps in the order an ad gets transcribed, each one legible as a step. */
+.admin-group {
+  margin: 0;
+  padding: 0 0 var(--s5);
+  border: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.admin-group:last-of-type {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.admin-group > legend {
+  padding: 0 0 var(--s3);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* The confirmation sits where the eye lands after pressing Save. */
+.job-form-saved {
+  margin: 0;
+  padding: 2px 0 2px var(--s4);
+  border-left: 3px solid var(--ink);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-strong);
+  line-height: var(--lh-body);
+  color: var(--ink);
+}
+
+/* Two ways forward from an empty board, side by side: one primary, one not. */
+.panel-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-top: var(--s2);
 }

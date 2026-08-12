@@ -1,14 +1,32 @@
 {
-  "jobLevel": ["Internship", "Graduate", "Junior", "Mid", "Senior", "Other"],
-  "type": ["Full-time", "Part-time", "Casual", "Contract", "Internship"],
-  "arrangement": ["On-site", "Hybrid", "Remote"],
+  "jobLevel": [
+    "Internship",
+    "Graduate",
+    "Junior",
+    "Mid",
+    "Senior"
+  ],
+  "type": [
+    "Full-time",
+    "Part-time",
+    "Casual",
+    "Contract",
+    "Freelance"
+  ],
+  "arrangement": [
+    "On-site",
+    "Hybrid",
+    "Remote"
+  ],
   "educationLevel": [
-    "Bachelor's",
-    "Bachelor's (can apply in your final year)",
-    "Master's",
     "Diploma",
-    "PhD",
-    "Other"
+    "Certification",
+    "Bachelor",
+    "Final year of degree",
+    "Master",
+    "Graduate Diploma",
+    "Graduate Certification",
+    "PhD"
   ],
   "assessment": [
     "ACS",
@@ -20,22 +38,5 @@
     "ANMAC",
     "Trades Recognition Australia"
   ],
-  "skills": [
-    "Python",
-    "JavaScript",
-    "TypeScript",
-    "React",
-    "Java",
-    "C++",
-    "SQL",
-    "MATLAB",
-    "Data analysis",
-    "Machine learning",
-    "Cloud (AWS)",
-    "Git",
-    "CAD",
-    "Communication",
-    "Problem solving",
-    "Teamwork"
-  ]
+  "skills": []
 }

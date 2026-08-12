@@ -5,6 +5,10 @@ const NAV = [
   { route: 'companies', label: 'Startups currently hiring' },
   { route: 'post', label: 'Post a job' },
   { route: 'about', label: 'About' },
+  // Only ever built into a local dev bundle, so it can't reach the live site.
+  ...(process.env.NODE_ENV === 'development'
+    ? [{ route: 'admin', label: 'Add a job' }]
+    : []),
 ];
 
 export function Header({ route }: { route: string }) {

@@ -53,7 +53,7 @@ function toJob(row: Record<string, string>): Job {
     location: row.location?.trim() ?? '',
     jobLevel: row.job_level?.trim() ?? '',
     type: row.type?.trim() ?? '',
-    arrangement: row.arrangement?.trim() ?? '',
+    arrangements: pipeList(row.arrangement ?? ''),
     salary: row.salary?.trim() ?? '',
     ...(() => {
       const { min, max } = parseSalaryAnnual(row.salary ?? '');
@@ -65,7 +65,14 @@ function toJob(row: Record<string, string>): Job {
     skillAssessment: row.skill_assessment?.trim() ?? '',
     anzscos: pipeList(row.anzsco ?? ''),
     employerSponsored: isTruthy(row.employer_sponsored ?? ''),
+    contactPublic: isTruthy(row.contact_public ?? ''),
+    contactName: row.contact_name?.trim() ?? '',
+    contactPosition: row.contact_position?.trim() ?? '',
+    contactLinkedin: row.contact_linkedin?.trim() ?? '',
+    contactWebsite: row.contact_website?.trim() ?? '',
+    contactEmail: row.contact_email?.trim() ?? '',
     posted: row.posted?.trim() ?? '',
+    startDate: row.start_date?.trim() ?? '',
     closes: row.closes?.trim() ?? '',
     skills: pipeList(row.skills ?? ''),
     summary: row.summary?.trim() ?? '',
@@ -75,19 +82,37 @@ function toJob(row: Record<string, string>): Job {
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
+/** How long a listing with no closing date stays up. */
+const MONTHS_WITHOUT_A_CLOSING_DATE = 3;
+
+/** The same ISO date, that many calendar months later. */
+function monthsLater(iso: string, months: number): string {
+  const date = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return '';
+  date.setUTCMonth(date.getUTCMonth() + months);
+  return date.toISOString().slice(0, 10);
+}
+
 /**
  * Whether a role is still open on a given day, both dates being YYYY-MM-DD in
  * the viewer's timezone — ISO dates compare correctly as plain strings, which
  * sidesteps the timezone trap in parsing them.
  *
  * A role stays listed through its closing date and drops off the day after.
- * A missing or unreadable date means no deadline was given, so the role stays:
- * a blank field is not evidence that something has closed.
+ * With no closing date it lapses three months after it went up: an open-ended
+ * listing is almost always one nobody came back to close, and a stale role
+ * wastes more of a student's time than a missing one does.
+ *
+ * A role with no dates at all stays, because there is nothing to judge it by.
  */
 export function isOpenOn(job: Job, today: string): boolean {
   const closes = job.closes.trim();
-  if (!ISO_DATE.test(closes)) return true;
-  return closes >= today;
+  if (ISO_DATE.test(closes)) return closes >= today;
+
+  const posted = job.posted.trim();
+  if (!ISO_DATE.test(posted)) return true;
+  const lapses = monthsLater(posted, MONTHS_WITHOUT_A_CLOSING_DATE);
+  return !lapses || lapses >= today;
 }
 
 /**

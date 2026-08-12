@@ -3,6 +3,8 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 export interface SelectOption {
   value: string;
   label: string;
+  /** How many results this option would leave. Omitted where not counted. */
+  count?: number;
 }
 
 interface Props {
@@ -158,6 +160,16 @@ export function FilterSelect({ label, options, selected, onChange, multiple = tr
                     }}
                   />
                   <span className="fselect-option-label">{option.label}</span>
+                  {option.count !== undefined && (
+                    <span className="fselect-option-count">
+                      {option.count}
+                      {/* The number is inside the label, so it reads out as
+                          part of the option. On its own "3" says nothing. */}
+                      <span className="visually-hidden">
+                        {option.count === 1 ? ' result' : ' results'}
+                      </span>
+                    </span>
+                  )}
                 </label>
               ))
             )}

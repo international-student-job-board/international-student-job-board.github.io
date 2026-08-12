@@ -20,9 +20,18 @@ export function JobCard({ job, selected, onSelect }: Props) {
         <span className="job-card-company">{job.company}</span>
 
         <span className="job-card-meta">
-          {[job.jobLevel, job.type, job.arrangement].filter(Boolean).join(' · ')}
+          {[job.jobLevel, job.type, ...job.arrangements].filter(Boolean).join(' · ')}
         </span>
-        <span className="job-card-meta job-card-posted">Posted {formatDate(job.posted)}</span>
+        {/* The application window, which is what decides whether a reader can
+            still act on this card at all. */}
+        <span className="job-card-meta job-card-posted">
+          {[
+            job.posted ? `Open ${formatDate(job.posted)}` : '',
+            job.closes ? `closes ${formatDate(job.closes)}` : '',
+          ]
+            .filter(Boolean)
+            .join(' · ') || 'Application dates not specified'}
+        </span>
         {job.employerSponsored && (
           <span className="job-card-flags">
             <span className="flag flag-sponsor">Visa sponsorship available</span>

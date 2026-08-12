@@ -26,3 +26,12 @@ export function formatDate(iso: string): string {
     year: 'numeric',
   });
 }
+
+/**
+ * What a field reads as when a role doesn't carry it. Shown rather than left
+ * blank so a gap in the data is legible as a gap, not as an oversight in the
+ * page — and so the filters can offer it as something to search for.
+ */
+export const NOT_SPECIFIED = 'Not specified';
+
+export const orNotSpecified = (value: string) => value.trim() || NOT_SPECIFIED;

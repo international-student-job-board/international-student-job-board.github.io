@@ -74,24 +74,61 @@ export function Companies() {
 
   // Values within a filter are OR'd and the two filters are AND'd, matching how
   // the job board's filters behave — one rule to learn, not two.
+  const overlaps = (selected: string[], values: string[]) =>
+    selected.length === 0 || values.some((v) => selected.includes(v));
+
+  const matchesReview = (selected: string[], c: Company) =>
+    selected.length === 0 ||
+    selected.some((r) => (r === 'sponsors' ? c.sponsorsVisas : c.hiresInternationalStudents));
+
   const shown = useMemo(() => {
-    const overlaps = (selected: string[], values: string[]) =>
-      selected.length === 0 || values.some((v) => selected.includes(v));
-
-    const matchesReview = (c: Company) =>
-      review.length === 0 ||
-      review.some((r) =>
-        r === 'sponsors' ? c.sponsorsVisas : c.hiresInternationalStudents
-      );
-
     const filtered = searchCompanies(companies, query).filter(
       (c) =>
         overlaps(industries, c.industries) &&
         overlaps(types, c.types) &&
-        matchesReview(c)
+        matchesReview(review, c)
     );
     return sortCompanies(filtered, sort);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companies, query, industries, types, review, sort]);
+
+  /**
+   * How many companies each option would leave, counted with that filter's own
+   * selection lifted — otherwise every unpicked value in a filter you have
+   * already used reads as zero, because that filter has just excluded them.
+   */
+  const counts = useMemo(() => {
+    const base = searchCompanies(companies, query);
+    const tally = (pool: Company[], pick: (c: Company) => string[]) => {
+      const counted = new Map<string, number>();
+      pool.forEach((c) =>
+        Array.from(new Set(pick(c))).forEach((v) =>
+          counted.set(v, (counted.get(v) ?? 0) + 1)
+        )
+      );
+      return counted;
+    };
+
+    const forIndustries = base.filter(
+      (c) => overlaps(types, c.types) && matchesReview(review, c)
+    );
+    const forTypes = base.filter(
+      (c) => overlaps(industries, c.industries) && matchesReview(review, c)
+    );
+    const forReview = base.filter(
+      (c) => overlaps(industries, c.industries) && overlaps(types, c.types)
+    );
+
+    return {
+      industries: tally(forIndustries, (c) => c.industries),
+      types: tally(forTypes, (c) => c.types),
+      review: new Map<string, number>([
+        ['sponsors', forReview.filter((c) => c.sponsorsVisas).length],
+        ['international', forReview.filter((c) => c.hiresInternationalStudents).length],
+      ]),
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companies, query, industries, types, review]);
 
   const openings = shown.reduce((total, c) => total + c.openings, 0);
   const applied = industries.length + types.length + review.length;
@@ -101,24 +138,20 @@ export function Companies() {
       <header className="about-intro">
         <h1>Startups currently hiring</h1>
         <p>
-          Melbourne startups and scaleups with roles open right now! Not every open role is on our
-          board yet, so go straight to the company if you vibe with the employer.
+          Feel like the title says it all ~
         </p>
       </header>
 
       <section className="about-section" aria-labelledby="companies-heading">
-        <h2 id="companies-heading" className="visually-hidden">
-          Companies
-        </h2>
-
-        {/* Context first, then the controls, then the results: the same order
-            the jobs page reads in, so the two pages are learned once. */}
-        <p className="panel-banner">
-          We're working through this list by hand to confirm which startups sponsor visas and
-          which hire international students. A company without those tags hasn't been checked
-          yet, so it's worth asking them directly.
+      <h2 id="companies-heading">
+          Startups and scaleups
+      </h2>
+      <p className="panel-banner">
+         Not every open role is on our board yet and we're working through this list manually
+         to confirm which startups sponsor visas and
+         which hire international students. A company without those tags hasn't been checked
+         yet, so it's worth asking them 'bout this directly.
         </p>
-
         <div className="company-controls filter-row" role="search">
           <div className="filter-search">
             <label className="visually-hidden" htmlFor="company-search">
@@ -143,19 +176,30 @@ export function Companies() {
 
           <FilterSelect
             label="Industry"
-            options={options.industries.map((v) => ({ value: v, label: v }))}
+            options={options.industries.map((v) => ({
+              value: v,
+              label: v,
+              count: counts.industries.get(v) ?? 0,
+            }))}
             selected={industries}
             onChange={setIndustries}
           />
           <FilterSelect
             label="Type"
-            options={options.types.map((v) => ({ value: v, label: v }))}
+            options={options.types.map((v) => ({
+              value: v,
+              label: v,
+              count: counts.types.get(v) ?? 0,
+            }))}
             selected={types}
             onChange={setTypes}
           />
           <FilterSelect
             label="Visa support"
-            options={REVIEW_FILTERS}
+            options={REVIEW_FILTERS.map((f) => ({
+              ...f,
+              count: counts.review.get(f.value) ?? 0,
+            }))}
             selected={review}
             onChange={setReview}
           />
@@ -267,7 +311,7 @@ function CompanyCard({
   company: Company;
   onHover?: (name: string | null) => void;
 }) {
-  const href = company.website || company.linkedin;
+  const href = outboundHref(company.website || company.linkedin, 'startups');
   const meta = [company.segment, company.employees && `${company.employees} people`]
     .filter(Boolean)
     .join(' · ');
@@ -286,15 +330,19 @@ function CompanyCard({
       onBlur={() => onHover?.(null)}
     >
       <div className="company-card-head">
-        <a
-          className="company-card-name"
-          href={outboundHref(href, 'startups')}
-          target="_blank"
-          rel="noopener"
+        {href ? (
+          <a
+            className="company-card-name"
+            href={href}
+            target="_blank"
+            rel="noopener"
             referrerPolicy="strict-origin-when-cross-origin"
-        >
-          {company.name}
-        </a>
+          >
+            {company.name}
+          </a>
+        ) : (
+          <span className="company-card-name">{company.name}</span>
+        )}
         {company.openings > 0 && (
           <span className="company-card-openings">
             {company.openings} open {company.openings === 1 ? 'role' : 'roles'}

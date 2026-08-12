@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { visaName, anzscoUrl, assessmentUrl } from '../references';
 import { AnzscoOccupation, loadAnzscoCodes } from '../anzsco';
+import { postJson } from '../devApi';
 import { PickOrAdd } from './PickOrAdd';
 import { VisaTagPicker } from './VisaTagPicker';
 
@@ -104,7 +105,7 @@ export function AddOccupation({
     if (!visaList.length) {
       setStatus('error');
       setMessage(
-        'Add at least one visa this occupation can be used for — that is what the entry exists to record.'
+        'Add at least one visa this occupation can be used for.'
       );
       return;
     }
@@ -122,20 +123,12 @@ export function AddOccupation({
     setStatus('saving');
     setMessage('');
     try {
-      const res = await fetch('/api/occupations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(record),
-      });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
+      await postJson('/api/occupations', record);
       onAdded({ code: record.code, name: record.name, visaCodes: visaList.map((v) => v.code) });
     } catch (err) {
       setStatus('error');
       setMessage(
-        `Couldn't save the occupation - is the dev server running? (npm run dev-server). ${
-          err instanceof Error ? err.message : ''
-        }`
+        err instanceof Error ? err.message : "Couldn't save the occupation."
       );
     }
   };

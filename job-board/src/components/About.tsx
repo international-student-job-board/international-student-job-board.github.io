@@ -8,7 +8,7 @@ const HOW_STUDENTS = [
 ];
 
 const HOW_STARTUPS = [
-  { n: 1, title: 'Tell us about the role', body: 'Email a PDF job advert, a link, or fill in the form with the job details.' },
+  { n: 1, title: 'Tell us about the role', body: 'Email a PDF / link to the job advert.' },
   { n: 2, title: 'We review it', body: 'We manually go through the jobs posted, match them with the visa requirements, and add it to the site.' },
   { n: 3, title: 'Job gets posted', body: 'Your role appears on the board and links applicants to your preferred site for applications.' },
 ];
@@ -33,6 +33,7 @@ const NEXT = [
   'Track how your application is progressing',
   'Interview tips and reviews from international students who applied to these startups before',
   'Networking events',
+  '. . . a working backend',
 ];
 
 export function About() {

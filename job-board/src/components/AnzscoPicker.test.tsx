@@ -15,24 +15,29 @@ function Harness() {
   const [value, setValue] = useState<string[]>([]);
   return (
     <>
-      <AnzscoPicker id="occ" label="Occupation" value={value} onChange={setValue} />
+      <AnzscoPicker id="occ" label="Occupations" value={value} onChange={setValue} />
       <output data-testid="value">{value.join(' | ')}</output>
     </>
   );
 }
 
+/** Opens the panel and waits for the list to arrive. */
 const openPicker = async () => {
   render(<Harness />);
-  const input = screen.getByRole('combobox', { name: 'Occupation' });
-  fireEvent.focus(input);
-  await waitFor(() => expect(screen.getByRole('listbox')).toBeInTheDocument());
-  return input;
+  fireEvent.click(screen.getByRole('button', { name: /choose occupations/i }));
+  await waitFor(() =>
+    expect(screen.getByRole('checkbox', { name: /software engineer/i })).toBeInTheDocument()
+  );
 };
 
-const optionTexts = () =>
-  within(screen.getByRole('listbox'))
-    .getAllByRole('option')
-    .map((o) => o.textContent ?? '');
+const tick = (name: RegExp) => fireEvent.click(screen.getByRole('checkbox', { name }));
+const search = (text: string) =>
+  fireEvent.change(screen.getByRole('textbox', { name: /search occupations/i }), {
+    target: { value: text },
+  });
+const options = () =>
+  within(screen.getByRole('group', { name: /occupations/i })).getAllByRole('checkbox');
+const panelOpen = () => screen.queryByRole('group', { name: /occupations/i }) !== null;
 
 beforeEach(() => {
   (global as unknown as { fetch: unknown }).fetch = jest
@@ -44,72 +49,67 @@ afterEach(() => {
   jest.resetAllMocks();
 });
 
-test('focusing lists every occupation, so the list can be browsed', async () => {
+test('the panel lists every occupation as a tick box', async () => {
   await openPicker();
-  expect(optionTexts()).toHaveLength(5);
+  expect(options()).toHaveLength(5);
 });
 
-test('typing a code prefix narrows to it — the regression', async () => {
-  const input = await openPicker();
-  fireEvent.change(input, { target: { value: '233' } });
+test('ticking keeps the panel open, so several can be chosen in one pass', async () => {
+  await openPicker();
 
-  const texts = optionTexts();
-  expect(texts).toHaveLength(3);
-  texts.forEach((t) => expect(t).toMatch(/^233/));
-  expect(texts.join(' ')).not.toMatch(/Software Engineer/);
-});
-
-test('typing a job name narrows too', async () => {
-  const input = await openPicker();
-  fireEvent.change(input, { target: { value: 'civil' } });
-  expect(optionTexts()).toEqual(['233211Civil Engineer']);
-});
-
-test('choosing an option stores the code and the title together', async () => {
-  const input = await openPicker();
-  fireEvent.change(input, { target: { value: '233211' } });
-  fireEvent.click(screen.getByRole('option', { name: /civil engineer/i }));
-
-  expect(screen.getByTestId('value')).toHaveTextContent('233211 Civil Engineer');
-});
-
-test('free text is kept when Enter is pressed on something that matches nothing', async () => {
-  const input = await openPicker();
-  fireEvent.change(input, { target: { value: 'underwater basket weaver' } });
-  expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
-
-  // Typing alone is a search; Enter is what commits, so an occupation that
-  // isn't on the list can still be recorded.
-  fireEvent.keyDown(input, { key: 'Enter' });
-  expect(screen.getByTestId('value')).toHaveTextContent('underwater basket weaver');
-});
-
-test('several occupations can be held at once', async () => {
-  const input = await openPicker();
-
-  fireEvent.change(input, { target: { value: 'civil' } });
-  fireEvent.click(screen.getByRole('option', { name: /civil engineer/i }));
-  fireEvent.change(input, { target: { value: 'software' } });
-  fireEvent.click(screen.getByRole('option', { name: /software engineer/i }));
+  tick(/civil engineer/i);
+  expect(panelOpen()).toBe(true);
+  tick(/software engineer/i);
+  expect(panelOpen()).toBe(true);
 
   expect(screen.getByTestId('value')).toHaveTextContent(
     '233211 Civil Engineer | 261313 Software Engineer'
   );
 });
 
-test('an occupation already chosen drops out of the list', async () => {
-  const input = await openPicker();
-  fireEvent.change(input, { target: { value: 'civil' } });
-  fireEvent.click(screen.getByRole('option', { name: /civil engineer/i }));
-
-  fireEvent.change(input, { target: { value: 'civil' } });
-  expect(screen.queryByRole('option', { name: /civil engineer/i })).not.toBeInTheDocument();
+test('a ticked occupation can be unticked again', async () => {
+  await openPicker();
+  tick(/civil engineer/i);
+  tick(/civil engineer/i);
+  expect(screen.getByTestId('value')).toHaveTextContent('');
 });
 
-test('a chosen occupation can be removed again', async () => {
-  const input = await openPicker();
-  fireEvent.change(input, { target: { value: 'civil' } });
-  fireEvent.click(screen.getByRole('option', { name: /civil engineer/i }));
+test('searching narrows the tick boxes', async () => {
+  await openPicker();
+  search('233');
+
+  const shown = options();
+  expect(shown).toHaveLength(3);
+  shown.forEach((box) => expect(box.parentElement?.textContent).toMatch(/^233/));
+});
+
+test('the trigger reports how many are chosen', async () => {
+  await openPicker();
+  tick(/civil engineer/i);
+  expect(screen.getByRole('button', { name: /1 chosen/i })).toBeInTheDocument();
+});
+
+test('an occupation off the list can be added deliberately', async () => {
+  await openPicker();
+  search('Underwater Basket Weaver');
+  fireEvent.click(screen.getByRole('button', { name: /add .* as typed/i }));
+
+  expect(screen.getByTestId('value')).toHaveTextContent('Underwater Basket Weaver');
+});
+
+test('escape closes the panel and leaves the choices alone', async () => {
+  await openPicker();
+  tick(/civil engineer/i);
+  fireEvent.keyDown(document, { key: 'Escape' });
+
+  expect(panelOpen()).toBe(false);
+  expect(screen.getByTestId('value')).toHaveTextContent('233211 Civil Engineer');
+});
+
+test('chosen occupations can be removed from the chip list', async () => {
+  await openPicker();
+  tick(/civil engineer/i);
+  fireEvent.keyDown(document, { key: 'Escape' });
 
   fireEvent.click(screen.getByRole('button', { name: /remove occupation/i }));
   expect(screen.getByTestId('value')).toHaveTextContent('');

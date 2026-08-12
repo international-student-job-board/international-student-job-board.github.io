@@ -5,6 +5,7 @@ import { getConstants, ConstantKey } from '../constants';
 import { AddOccupation, NewOccupation } from './AddOccupation';
 import { AnzscoPicker } from './AnzscoPicker';
 import { CompanyPicker } from './CompanyPicker';
+import { postJson } from '../devApi';
 import { Company } from '../companies';
 import { PickOrAdd } from './PickOrAdd';
 import { VisaTagPicker, pipeToList, toggleInPipe } from './VisaTagPicker';
@@ -16,11 +17,11 @@ import { TagSelect } from './TagSelect';
 const CONSTANT_JOB_FIELDS: { key: string; constant: ConstantKey; label: string }[] = [
   { key: 'job_level', constant: 'jobLevel', label: 'Level' },
   { key: 'type', constant: 'type', label: 'Type' },
-  { key: 'arrangement', constant: 'arrangement', label: 'Arrangement' },
   { key: 'education_level', constant: 'educationLevel', label: 'Education needed' },
 ];
 
 const CUSTOM_KEYS = [
+  'arrangement',
   'company',
   'company_about',
   'company_url',
@@ -33,6 +34,32 @@ const CUSTOM_KEYS = [
 ];
 
 const GENERIC_FIELDS = FIELDS.filter((f) => !CUSTOM_KEYS.includes(f.key));
+
+/**
+ * The plain fields, in the order someone actually transcribes an ad, grouped
+ * under headings rather than run together. Anything not listed here still
+ * renders, under "Anything else" — a hardcoded grouping that silently dropped
+ * a new field would be a trap, and jobFields.ts is edited often.
+ */
+const FIELD_GROUPS: { legend: string; keys: string[] }[] = [
+  { legend: 'The role', keys: ['title', 'location', 'salary', 'summary'] },
+  { legend: 'Dates', keys: ['start_date', 'posted', 'closes'] },
+  { legend: 'Applying', keys: ['apply_url'] },
+  {
+    legend: 'Who posted it',
+    keys: [
+      'contact_public',
+      'contact_name',
+      'contact_position',
+      'contact_linkedin',
+      'contact_website',
+      'contact_email',
+    ],
+  },
+];
+
+const GROUPED_KEYS = FIELD_GROUPS.flatMap((g) => g.keys);
+const UNGROUPED = GENERIC_FIELDS.filter((f) => !GROUPED_KEYS.includes(f.key));
 
 const toggle = (arr: string[], value: string) =>
   arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
@@ -63,6 +90,7 @@ export function AdminAddJob() {
   // list has loaded and a name has been typed.
   const [matchedCompany, setMatchedCompany] = useState<Company | undefined>();
   const [eligible, setEligible] = useState<string[]>([]);
+  const [arrangements, setArrangements] = useState<string[]>([]);
   const [pathway, setPathway] = useState<string[]>([]);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [message, setMessage] = useState('');
@@ -86,13 +114,7 @@ export function AdminAddJob() {
 
   // Persist a new value to a constant list and add it to the in-session options.
   const addConstant = async (key: ConstantKey, value: string) => {
-    const res = await fetch('/api/constants', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key, value }),
-    });
-    const body = await res.json();
-    if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
+    const body = await postJson<{ list: string[] }>('/api/constants', { key, value });
     setConstants((prev) => ({ ...prev, [key]: body.list }));
   };
 
@@ -149,6 +171,13 @@ export function AdminAddJob() {
       setMessage(`Please fill in: ${missing.map((f) => f.label).join(', ')}.`);
       return;
     }
+    // jobs.json is grouped by company, so the admin needs one even though the
+    // public form doesn't: without it a role has no group to sit under.
+    if (!draft.company.trim()) {
+      setStatus('error');
+      setMessage('Please give the company a name; the file is grouped by it.');
+      return;
+    }
     if (!occCodes.length) {
       setStatus('error');
       setMessage('Please choose at least one occupation first.');
@@ -166,45 +195,102 @@ export function AdminAddJob() {
     const record = toJobRecord(draft);
     record.anzsco = occCodes.join('|');
     if (eligible.length) record.visa_eligible = eligible.join('|');
-    if (pathway.length) record.visa_pathways = pathway.join('|');
     if (draft.skills?.trim()) record.skills = draft.skills.trim();
+    if (arrangements.length) record.arrangement = arrangements.join('|');
+
+    // Only the pathways the occupations don't already provide. The tags above
+    // are prefilled from the chosen occupations, so writing them back would
+    // copy into every job a fact occupations.json already states once, and the
+    // two would drift the moment the reference file is corrected.
+    const fromOccupations = new Set(occCodes.flatMap(occupationVisaCodes));
+    const extraPathways = pathway.filter((code) => !fromOccupations.has(code));
+    if (extraPathways.length) record.visa_pathways = extraPathways.join('|');
 
     setStatus('saving');
     setMessage('');
     try {
-      const res = await fetch('/api/jobs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(record),
-      });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
+      const body = await postJson<{ job: { id: string } }>('/api/jobs', record);
       setStatus('saved');
       setMessage(`Saved as job #${body.job.id} in jobs.json. Reload to see it in the list.`);
       setDraft(emptyDraft());
       setEligible([]);
+      setArrangements([]);
       setPathway([]);
       setOccEntries([]);
     } catch (err) {
       setStatus('error');
-      setMessage(
-        `Couldn't save - is the dev server running? (npm run dev-server). ${
-          err instanceof Error ? err.message : ''
-        }`
-      );
+      setMessage(err instanceof Error ? err.message : "Couldn't save the job.");
     }
   };
 
-  return (
-    <section className="about-section admin-panel" aria-labelledby="admin-heading">
-      <h2 id="admin-heading">➕ Add a job (local only)</h2>
-      <p>
-        This panel only shows when running the site locally. It writes the role straight into{' '}
-        <code>public/jobs.json</code>, and the occupation you pick links its visas, assessor and
-        ANZSCO page from <code>occupations.json</code>.
-      </p>
+  /** One plain field. Shared by every group, so moving a field between groups
+      is an edit to FIELD_GROUPS and nothing else. */
+  const renderField = (field: (typeof GENERIC_FIELDS)[number]) => (
+    <div
+      key={field.key}
+      className={`field ${field.type === 'textarea' ? 'field-wide' : ''}`}
+    >
+      <label htmlFor={`admin-${field.key}`}>
+        {field.label}
+        {field.required && <span aria-hidden="true"> *</span>}
+      </label>
 
-      <form className="job-form" onSubmit={submit} noValidate>
+      {field.type === 'textarea' ? (
+        <textarea
+          id={`admin-${field.key}`}
+          value={draft[field.key]}
+          placeholder={field.placeholder}
+          rows={3}
+          maxLength={field.maxLength}
+          onChange={(e) => setField(field.key, e.target.value)}
+        />
+      ) : field.type === 'select' ? (
+        <select
+          id={`admin-${field.key}`}
+          value={draft[field.key]}
+          onChange={(e) => setField(field.key, e.target.value)}
+        >
+          {field.options!.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          id={`admin-${field.key}`}
+          type={field.type === 'url' ? 'url' : field.type === 'date' ? 'date' : 'text'}
+          value={draft[field.key]}
+          placeholder={field.placeholder}
+          required={field.required}
+          maxLength={field.maxLength}
+          onChange={(e) => setField(field.key, e.target.value)}
+        />
+      )}
+
+      <div className="field-foot">
+        {field.hint && <span className="field-hint">{field.hint}</span>}
+        {field.maxLength && (
+          <span className="field-count">
+            {(draft[field.key] ?? '').length}/{field.maxLength}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="about admin-page">
+      <header className="about-intro">
+        <h1>Add a job</h1>
+        <p>
+          Local only. Saving writes the role into <code>public/jobs.json</code> and any new
+          occupation into <code>src/data/occupations.json</code>, so the board reads it the same
+          way it will read a database later.
+        </p>
+      </header>
+
+      <form className="job-form about-section" onSubmit={submit} noValidate>
         {/* Company — matched against the Melbourne CSV so its blurb and link
             come from one place. */}
         <div className="job-form-grid">
@@ -315,6 +401,16 @@ export function AdminAddJob() {
         {/* Skills */}
         <div className="job-form-grid">
           <TagSelect
+            legend="Work arrangement"
+            hint="Pick every arrangement the role can be done under."
+            options={constants.arrangement}
+            selected={arrangements}
+            onToggle={(v) => setArrangements((prev) => toggle(prev, v))}
+            onAdd={(v) => addConstant('arrangement', v)}
+            addLabel="arrangement"
+          />
+
+          <TagSelect
             legend="Skills needed"
             hint="Pick skills or add new ones; new tags are saved to constants.json."
             options={constants.skills}
@@ -339,59 +435,27 @@ export function AdminAddJob() {
           ))}
         </div>
 
-        {/* Everything else */}
-        <div className="job-form-grid">
-          {GENERIC_FIELDS.map((f) => (
-            <div key={f.key} className={`field ${f.type === 'textarea' ? 'field-wide' : ''}`}>
-              <label htmlFor={`admin-${f.key}`}>
-                {f.label}
-                {f.required && <span aria-hidden="true"> *</span>}
-              </label>
+        {/* The plain fields, under headings. Same renderer for each, so a
+            field moves between groups by editing FIELD_GROUPS alone. */}
+        {FIELD_GROUPS.map((group) => {
+          const fields = group.keys
+            .map((key) => GENERIC_FIELDS.find((f) => f.key === key))
+            .filter((f): f is (typeof GENERIC_FIELDS)[number] => Boolean(f));
+          if (!fields.length) return null;
+          return (
+            <fieldset key={group.legend} className="admin-group">
+              <legend>{group.legend}</legend>
+              <div className="job-form-grid">{fields.map(renderField)}</div>
+            </fieldset>
+          );
+        })}
 
-              {f.type === 'textarea' ? (
-                <textarea
-                  id={`admin-${f.key}`}
-                  value={draft[f.key]}
-                  placeholder={f.placeholder}
-                  rows={3}
-                  maxLength={f.maxLength}
-                  onChange={(e) => setField(f.key, e.target.value)}
-                />
-              ) : f.type === 'select' ? (
-                <select
-                  id={`admin-${f.key}`}
-                  value={draft[f.key]}
-                  onChange={(e) => setField(f.key, e.target.value)}
-                >
-                  {f.options!.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  id={`admin-${f.key}`}
-                  type={f.type === 'url' ? 'url' : f.type === 'date' ? 'date' : 'text'}
-                  value={draft[f.key]}
-                  placeholder={f.placeholder}
-                  required={f.required}
-                  maxLength={f.maxLength}
-                  onChange={(e) => setField(f.key, e.target.value)}
-                />
-              )}
-
-              <div className="field-foot">
-                {f.hint && <span className="field-hint">{f.hint}</span>}
-                {f.maxLength && (
-                  <span className="field-count">
-                    {(draft[f.key] ?? '').length}/{f.maxLength}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        {UNGROUPED.length > 0 && (
+          <fieldset className="admin-group">
+            <legend>Anything else</legend>
+            <div className="job-form-grid">{UNGROUPED.map(renderField)}</div>
+          </fieldset>
+        )}
 
         {status === 'error' && (
           <p className="job-form-error" role="alert">
@@ -399,23 +463,25 @@ export function AdminAddJob() {
           </p>
         )}
 
-        <div className="job-form-actions">
-          <button type="submit" className="btn btn-primary" disabled={status === 'saving'}>
-            {status === 'saving' ? 'Saving…' : 'Add to jobs.json'}
-          </button>
-          {status === 'saved' && (
-            <button type="button" className="btn" onClick={() => window.location.reload()}>
-              Reload to view
-            </button>
-          )}
-        </div>
-
+        {/* Saved state first, then the actions: the confirmation is the thing
+            you look for after pressing the button. */}
         {status === 'saved' && (
-          <p className="about-note" role="status">
+          <p className="job-form-saved" role="status">
             {message}
           </p>
         )}
+
+        <div className="job-form-actions">
+          <button type="submit" className="btn btn-primary" disabled={status === 'saving'}>
+            {status === 'saving' ? 'Saving…' : 'Save to jobs.json'}
+          </button>
+          {status === 'saved' && (
+            <button type="button" className="btn" onClick={() => window.location.reload()}>
+              Reload the board to see it
+            </button>
+          )}
+        </div>
       </form>
-    </section>
+    </div>
   );
 }

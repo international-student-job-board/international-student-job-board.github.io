@@ -151,9 +151,9 @@ export function listOccupations(): { code: string; name: string }[] {
 
 // Everything the UI needs to render a job's occupation, resolved from the
 // reference file with sensible fallbacks so a job whose code isn't in the file
-// yet still links correctly. `job.anzsco` may be a bare code ("261313") or code
-// plus name ("261313 Software Engineer"); `job.skillAssessment` is an optional
-// per-job override of the authority.
+// yet still links correctly. `anzsco` may be a bare code ("261313") or code
+// plus name ("261313 Software Engineer"); `skillAssessment` is a fallback used
+// only when the occupation isn't in the reference file.
 export interface ResolvedOccupation {
   code: string;
   name: string;
@@ -173,11 +173,25 @@ export function resolveOccupation(
 
   // Occupation name: the reference file wins; otherwise the free text minus the
   // code (so "261313 Software Engineer" still shows "Software Engineer").
+  //
+  // The last fallback is only for text with no code in it at all. Without that
+  // guard a bare "261312" fell through to itself and became its own name, which
+  // the detail page then printed as "261312 261312". An occupation we can't
+  // name has no name; it should show its code once and nothing else.
   const name =
-    record?.name || anzsco.replace(/\b\d{6}\b/, '').trim() || anzsco.trim();
+    record?.name ||
+    anzsco.replace(/\b\d{6}\b/, '').trim() ||
+    (code ? '' : anzsco.trim());
 
-  // A per-job skill assessment always overrides the reference authority.
-  const assessment = skillAssessment.trim() || record?.assessment || '';
+  // The assessing authority belongs to the occupation, not to the job, so the
+  // reference file is the answer whenever it has one. A job's own value is only
+  // a fallback for an occupation nobody has written up yet.
+  //
+  // This used to be the other way round, which had two costs: every job
+  // repeated a fact the reference file already held and could contradict it,
+  // and a role mapped to two occupations put the same typed assessor against
+  // both even where they differ.
+  const assessment = record?.assessment || skillAssessment.trim() || '';
 
   return {
     code,
@@ -185,8 +199,7 @@ export function resolveOccupation(
     anzscoHref: record?.anzscoUrl || anzscoUrl(anzsco),
     assessment,
     assessmentHref:
-      (skillAssessment.trim() ? assessmentUrl(skillAssessment) : record?.assessmentUrl) ||
-      assessmentUrl(assessment),
+      (record?.assessment ? record.assessmentUrl : undefined) || assessmentUrl(assessment),
     lists: record?.lists ?? [],
     visas: record?.visas ?? [],
   };
@@ -235,6 +248,13 @@ export function pathwayVisasFor(job: Job): string[] {
   );
   return Array.from(new Set([...job.visaPathways, ...fromOccupations]));
 }
+
+// Home Affairs' side-by-side of the employer-sponsored skilled visas, for
+// employers working out which one they could offer. Lives here with the other
+// government references rather than in a component, so there is one place to
+// correct a Home Affairs URL when they move it.
+export const EMPLOYER_VISA_COMPARISON_URL =
+  'https://immi.homeaffairs.gov.au/employer-subsite/Pages/compare-sponsored-skilled-visa-options.aspx';
 
 // Where the occupation-list data comes from; surfaced in the on-page disclaimer.
 export const SKILL_OCCUPATION_LIST_URL =

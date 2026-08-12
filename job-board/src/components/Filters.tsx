@@ -1,4 +1,5 @@
 import { resolveOccupation, VISA_NAMES } from '../references';
+import { NOT_SPECIFIED } from '../format';
 import { FilterSelect, SelectOption } from './FilterSelect';
 
 const base = process.env.PUBLIC_URL || '';
@@ -19,7 +20,10 @@ export interface FilterState {
   anzscos: string[];
   skillAssessments: string[];
   skills: string[];
+  /** A band floor, 0 for any, or -1 for "roles with no salary given". */
   salaryMin: number;
+  /** Only roles starting within this many days; 0 means any start date. */
+  startsWithinDays: number;
   /** Only roles posted within this many days; 0 means any age. */
   postedWithinDays: number;
   sponsoredOnly: boolean;
@@ -56,16 +60,33 @@ const SALARY_BANDS = [
   { value: '60000', label: '$60k+' },
   { value: '80000', label: '$80k+' },
   { value: '100000', label: '$100k+' },
+  // Negative is the sentinel for "no salary we could read a number from" — see
+  // matches() in App.tsx. Last in the list because it narrows rather than
+  // raises the floor.
+  { value: '-1', label: NOT_SPECIFIED },
 ];
 
-/* Windows measured back from today, so they stay true whenever the page is
-   open. Single-choice for the same reason as salary: asking for the past week
-   and the past month at once only ever means the past month. */
+/* Windows measured forward from today, so they stay true whenever the page is
+   open. Single-choice for the same reason as salary: asking for "within a
+   month" and "within six" at once only ever means six. A role that has already
+   started counts as starting within any window — it is available now. */
+/* Looking back, where the start filter looks forward. Fine-grained at the near
+   end because "since I last looked" is usually a day or two, and nobody needs
+   to tell 45 days from 50. */
 const POSTED_WINDOWS = [
-  { value: '7', label: 'Past week' },
-  { value: '14', label: 'Past 2 weeks' },
-  { value: '30', label: 'Past month' },
-  { value: '60', label: 'Past 2 months' },
+  { value: '1', label: 'Last 24 hours' },
+  { value: '2', label: 'Last 2 days' },
+  { value: '7', label: 'Last 7 days' },
+  { value: '14', label: 'Last 14 days' },
+  { value: '30', label: 'Last month' },
+  { value: '60', label: 'Last 2 months' },
+];
+
+const START_WINDOWS = [
+  { value: '30', label: 'Within a month' },
+  { value: '90', label: 'Within 3 months' },
+  { value: '180', label: 'Within 6 months' },
+  { value: '-1', label: NOT_SPECIFIED },
 ];
 
 const FIELDS: { key: FilterListKey; label: string; format?: (value: string) => string }[] = [
@@ -86,7 +107,8 @@ const FIELDS: { key: FilterListKey; label: string; format?: (value: string) => s
 export function countActiveFilters(filters: FilterState): number {
   return (
     FIELDS.reduce((total, field) => total + filters[field.key].length, 0) +
-    (filters.salaryMin > 0 ? 1 : 0) +
+    (filters.salaryMin !== 0 ? 1 : 0) +
+    (filters.startsWithinDays !== 0 ? 1 : 0) +
     (filters.postedWithinDays > 0 ? 1 : 0) +
     (filters.sponsoredOnly ? 1 : 0) +
     (filters.query.trim() ? 1 : 0)
@@ -96,6 +118,8 @@ export function countActiveFilters(filters: FilterState): number {
 interface Props {
   filters: FilterState;
   options: FilterOptions;
+  /** How many roles each option would leave, keyed by filter then by value. */
+  counts?: Record<FilterListKey, Map<string, number>>;
   onChange: (next: FilterState) => void;
   onClear: () => void;
 }
@@ -108,11 +132,21 @@ interface ActiveChip {
   remove: () => void;
 }
 
-export function Filters({ filters, options, onChange, onClear }: Props) {
+export function Filters({ filters, options, counts, onChange, onClear }: Props) {
   const set = (patch: Partial<FilterState>) => onChange({ ...filters, ...patch });
 
-  const toOptions = (values: string[], format?: (v: string) => string): SelectOption[] =>
-    values.map((value) => ({ value, label: format ? format(value) : value }));
+  // A blank value is the "not specified" marker; it needs a label or it renders
+  // as an unlabelled tick box.
+  const toOptions = (
+    key: FilterListKey,
+    values: string[],
+    format?: (v: string) => string
+  ): SelectOption[] =>
+    values.map((value) => ({
+      value,
+      label: value ? (format ? format(value) : value) : NOT_SPECIFIED,
+      count: counts?.[key]?.get(value) ?? 0,
+    }));
 
   // Rather than a bare count, each selection gets its own chip below the row,
   // so what is currently narrowing the list is readable at a glance and can be
@@ -124,14 +158,14 @@ export function Filters({ filters, options, onChange, onClear }: Props) {
       chips.push({
         id: `${field.key}:${value}`,
         field: field.label,
-        value: field.format ? field.format(value) : value,
+        value: value ? (field.format ? field.format(value) : value) : NOT_SPECIFIED,
         remove: () =>
           set({ [field.key]: filters[field.key].filter((v) => v !== value) } as Partial<FilterState>),
       });
     });
   });
 
-  if (filters.salaryMin > 0) {
+  if (filters.salaryMin !== 0) {
     chips.push({
       id: 'salary',
       field: 'Salary',
@@ -147,6 +181,16 @@ export function Filters({ filters, options, onChange, onClear }: Props) {
       value:
         POSTED_WINDOWS.find((w) => w.value === String(filters.postedWithinDays))?.label ?? '',
       remove: () => set({ postedWithinDays: 0 }),
+    });
+  }
+
+  if (filters.startsWithinDays !== 0) {
+    chips.push({
+      id: 'starts',
+      field: 'Starts',
+      value:
+        START_WINDOWS.find((w) => w.value === String(filters.startsWithinDays))?.label ?? '',
+      remove: () => set({ startsWithinDays: 0 }),
     });
   }
 
@@ -187,7 +231,7 @@ export function Filters({ filters, options, onChange, onClear }: Props) {
           <FilterSelect
             key={field.key}
             label={field.label}
-            options={toOptions(options[field.key], field.format)}
+            options={toOptions(field.key, options[field.key], field.format)}
             selected={filters[field.key]}
             onChange={(next) => set({ [field.key]: next } as Partial<FilterState>)}
           />
@@ -197,7 +241,7 @@ export function Filters({ filters, options, onChange, onClear }: Props) {
           label="Salary"
           multiple={false}
           options={SALARY_BANDS}
-          selected={filters.salaryMin > 0 ? [String(filters.salaryMin)] : []}
+          selected={filters.salaryMin !== 0 ? [String(filters.salaryMin)] : []}
           onChange={(next) => set({ salaryMin: Number(next[0] ?? 0) })}
         />
 
@@ -207,6 +251,14 @@ export function Filters({ filters, options, onChange, onClear }: Props) {
           options={POSTED_WINDOWS}
           selected={filters.postedWithinDays > 0 ? [String(filters.postedWithinDays)] : []}
           onChange={(next) => set({ postedWithinDays: Number(next[0] ?? 0) })}
+        />
+
+        <FilterSelect
+          label="Starts"
+          multiple={false}
+          options={START_WINDOWS}
+          selected={filters.startsWithinDays !== 0 ? [String(filters.startsWithinDays)] : []}
+          onChange={(next) => set({ startsWithinDays: Number(next[0] ?? 0) })}
         />
 
         {/* Two labels, one per breakpoint: the full phrase doesn't fit a

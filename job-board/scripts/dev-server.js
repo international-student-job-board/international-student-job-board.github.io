@@ -67,15 +67,24 @@ function addRole(groups, incoming) {
     (g) => String(g.company || '').trim().toLowerCase() === key && Array.isArray(g.jobs)
   );
   if (!group) {
-    group = { company, company_about: about || '', company_url: url || '', jobs: [] };
+    // Only fields that carry a value: an empty string in the file is a row of
+    // noise that the loader treats exactly as a missing key anyway.
+    group = { company, jobs: [] };
+    if (about) group.company_about = about;
+    if (url) group.company_url = url;
     groups.push(group);
   } else {
     // A later posting fills in details the first one left blank.
     if (!group.company_about && about) group.company_about = about;
     if (!group.company_url && url) group.company_url = url;
   }
-  group.jobs.push(role);
-  return role;
+  // Same on the role itself, so a blank field never reaches the file.
+  const clean = {};
+  for (const [key, value] of Object.entries(role)) {
+    if (value !== '' && value !== null && value !== undefined) clean[key] = value;
+  }
+  group.jobs.push(clean);
+  return clean;
 }
 
 function sendJson(res, status, body) {
@@ -203,7 +212,12 @@ const server = http.createServer((req, res) => {
   sendJson(res, 404, { error: 'not found' });
 });
 
-server.listen(PORT, () => {
+// Bound to the loopback address on purpose. This server writes to jobs.json,
+// occupations.json and constants.json with no authentication, and it answers
+// any origin — which is fine for a tool only this machine can reach, and not
+// fine on a shared network. Without the host argument Node listens on every
+// interface, so anyone on the same wifi could post a job into the repo.
+server.listen(PORT, '127.0.0.1', () => {
   console.log(`Local admin server on http://localhost:${PORT}`);
   console.log(`  jobs        → ${JOBS_FILE}`);
   console.log(`  occupations → ${OCC_FILE}`);

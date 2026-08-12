@@ -1,4 +1,10 @@
-import { OUTBOUND, outboundHref, OUTBOUND_ATTRS, emailApplyHref } from './outbound';
+import {
+  OUTBOUND,
+  outboundHref,
+  OUTBOUND_ATTRS,
+  emailApplyHref,
+  safeHref,
+} from './outbound';
 
 describe('the outbound link contract', () => {
   test('keeps noopener but never noreferrer', () => {
@@ -40,7 +46,7 @@ describe('outboundHref', () => {
   });
 
   test('an unparseable link is passed through, never broken', () => {
-    expect(outboundHref('https://', 'apply')).toBe('https://');
+    expect(outboundHref('https://', 'apply')).toBe('');
     expect(outboundHref('  ', 'apply')).toBe('');
   });
 });
@@ -106,4 +112,34 @@ describe('emailApplyHref', () => {
       'https://acme.test/apply'
     );
   });
+});
+
+describe('safeHref', () => {
+  test('allows the schemes a job board actually needs', () => {
+    expect(safeHref('https://acme.test/apply')).toBe('https://acme.test/apply');
+    expect(safeHref('http://acme.test')).toBe('http://acme.test');
+    expect(safeHref('mailto:jobs@acme.test')).toBe('mailto:jobs@acme.test');
+    expect(safeHref('#/jobs')).toBe('#/jobs');
+  });
+
+  test('refuses anything that can execute', () => {
+    // Stored XSS if any of these reached an href: the data files are edited by
+    // hand and generated from third-party exports.
+    expect(safeHref('javascript:alert(1)')).toBe('');
+    expect(safeHref('JavaScript:alert(1)')).toBe('');
+    expect(safeHref('  javascript:alert(1)  ')).toBe('');
+    expect(safeHref('data:text/html,<script>alert(1)</script>')).toBe('');
+    expect(safeHref('vbscript:msgbox(1)')).toBe('');
+  });
+
+  test('an empty or unparseable value yields nothing to click', () => {
+    expect(safeHref('')).toBe('');
+    expect(safeHref('   ')).toBe('');
+    expect(safeHref('not a url')).toBe('');
+  });
+});
+
+test('outbound links inherit the scheme allowlist', () => {
+  expect(outboundHref('javascript:alert(1)', 'apply')).toBe('');
+  expect(emailApplyHref('javascript:alert(1)', 'Role', 'Site', 'https://s.test')).toBe('');
 });

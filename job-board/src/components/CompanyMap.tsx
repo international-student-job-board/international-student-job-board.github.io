@@ -3,7 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Company } from '../companies';
 import { clusterCompanies } from '../geo';
-import { OUTBOUND_ATTRS, outboundHref } from '../outbound';
+import { OUTBOUND_ATTRS, outboundHref, safeHref } from '../outbound';
 
 const MELBOURNE: L.LatLngExpression = [-37.8136, 144.9631];
 
@@ -93,7 +93,7 @@ export function CompanyMap({
       const list = cluster.companies
         .slice(0, 12)
         .map((c) => {
-          const href = c.website || c.linkedin;
+          const href = safeHref(c.website || c.linkedin);
           const openings = c.openings > 0 ? ` <em>${c.openings} open</em>` : '';
           return href
             ? `<li><a href="${esc(outboundHref(href, 'startups-map'))}" ${OUTBOUND_ATTRS}>${esc(

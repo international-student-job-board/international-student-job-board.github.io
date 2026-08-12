@@ -17,31 +17,33 @@ interface Props {
 }
 
 /**
- * Search-as-you-type picker over the whole ANZSCO list. A <select> of 1,400
- * options is unusable, and a plain text box asks the poster to know a 6-digit
- * code by heart — this takes either the code or the name of the job.
+ * Occupation picker built on the same control as the job filters: a trigger, a
+ * panel of tick boxes, and a search over them. Ticking does not close the
+ * panel, so several codes can be chosen in one pass and the panel dismissed
+ * when you're done. The previous version closed on every pick, which made
+ * choosing a second occupation feel like correcting a mistake.
  *
- * Several occupations can be chosen: a role often straddles two ANZSCO codes,
- * and which one an applicant is assessed under changes their visa options, so
- * making the poster pick just one throws away something the reader needs.
+ * Several occupations is the normal case, not an edge case: a role often
+ * straddles two ANZSCO codes, and which one an applicant is assessed under
+ * changes their visa options.
  *
- * Free text is deliberately allowed: the list is long but not exhaustive, and a
+ * Free text is still accepted. The list is long but not exhaustive, and a
  * posting form should never refuse a role because its occupation isn't on a
- * dropdown. Pressing Enter on text that matches nothing keeps it as typed.
+ * dropdown — but it is added as a deliberate row rather than by typing, so
+ * nobody records a half-typed search by accident.
  */
 export function AnzscoPicker({ id, label, value, onChange, required, hint }: Props) {
   const [rows, setRows] = useState<AnzscoOccupation[]>([]);
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
-  const listId = useId();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const panelId = useId();
 
-
-
-  // Fetched on first focus, not on mount: most people filling this form never
-  // touch the occupation field, and it is the largest thing the page can load.
+  // Fetched on first open, not on mount: most people filling this form never
+  // touch the occupation field, and it is the largest thing the page loads.
   const ensureLoaded = () => {
     if (status !== 'idle') return;
     setStatus('loading');
@@ -55,138 +57,148 @@ export function AnzscoPicker({ id, label, value, onChange, required, hint }: Pro
 
   useEffect(() => {
     if (!open) return;
+    const root = rootRef.current;
+
     const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      if (!root?.contains(event.target as Node)) setOpen(false);
     };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setOpen(false);
+      triggerRef.current?.focus();
+    };
+
     document.addEventListener('pointerdown', onPointerDown);
-    return () => document.removeEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
   }, [open]);
 
-  // The whole list, every time — nothing is capped, so scrolling reaches the
-  // last occupation whether or not anything has been typed. Memoised because
-  // sorting 1,400 rows on every keystroke of an unrelated field would be
-  // wasted work, and `content-visibility` in the stylesheet keeps the browser
-  // from laying out the rows that are scrolled out of view.
-  // Everything already chosen drops out of the list, so the same occupation
-  // can't be added twice.
-  const matches = useMemo(() => {
-    const chosen = new Set(value);
-    return searchAnzsco(rows, query).filter((row) => !chosen.has(anzscoLabel(row)));
-  }, [rows, query, value]);
+  useEffect(() => {
+    if (open) searchRef.current?.focus();
+  }, [open]);
 
-  const add = (entry: string) => {
-    const next = entry.trim();
-    if (!next || value.includes(next)) return;
-    onChange([...value, next]);
-    setQuery('');
-    setActive(0);
+  // The whole matching list, uncapped; `content-visibility` in the stylesheet
+  // keeps rows scrolled out of view from being laid out.
+  const matches = useMemo(() => searchAnzsco(rows, query), [rows, query]);
+
+  const toggle = (entry: string) => {
+    onChange(value.includes(entry) ? value.filter((v) => v !== entry) : [...value, entry]);
   };
 
-  const remove = (entry: string) => onChange(value.filter((v) => v !== entry));
+  const typed = query.trim();
+  const canAddTyped =
+    typed.length > 2 &&
+    !matches.some((row) => anzscoLabel(row).toLowerCase() === typed.toLowerCase()) &&
+    !value.includes(typed);
 
-  const onKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      setOpen(false);
-      setQuery('');
-      return;
-    }
-    // Backspace on an empty box removes the last chip, the way tag inputs do.
-    if (event.key === 'Backspace' && !query && value.length) {
-      remove(value[value.length - 1]);
-      return;
-    }
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      event.preventDefault();
-      if (!open) {
-        setOpen(true);
-        return;
-      }
-      const step = event.key === 'ArrowDown' ? 1 : -1;
-      setActive((i) => Math.max(0, Math.min(matches.length - 1, i + step)));
-      return;
-    }
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      if (open && matches[active]) add(anzscoLabel(matches[active]));
-      else if (query.trim()) add(query);
-    }
-  };
+  const className = [
+    'fselect',
+    open ? 'is-open' : '',
+    value.length > 0 ? 'is-active' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <div className="field field-wide combo" ref={rootRef}>
-      <label htmlFor={id}>
+    <div className="field field-wide">
+      <span className="label-text" id={`${id}-label`}>
         {label}
         {required && <span aria-hidden="true"> *</span>}
-      </label>
+      </span>
 
-      <input
-        id={id}
-        type="text"
-        role="combobox"
-        autoComplete="off"
-        aria-expanded={open}
-        aria-controls={open ? listId : undefined}
-        aria-autocomplete="list"
-        placeholder={value.length ? "Add another occupation" : "Search by job name or 6-digit code"}
-        value={query}
-        // Opening shows the whole list to browse; typing filters it.
-        onFocus={() => {
-          ensureLoaded();
-          setOpen(true);
-          setActive(0);
-        }}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setOpen(true);
-          setActive(0);
-        }}
-        onKeyDown={onKeyDown}
-      />
+      <div className={className} ref={rootRef}>
+        <button
+          type="button"
+          id={id}
+          ref={triggerRef}
+          className="fselect-trigger"
+          aria-expanded={open}
+          aria-controls={open ? panelId : undefined}
+          aria-labelledby={`${id}-label ${id}`}
+          onClick={() => {
+            ensureLoaded();
+            setOpen((o) => !o);
+          }}
+        >
+          <span className="fselect-label">
+            {value.length === 0 ? 'Choose occupations' : `${value.length} chosen`}
+          </span>
+          {value.length > 0 && <span className="fselect-count">{value.length}</span>}
+        </button>
 
-      {open && (
-        <div className="combo-panel">
-          {status === 'loading' && <p className="combo-note">Loading occupations . . .</p>}
-          {status === 'error' && (
-            <p className="combo-note">
-              Couldn't load the occupation list. Type the occupation instead and we'll match it
-              up.
-            </p>
-          )}
-          {status === 'ready' && matches.length === 0 && (
-            <p className="combo-note">
-              No match for “{query}”. You can leave what you've typed and we'll sort it out.
-            </p>
-          )}
-          {matches.length > 0 && (
-            <>
-            <ul className="combo-list" id={listId} role="listbox" aria-label={label}>
-              {matches.map((row, i) => (
-                <li key={row.code}>
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={i === active}
-                    className={`combo-option${i === active ? ' is-active' : ''}`}
-                    // The input must keep focus, or the panel closes before the
-                    // click lands.
-                    onMouseDown={(e) => e.preventDefault()}
-                    onMouseEnter={() => setActive(i)}
-                    onClick={() => add(anzscoLabel(row))}
-                  >
+        {open && (
+          <div className="fselect-panel" id={panelId} data-align="left">
+            <input
+              ref={searchRef}
+              type="text"
+              className="fselect-search"
+              placeholder="Search by job name or 6-digit code"
+              aria-label="Search occupations"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+
+            {status === 'loading' && <p className="combo-note">Loading occupations . . .</p>}
+            {status === 'error' && (
+              <p className="combo-note">
+                Couldn't load the occupation list. Type the occupation and add it below.
+              </p>
+            )}
+
+            <div className="fselect-options" role="group" aria-labelledby={`${id}-label`}>
+              {canAddTyped && (
+                <button
+                  type="button"
+                  className="fselect-option fselect-add"
+                  onClick={() => {
+                    toggle(typed);
+                    setQuery('');
+                  }}
+                >
+                  Add “{typed}” as typed
+                </button>
+              )}
+
+              {matches.map((row) => {
+                const entry = anzscoLabel(row);
+                return (
+                  <label key={row.code} className="fselect-option">
+                    <input
+                      type="checkbox"
+                      checked={value.includes(entry)}
+                      onChange={() => toggle(entry)}
+                    />
                     <span className="combo-code">{row.code}</span>
-                    <span className="combo-title">{row.title}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <p className="combo-count" aria-live="polite">
-              {matches.length} occupation{matches.length === 1 ? '' : 's'}
-              {matches.length === rows.length ? ' : : scroll, or type to narrow' : ''}
-            </p>
-            </>
-          )}
-        </div>
-      )}
+                    <span className="fselect-option-label">{row.title}</span>
+                  </label>
+                );
+              })}
+
+              {status === 'ready' && !matches.length && !canAddTyped && (
+                <p className="combo-note">No match for “{query}”.</p>
+              )}
+            </div>
+
+            <div className="fselect-foot">
+              <span className="fselect-status">
+                {value.length > 0 ? `${value.length} chosen` : 'None chosen'}
+                {matches.length > 0 && ` · ${matches.length} shown`}
+              </span>
+              <button
+                type="button"
+                className="fselect-reset"
+                disabled={value.length === 0}
+                onClick={() => onChange([])}
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {value.length > 0 && (
         <ul className="chosen-list">
@@ -195,7 +207,7 @@ export function AnzscoPicker({ id, label, value, onChange, required, hint }: Pro
               <button
                 type="button"
                 className="active-chip"
-                onClick={() => remove(entry)}
+                onClick={() => toggle(entry)}
                 title={`Remove ${entry}`}
               >
                 <span className="active-chip-value">{entry}</span>

@@ -1,5 +1,5 @@
 import { Job } from '../types';
-import { formatDate } from '../format';
+import { formatDate, orNotSpecified, NOT_SPECIFIED } from '../format';
 import {
   visaUrl,
   resolveOccupations,
@@ -9,7 +9,7 @@ import {
   VISA_DISCLAIMER,
 } from '../references';
 import { InfoTooltip } from './InfoTooltip';
-import { OUTBOUND, outboundHref, emailApplyHref } from '../outbound';
+import { OUTBOUND, outboundHref, emailApplyHref, safeHref } from '../outbound';
 import { SITE_NAME, SITE_URL } from '../links';
 
 // The skilled-migration lists an occupation sits on. Outlined chips rather than
@@ -79,11 +79,12 @@ function Pills({ items }: { items: string[] }) {
 // link out to its official source when we can resolve one.
 function Reference({ text, href }: { text: string; href?: string }) {
   if (!text) return <>Not specified</>;
-  if (!href) return <>{text}</>;
+  const safe = safeHref(href ?? '');
+  if (!safe) return <>{text}</>;
   return (
     <a
       className="reference-link"
-      href={href}
+      href={safe}
       target="_blank"
       rel="noopener"
             referrerPolicy="strict-origin-when-cross-origin"
@@ -98,14 +99,20 @@ function Reference({ text, href }: { text: string; href?: string }) {
 // employer's application page in a new tab.
 function ApplyButton({ url, jobTitle }: { url: string; jobTitle: string }) {
   const isEmail = url.trim().toLowerCase().startsWith('mailto:');
+  const href = isEmail
+    ? emailApplyHref(url, jobTitle, SITE_NAME, SITE_URL)
+    : outboundHref(url, 'apply');
+
+  // A link we can't safely build is no link at all — an empty href would just
+  // reload the page and look like the button is broken.
+  if (!href) {
+    return <p className="apply-note">This role has no working application link yet.</p>;
+  }
+
   return (
     <a
       className={`btn btn-primary${isEmail ? ' btn-email' : ''}`}
-      href={
-        isEmail
-          ? emailApplyHref(url, jobTitle, SITE_NAME, SITE_URL)
-          : outboundHref(url, 'apply')
-      }
+      href={href}
       {...(isEmail ? {} : OUTBOUND)}
     >
       {isEmail ? (
@@ -147,7 +154,7 @@ export function JobDetail({ job }: { job: Job }) {
           thing in this block, and ahead of the headline it takes the lead
           away from it. */}
       <p className="detail-company">
-        {job.companyUrl ? (
+        {outboundHref(job.companyUrl, 'employer') ? (
           <a
             className="company-link"
             href={outboundHref(job.companyUrl, 'employer')}
@@ -167,8 +174,17 @@ export function JobDetail({ job }: { job: Job }) {
       </h1>
 
       <div className="detail-meta">
+        {/* A matched pair, worded the same way round: both halves are about
+            the application window, so both read "Applications …". When the role
+            itself starts is a fact about the job, and lives with the other
+            facts below. */}
         <span className="detail-posted">
-          Posted {formatDate(job.posted)} · Closes {formatDate(job.closes)}
+          {[
+            job.posted ? `Applications open ${formatDate(job.posted)}` : '',
+            job.closes ? `Applications close ${formatDate(job.closes)}` : '',
+          ]
+            .filter(Boolean)
+            .join(' · ') || 'Application dates not specified'}
         </span>
         {job.employerSponsored && (
           <span className="flag flag-sponsor">Visa sponsorship available</span>
@@ -179,28 +195,34 @@ export function JobDetail({ job }: { job: Job }) {
       <h2 className="detail-heading">In a nutshell</h2>
       <ul className="detail-facts">
         <li>
+          <span className="fact-label">Start date</span>
+          {job.startDate ? formatDate(job.startDate) : NOT_SPECIFIED}
+        </li>
+        <li>
           <span className="fact-label">Location</span>
-          {job.location}
+          {orNotSpecified(job.location)}
         </li>
         <li>
           <span className="fact-label">Type</span>
-          {job.type}
+          {orNotSpecified(job.type)}
         </li>
         <li>
-          <span className="fact-label">Arrangement</span>
-          {job.arrangement}
+          <span className="fact-label">
+            Arrangement{job.arrangements.length > 1 ? 's' : ''}
+          </span>
+          {job.arrangements.join(', ') || NOT_SPECIFIED}
         </li>
         <li>
           <span className="fact-label">Salary</span>
-          {job.salary}
+          {orNotSpecified(job.salary)}
         </li>
         <li>
           <span className="fact-label">Education</span>
-          {job.educationLevel || 'Not specified'}
+          {orNotSpecified(job.educationLevel)}
         </li>
         <li>
           <span className="fact-label">Level</span>
-          {job.jobLevel}
+          {orNotSpecified(job.jobLevel)}
         </li>
       </ul>
       </section>
@@ -298,6 +320,31 @@ export function JobDetail({ job }: { job: Job }) {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {/* Right above the apply action, because that is when knowing who you are
+          writing to actually changes what you do. */}
+      {/* Both conditions: details we hold but were not given permission to
+          publish stay unpublished. */}
+      {job.contactPublic && job.contactName && (
+        <section className="detail-section hiring-contact">
+          <h2>Who posted this</h2>
+          {/* Name leads, position sits under it: one is who they are, the other
+              is context for it, and stacking says that without a separator. */}
+          <p className="hiring-contact-name">{job.contactName}</p>
+          {job.contactPosition && (
+            <p className="hiring-contact-role">{job.contactPosition}</p>
+          )}
+          {outboundHref(job.contactLinkedin, 'contact') && (
+            <a
+              className="reference-link"
+              href={outboundHref(job.contactLinkedin, 'contact')}
+              {...OUTBOUND}
+            >
+              LinkedIn profile
+            </a>
+          )}
         </section>
       )}
 
