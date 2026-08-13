@@ -18,10 +18,7 @@ import { OUTBOUND, outboundHref, emailApplyHref, safeHref } from '../outbound';
 import { SITE_NAME, SITE_URL } from '../links';
 import { prettyLabels } from '../labels';
 
-// The skilled-migration lists an occupation sits on. Outlined chips rather than
-// the filled pills used for visa subclasses just above them: both are codes
-// that link out, but they answer different questions, and one shared style for
-// two different kinds of code would invite reading them as one set.
+// The skilled-migration lists an occupation sits on.
 function OccupationLists({ lists }: { lists: string[] }) {
   if (!lists.length) return <>Not specified</>;
   return (
@@ -51,8 +48,8 @@ function OccupationLists({ lists }: { lists: string[] }) {
   );
 }
 
-// Each visa code links to its official Home Affairs listing when we know the
-// page; unknown codes stay as plain (unclickable) pills.
+// Each visa code links to its official Home Affairs listing when we know the page; unknown
+// codes stay as plain (unclickable) pills.
 function Pills({ items }: { items: string[] }) {
   if (!items.length) return <>Not specified</>;
   return (
@@ -81,24 +78,7 @@ function Pills({ items }: { items: string[] }) {
   );
 }
 
-/**
- * A role's occupations, each with the codes it is known by:
- *
- *   Electronics Engineer (233411 - 2022, 233411 - 2013)
- *
- * One line per occupation. The name carries the weight and the bracket
- * qualifies it, which is the shape of the sentence being read — a row of
- * equal-looking chips made "233411" and "ANZSCO 2022" run together as one
- * token.
- *
- * Each code links to its own version's page on the ABS. That is worth the two
- * links: subclasses 186 and 482 are assessed against ANZSCO 2022 and every
- * other visa against ANZSCO 2013, the two classifications live on different ABS
- * sites, and for a handful of occupations the codes themselves differ — so a
- * reader following the wrong one is reading about a code their visa does not
- * use. A code with no page stays as plain text rather than borrowing the other
- * version's link.
- */
+/** A role's occupations, each with the codes it is known by: */
 function Occupations({ occupations }: { occupations: ReturnType<typeof resolveOccupations> }) {
   if (!occupations.length) return <>Not specified</>;
   return (
@@ -138,8 +118,8 @@ function Occupations({ occupations }: { occupations: ReturnType<typeof resolveOc
   );
 }
 
-// A single free-text value that becomes a link out to its official source when
-// we can resolve one.
+// A single free-text value that becomes a link out to its official source when we can
+// resolve one.
 function Reference({ text, href }: { text: string; href?: string }) {
   if (!text) return <>Not specified</>;
   const safe = safeHref(href ?? '');
@@ -164,17 +144,15 @@ function Answer({ value, yes, no }: { value: boolean | undefined; yes: string; n
   return <>Not checked yet</>;
 }
 
-// Apply action. When the employer takes applications by email (a mailto: link)
-// the button says so and opens the mail client in place; otherwise it opens the
-// employer's application page in a new tab.
+// Apply action.
 function ApplyButton({ url, jobTitle }: { url: string; jobTitle: string }) {
   const isEmail = url.trim().toLowerCase().startsWith('mailto:');
   const href = isEmail
     ? emailApplyHref(url, jobTitle, SITE_NAME, SITE_URL)
     : outboundHref(url, 'apply');
 
-  // A link we can't safely build is no link at all — an empty href would just
-  // reload the page and look like the button is broken.
+  // A link we can't safely build is no link at all — an empty href would just reload the
+  // page and look like the button is broken.
   if (!href) {
     return <p className="apply-note">This role has no working application link yet.</p>;
   }
@@ -213,14 +191,6 @@ export function JobDetail({ job }: { job: Job }) {
 
   return (
     <article className="job-detail" aria-labelledby="job-detail-title">
-      {/* Who, then what, then when — the company and title read as one unit
-          and the date and sponsorship badge as another. The badge sits with
-          the date rather than above the title: a solid pill is the heaviest
-          thing in this block, and ahead of the headline it takes the lead
-          away from it.
-
-          The header spans the full width; below it the article splits into a
-          reading column and a column of actions. */}
       <header className="detail-head">
         <p className="detail-company">
           {companyHref ? (
@@ -349,11 +319,6 @@ export function JobDetail({ job }: { job: Job }) {
                 <dd className="fact-value">{prettyLabels(company.industries).join(', ')}</dd>
               </div>
             )}
-            {/* The CSV's "Type" column, which holds two different kinds of
-                thing at once: what the company makes (saas, big data,
-                manufacturing) and how it makes money (commission,
-                subscription, advertising). This was labelled "Builds", which
-                is true of the first half and nonsense next to "commission". */}
             {company.types.length > 0 && (
               <div className="fact">
                 <dt className="fact-label">Model &amp; tech</dt>
@@ -384,8 +349,6 @@ export function JobDetail({ job }: { job: Job }) {
         </section>
       </div>
 
-      {/* Everything you do rather than read. Given its own column when there is
-          room for one, where it stays put as the role scrolls past. */}
       <aside className="detail-side">
         <div className="detail-actions">
           <ApplyButton url={job.applyUrl} jobTitle={job.title} />

@@ -70,8 +70,8 @@ describe('resolving a role’s occupations', () => {
   });
 
   test('codes that differ between versions still resolve to one occupation', () => {
-    // Data Analyst is 224114 in ANZSCO 2022 and 224999 in 2013 — the case the
-    // two columns exist for.
+    // Data Analyst is 224114 in ANZSCO 2022 and 224999 in 2013 — the case the two columns
+    // exist for.
     const occupations = resolveOccupations(job({ anzsco2022: ['224114'], anzsco2013: ['224999'] }));
     expect(occupations).toHaveLength(1);
     expect(occupations[0].codes.map((c) => c.code)).toEqual(['224114', '224999']);
@@ -83,17 +83,16 @@ describe('resolving a role’s occupations', () => {
   });
 
   test('each version links to its own ABS page, not to the other one\u2019s', () => {
-    // The two classifications live on different ABS sites, and for some
-    // occupations the codes differ — so borrowing one link for both would send
-    // a reader to a code their visa does not use.
+    // The two classifications live on different ABS sites, and for some occupations the
+    // codes differ — so borrowing one link for both would send a reader to a code their
+    // visa does not use.
     const [occ] = resolveOccupations(job({ anzsco2022: ['261313'], anzsco2013: ['261313'] }));
     expect(occ.codes.find((c) => c.version === '2022')?.href).toBe(SOFTWARE.urls.anzsco2022);
     expect(occ.codes.find((c) => c.version === '2013')?.href).toBe(SOFTWARE.urls.anzsco2013);
   });
 
   test('a version with no page of its own stays unlinked', () => {
-    // Data Analyst has no 2013 URL in the fixture; it must not inherit the
-    // 2022 one.
+    // Data Analyst has no 2013 URL in the fixture; it must not inherit the 2022 one.
     const [occ] = resolveOccupations(job({ anzsco2022: ['224114'], anzsco2013: ['224999'] }));
     expect(occ.codes.find((c) => c.version === '2013')?.href).toBeUndefined();
   });

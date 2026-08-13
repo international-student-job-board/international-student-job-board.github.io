@@ -1,11 +1,14 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
+import { FEEDBACK_URL } from './links';
 import { Job, jobLocation } from './types';
-import { loadJobs, isRecent } from './jobs';
+import { loadJobs, isRecent, MONTHS_LISTED } from './jobs';
 import { loadCompanies } from './companies';
 import { dateValue, todayISO } from './format';
 import { pathwayVisasFor, occupationCodesFor } from './references';
 import { Header } from './components/Header';
+import { Route, parsePath, pathFor, pathFromLegacyHash } from './routes';
+import { applyMeta, applySchema, metaFor, jobPostingSchema, websiteSchema } from './seo';
 import {
   Filters,
   FilterState,
@@ -21,10 +24,8 @@ import { Companies } from './components/Companies';
 
 import { Footer } from './components/Footer';
 /**
- * Split out so the admin and everything only it uses — the occupation writer,
- * the constant pickers, the tag editors — stay out of the bundle visitors
- * download. The route is unreachable outside a dev build, so the chunk is
- * never requested there.
+ * Split out so the admin and everything only it uses — the occupation writer, the constant
+ * pickers, the tag editors — stay out of the bundle visitors download.
  */
 const AdminAddJob = lazy(() =>
   import('./components/AdminAddJob').then((m) => ({ default: m.AdminAddJob }))
@@ -48,43 +49,28 @@ const EMPTY_FILTERS: FilterState = {
   postedWithinDays: 0,
 };
 
-/**
- * The value a filter uses to mean "roles that don't say". An empty string is
- * the natural sentinel: it is exactly what a job carries when the field is
- * blank, so single-value fields need no special case at all.
- */
+/** The value a filter uses to mean "roles that don't say". */
 export const UNSPECIFIED = '';
 
 /** An empty filter narrows nothing; otherwise the job's value has to be in it. */
 const allows = (selected: string[], value: string) =>
   selected.length === 0 || selected.includes(value.trim());
 
-/**
- * Same, for the fields where the job itself holds a list (occupations, visas).
- * A role with an empty list matches only when "Not specified" is what was asked
- * for — otherwise a blank field would quietly satisfy every filter.
- */
+/** Same, for the fields where the job itself holds a list (occupations, visas). */
 const overlaps = (selected: string[], values: string[]) =>
   selected.length === 0 ||
   (values.length
     ? values.some((value) => selected.includes(value))
     : selected.includes(UNSPECIFIED));
 
-/**
- * A hand-checked yes/no/nobody-said column as a filter value.
- *
- * The blank case is the same UNSPECIFIED sentinel every other filter uses, so
- * these two need no special handling anywhere downstream — they are ordinary
- * list filters whose values happen to come from a boolean.
- */
+/** A hand-checked yes/no/nobody-said column as a filter value. */
 const answer = (value: boolean | undefined): string[] => [
   value === true ? 'yes' : value === false ? 'no' : UNSPECIFIED,
 ];
 
 /**
- * `postedAfter` is a timestamp resolved once per pass rather than per job, so
- * every card in one run is measured against the same instant. 0 means the
- * recency filter is off.
+ * `postedAfter` is a timestamp resolved once per pass rather than per job, so every card in
+ * one run is measured against the same instant. 0 means the recency filter is off.
  */
 function matches(job: Job, filters: FilterState, postedAfter: number): boolean {
   if (!allows(filters.companies, job.company.name)) return false;
@@ -96,15 +82,14 @@ function matches(job: Job, filters: FilterState, postedAfter: number): boolean {
   if (!allows(filters.hqCities, job.company.hqCity)) return false;
   // A role can map to several occupations, so it matches if any of them do.
   if (!overlaps(filters.anzscos, occupationCodesFor(job))) return false;
-  // The occupations' own visas are what the detail page shows as pathways, so
-  // filtering reads the same function — a role can always be found by the
-  // visas it is shown to offer.
+  // The occupations' own visas are what the detail page shows as pathways, so filtering
+  // reads the same function — a role can always be found by the visas it is shown to offer.
   if (!overlaps(filters.pathwayVisas, pathwayVisasFor(job))) return false;
   if (!overlaps(filters.sponsor, answer(job.company.accreditedSponsor))) return false;
   if (!overlaps(filters.students, answer(job.company.hiresInternationalStudents))) return false;
 
-  // A role we can't date can't be shown to be recent, so it drops out when the
-  // reader asks for recent ones.
+  // A role we can't date can't be shown to be recent, so it drops out when the reader asks
+  // for recent ones.
   if (postedAfter > 0) {
     const posted = dateValue(job.posted);
     if (!Number.isFinite(posted) || posted < postedAfter) return false;
@@ -132,50 +117,29 @@ const cutoff = (filters: FilterState): number =>
 
 const uniqueSorted = (values: string[]) => Array.from(new Set(values)).sort();
 
-type Route = 'jobs' | 'companies' | 'post' | 'about' | 'admin';
-
-/** The admin route exists only in a local dev build. */
-export const IS_LOCAL = process.env.NODE_ENV === 'development';
-
-function routeFromHash(): Route {
-  const hash = window.location.hash;
-  if (hash.startsWith('#/about')) return 'about';
-  if (hash.startsWith('#/post')) return 'post';
-  if (hash.startsWith('#/companies')) return 'companies';
-  if (hash.startsWith('#/admin') && IS_LOCAL) return 'admin';
-  return 'jobs';
+/** When a listing stops being true, for the structured data's validThrough. */
+function lapseDate(posted: string, months: number): string {
+  const date = new Date(`${posted}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return '';
+  date.setUTCMonth(date.getUTCMonth() + months);
+  return date.toISOString().slice(0, 10);
 }
 
-/**
- * The job id in the address bar, if there is one: #/jobs/7.
- *
- * Which role you are reading used to be state and nothing else, so every job on
- * the board shared one address and there was nothing to send anyone. It lives
- * in the URL now, which makes it linkable, bookmarkable, and undoable with the
- * back button.
- */
-function jobIdFromHash(): string | null {
-  return window.location.hash.match(/^#\/jobs\/([^/?#]+)/)?.[1] ?? null;
-}
-
-/** The address for one role, absolute so it can be pasted anywhere. */
-export function jobShareUrl(id: string): string {
-  const { origin, pathname } = window.location;
-  return `${origin}${pathname}#/jobs/${encodeURIComponent(id)}`;
-}
+export { IS_LOCAL, jobShareUrl } from './routes';
 
 function App() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  // On mobile the list and detail are separate "pages"; this flips to the
-  // detail page when a job is tapped. On desktop both always show side by side.
+  // On mobile the list and detail are separate "pages"; this flips to the detail page when
+  // a job is tapped.
   const [showDetail, setShowDetail] = useState(false);
-  const [route, setRoute] = useState<Route>(routeFromHash);
+  const [route, setRoute] = useState<Route>(() => parsePath(window.location.pathname).route);
   const [page, setPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(true);
   const detailRef = useRef<HTMLElement>(null);
+  const listRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     loadJobs()
@@ -186,41 +150,67 @@ function App() {
       .catch(() => setStatus('error'));
   }, []);
 
+  /**
+   * The address is the source of truth for what is on screen, read on arrival and on every
+   * back/forward step.
+   */
   useEffect(() => {
-    const onHashChange = () => {
-      setRoute(routeFromHash());
-      // Covers the back button and a pasted link alike.
-      const shared = jobIdFromHash();
-      if (shared) {
-        setSelectedId(shared);
+    const legacy = pathFromLegacyHash(window.location.hash);
+    if (legacy) window.history.replaceState(null, '', legacy);
+
+    const read = () => {
+      const here = parsePath(window.location.pathname);
+      setRoute(here.route);
+      if (here.jobId) {
+        setSelectedId(here.jobId);
         setShowDetail(true);
+      } else {
+        setShowDetail(false);
       }
     };
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
-  }, []);
 
-  // A link opened cold: the id is in the address before the jobs have loaded.
-  useEffect(() => {
-    const shared = jobIdFromHash();
-    if (shared) {
-      setSelectedId(shared);
-      setShowDetail(true);
-    }
-  }, []);
+    /** Internal links navigate in place rather than reloading the whole app. */
+    const onClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
-  // Leaving the jobs page (or switching routes) drops back to the list view.
-  useEffect(() => {
-    setShowDetail(false);
-  }, [route]);
+      const link = (event.target as HTMLElement | null)?.closest?.('a');
+      if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+
+      const url = new URL(link.href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+
+      event.preventDefault();
+      if (url.pathname !== window.location.pathname) {
+        window.history.pushState(null, '', url.pathname);
+        window.scrollTo({ top: 0 });
+      }
+      read();
+    };
+
+    read();
+    window.addEventListener('popstate', read);
+    document.addEventListener('click', onClick);
+    return () => {
+      window.removeEventListener('popstate', read);
+      document.removeEventListener('click', onClick);
+    };
+  }, []);
 
   const openJob = (id: string) => {
     setSelectedId(id);
     setShowDetail(true);
-    // replaceState rather than assigning the hash: picking through a list
-    // shouldn't bury the page you arrived from under twenty back-button steps.
-    window.history.replaceState(null, '', `#/jobs/${encodeURIComponent(id)}`);
+    // replaceState rather than pushState: picking through a list shouldn't bury the page
+    // you arrived from under twenty back-button steps.
+    window.history.replaceState(null, '', pathFor('jobs', id));
     window.scrollTo({ top: 0 });
+  };
+
+  /** Turning a page puts you at the top of the new one. */
+  const goToPage = (next: number) => {
+    setPage(next);
+    listRef.current?.scrollTo?.({ top: 0 });
+    window.scrollTo?.({ top: 0 });
   };
 
   // Back to page 1 whenever the filters change.
@@ -228,27 +218,17 @@ function App() {
     setPage(1);
   }, [filters]);
 
-  // Stale roles are dropped here rather than inside the filtering, so they are
-  // gone from everything downstream: the count, the default selection, and the
-  // filter dropdowns — which would otherwise offer a company or an occupation
-  // that no listed role has. Measured against the viewer's own date, so the
-  // board ages as it is read rather than as of whenever it was built.
+  // Stale roles are dropped here rather than inside the filtering, so they are gone from
+  // everything downstream: the count, the default selection, and the filter dropdowns —
+  // which would otherwise offer a company or an occupation that no listed role has.
   const openJobs = useMemo(() => {
     const today = todayISO();
     return jobs.filter((job) => isRecent(job, today));
   }, [jobs]);
 
   /**
-   * How many roles each option would leave, counted against everything the
-   * *other* filters allow — not against the whole board and not against the
-   * current results.
-   *
-   * Counting against the whole board would promise matches that the filters
-   * already rule out. Counting against the current results would show a zero
-   * beside every unpicked value in a filter you have already used, because
-   * that filter has just excluded them all. Excluding the filter from its own
-   * count is the only version that answers the question being asked: "what
-   * happens if I tick this."
+   * How many roles each option would leave, counted against everything the *other* filters
+   * allow — not against the whole board and not against the current results.
    */
   const counts = useMemo(() => {
     const postedAfter = cutoff(filters);
@@ -287,10 +267,8 @@ function App() {
     ) as Record<FilterListKey, Map<string, number>>;
 
     /**
-     * The recency filter can't be tallied by walking a job's values, because
-     * its options are thresholds rather than things a job "has". Each window is
-     * counted by running the filter as if it were picked, with the current
-     * choice lifted.
+     * The recency filter can't be tallied by walking a job's values, because its options
+     * are thresholds rather than things a job "has".
      */
     const postedCounts = new Map<string, number>();
     ['1', '2', '7', '14', '30', '60'].forEach((value) => {
@@ -302,9 +280,9 @@ function App() {
   }, [openJobs, filters]);
 
   const options: FilterOptions = useMemo(() => {
-    // Every distinct value, plus the "not specified" marker when at least one
-    // role is missing that field — offered only where it would actually match
-    // something, so the dropdowns don't grow an option that finds nothing.
+    // Every distinct value, plus the "not specified" marker when at least one role is
+    // missing that field — offered only where it would actually match something, so the
+    // dropdowns don't grow an option that finds nothing.
     const from = (pick: (job: Job) => string[]) => {
       const values = uniqueSorted(openJobs.flatMap(pick).filter(Boolean));
       const anyBlank = openJobs.some((job) => pick(job).filter(Boolean).length === 0);
@@ -321,8 +299,8 @@ function App() {
       hqCities: from((j) => [j.company.hqCity]),
       anzscos: from(occupationCodesFor),
       pathwayVisas: from(pathwayVisasFor),
-      // These two carry a value for every role — 'yes', 'no' or the blank
-      // sentinel — so they never need the "any blank?" pass the others do.
+      // These two carry a value for every role — 'yes', 'no' or the blank sentinel — so
+      // they never need the "any blank?" pass the others do.
       sponsor: uniqueSorted(openJobs.flatMap((j) => answer(j.company.accreditedSponsor))),
       students: uniqueSorted(
         openJobs.flatMap((j) => answer(j.company.hiresInternationalStudents))
@@ -331,9 +309,6 @@ function App() {
   }, [openJobs]);
 
   // loadJobs already sorted newest first, and filtering preserves that order.
-  // Only fetched when the board is empty, and only to make the empty state say
-  // something true and specific: "397 startups are hiring" is a reason to click
-  // through, "check back soon" is not.
   const [companyCount, setCompanyCount] = useState(0);
   useEffect(() => {
     if (status !== 'ready' || openJobs.length > 0) return;
@@ -357,6 +332,19 @@ function App() {
   const pageJobs = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const selected = visible.find((j) => j.id === selectedId) ?? visible[0] ?? null;
+
+  /** The address bar, the tab title and the structured data all describe the same thing. */
+  const reading = showDetail && route === 'jobs' ? selected : null;
+  useEffect(() => {
+    const origin = window.location.origin;
+    const meta = metaFor(route, reading, origin);
+    applyMeta(meta);
+    applySchema(
+      reading
+        ? jobPostingSchema(reading, meta.url, lapseDate(reading.posted, MONTHS_LISTED))
+        : websiteSchema(origin)
+    );
+  }, [route, reading]);
 
   // Scroll the (sticky) detail panel back to the top when a different job is shown.
   useEffect(() => {
@@ -389,8 +377,26 @@ function App() {
     <div className={`app${showDetail ? ' detail-open' : ''}`} id="top">
       <Header route={route} />
 
-      {/* No point offering filters over an empty board — supporting UI that
-          can't do anything yet is just noise in front of the real message. */}
+      <div className="board-intro">
+        <h1 className="panel-title">Jobs at budding Melbourne startups, with the migration pathways!</h1>
+        <p className="panel-lead">
+          Roles at startups and scaleups founded in Victoria, Australia : : Mapped with potential visa pathways and skills assessments it can lead to!
+        </p>
+        <p className="panel-banner">
+          We're working through this list manually to confirm which companies sponsor visas and
+          which hire international students. If you have any feedback or insights,{' '}
+          <a
+            href={FEEDBACK_URL}
+            target="_blank"
+            rel="noopener"
+            referrerPolicy="strict-origin-when-cross-origin"
+          >
+            please let us know
+          </a>
+          !
+        </p>
+      </div>
+
       <div className="filters-region" hidden={status === 'ready' && openJobs.length === 0}>
         <button
           type="button"
@@ -418,23 +424,15 @@ function App() {
       </div>
 
       <div className="workspace">
-        <section className="jobs-panel" id="jobs" aria-label="Job listings">
-          <div className="jobs-head">
-            <h1 className="panel-title">Jobs</h1>
-            {status === 'ready' && (
-              openJobs.length > 0 && (
-                <p className="result-count" aria-live="polite">
-                  {visible.length} {visible.length === 1 ? 'role' : 'roles'}
-                </p>
-              )
-            )}
-          </div>
-          <p className="panel-banner">
-            We're working through this list manually to confirm which startups sponsor visas and which hire international students and graduates.
-          </p>
+        <section className="jobs-panel" id="jobs" aria-label="Job listings" ref={listRef}>
+          {status === 'ready' && openJobs.length > 0 && (
+            <div className="jobs-head">
+              <p className="result-count" aria-live="polite">
+                {visible.length} {visible.length === 1 ? 'role' : 'roles'}
+              </p>
+            </div>
+          )}
 
-          {/* Placeholder cards rather than a line of text: the list keeps its
-              shape while it loads, so nothing jumps when the jobs arrive. */}
           {status === 'loading' && (
             <div className="job-skeletons" aria-hidden="true">
               {[0, 1, 2].map((n) => (
@@ -451,10 +449,6 @@ function App() {
             </p>
           )}
 
-          {/* An empty board and an over-narrowed search are different problems
-              and get different words. Saying "no roles match these filters"
-              when no filters are set sends someone hunting for a control to
-              undo, and there isn't one. */}
           {status === 'ready' &&
             (openJobs.length === 0 ? (
               <div className="panel-empty">
@@ -468,10 +462,10 @@ function App() {
                   hiring right now, and you can go to them directly.
                 </p>
                 <div className="panel-empty-actions">
-                  <a className="btn btn-primary btn-small" href="#/companies">
+                  <a className="btn btn-primary btn-small" href={pathFor('companies')}>
                     Browse startups hiring
                   </a>
-                  <a className="btn btn-small" href="#/post">
+                  <a className="btn btn-small" href={pathFor('post')}>
                     Post a role
                   </a>
                 </div>
@@ -507,7 +501,7 @@ function App() {
                       type="button"
                       className="page-btn"
                       disabled={currentPage === 1}
-                      onClick={() => setPage(currentPage - 1)}
+                      onClick={() => goToPage(currentPage - 1)}
                     >
                       Prev
                     </button>
@@ -518,7 +512,7 @@ function App() {
                       type="button"
                       className="page-btn"
                       disabled={currentPage === totalPages}
-                      onClick={() => setPage(currentPage + 1)}
+                      onClick={() => goToPage(currentPage + 1)}
                     >
                       Next
                     </button>

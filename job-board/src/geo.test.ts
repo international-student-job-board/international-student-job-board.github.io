@@ -60,8 +60,8 @@ describe('clusterCompanies', () => {
 });
 
 test('every mapped postcode sits inside greater Melbourne', () => {
-  // A transposed or mistyped coordinate would put a pin in the ocean; this
-  // pins the whole table inside a sane bounding box.
+  // A transposed or mistyped coordinate would put a pin in the ocean; this pins the whole
+  // table inside a sane bounding box.
   Object.entries(POSTCODE_PLACES).forEach(([postcode, place]) => {
     expect(place.lat).toBeGreaterThan(-38.5);
     expect(place.lat).toBeLessThan(-37.4);

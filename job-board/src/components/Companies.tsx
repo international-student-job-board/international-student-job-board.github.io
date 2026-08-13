@@ -11,9 +11,9 @@ import { NOT_SPECIFIED } from '../format';
 import { prettyLabel } from '../labels';
 import { ActiveFilters, ActiveChip } from './ActiveFilters';
 import { outboundHref } from '../outbound';
-// Leaflet and its stylesheet are a big chunk of the site's weight, and only
-// this page's map view needs them — split out so they download when someone
-// actually asks for a map, not on every visit to the job board.
+// Leaflet and its stylesheet are a big chunk of the site's weight, and only this page's map
+// view needs them — split out so they download when someone actually asks for a map, not on
+// every visit to the job board.
 const CompanyMap = lazy(() =>
   import('./CompanyMap').then((m) => ({ default: m.CompanyMap }))
 );
@@ -35,11 +35,7 @@ const SORTS: { value: CompanySort; label: string }[] = [
 const answerOf = (value: boolean | undefined) =>
   value === true ? 'yes' : value === false ? 'no' : '';
 
-/**
- * The three answers the two hand-checked columns can hold. Blank means nobody
- * has looked yet, which is not "no", so it is labelled rather than left as an
- * unnamed tick box.
- */
+/** The three answers the two hand-checked columns can hold. */
 const answerLabel = (value: string) =>
   value === 'yes' ? 'Yes' : value === 'no' ? 'No' : 'Not checked yet';
 
@@ -52,18 +48,7 @@ type CompanyFilterKey =
   | 'sponsor'
   | 'students';
 
-/**
- * Every filter on this page, defined once.
- *
- * They all behave the same way — pick any number of values, see how many
- * companies each would leave — so they are described rather than written out.
- * The counts are the reason this matters: each option is counted against
- * everything the *other* filters allow, and with a filter written out by hand
- * that meant a bespoke pool per filter, rewritten every time one was added.
- *
- * Names match the jobs page wherever the same thing is being filtered, so a
- * reader moving between the two pages meets one vocabulary.
- */
+/** Every filter on this page, defined once. */
 const FIELDS: {
   key: CompanyFilterKey;
   label: string;
@@ -81,9 +66,8 @@ const FIELDS: {
   {
     key: 'openRoles',
     label: 'Open roles',
-    // Whether, not how many: the count comes from the source file and is a
-    // claim about the company's own careers page, not about roles on this
-    // board. "Has some" is the part of it worth standing behind.
+    // Whether, not how many: the count comes from the source file and is a claim about the
+    // company's own careers page, not about roles on this board.
     pick: (c) => [c.openings > 0 ? 'yes' : 'no'],
     values: ['yes', 'no'],
     format: (v) => (v === 'yes' ? 'Has open roles' : 'None listed'),
@@ -120,11 +104,7 @@ const base = process.env.PUBLIC_URL || '';
 
 const uniqueSorted = (values: string[]) => Array.from(new Set(values)).sort();
 
-/**
- * Every company on the Melbourne list. The jobs page answers "what can I apply
- * for"; this answers "who is hiring" — a startup with openings we haven't
- * listed yet is still worth knowing about.
- */
+/** Every company on the Melbourne list. */
 export function Companies() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -146,12 +126,8 @@ export function Companies() {
   }, []);
 
   /**
-   * Every value each filter could take, read off the data — except where the
-   * options are fixed. A dropdown offering something no company has is a dead
-   * end, so a value only appears if it would match.
-   *
-   * The blank "not specified" marker is offered only where a company actually
-   * leaves that field empty.
+   * Every value each filter could take, read off the data — except where the options are
+   * fixed.
    */
   const options = useMemo(() => {
     const built = {} as Record<CompanyFilterKey, string[]>;
@@ -168,10 +144,8 @@ export function Companies() {
     return built;
   }, [companies]);
 
-  // Values within a filter are OR'd and separate filters are AND'd, matching
-  // how the job board's filters behave — one rule to learn, not two. A company
-  // with nothing in that field matches only when "not specified" is what was
-  // asked for.
+  // Values within a filter are OR'd and separate filters are AND'd, matching how the job
+  // board's filters behave — one rule to learn, not two.
   const overlaps = (selected: string[], values: string[]) =>
     selected.length === 0 ||
     (values.filter(Boolean).length
@@ -188,9 +162,9 @@ export function Companies() {
   }, [companies, query, filters, sort]);
 
   /**
-   * How many companies each option would leave, counted with that filter's own
-   * selection lifted — otherwise every unpicked value in a filter you have
-   * already used reads as zero, because that filter has just excluded them.
+   * How many companies each option would leave, counted with that filter's own selection
+   * lifted — otherwise every unpicked value in a filter you have already used reads as
+   * zero, because that filter has just excluded them.
    */
   const counts = useMemo(() => {
     const pool = searchCompanies(companies, query);
@@ -214,8 +188,8 @@ export function Companies() {
   const label = (value: string, format?: (v: string) => string) =>
     (format ? format(value) : value) || NOT_SPECIFIED;
 
-  // Same chips as the job board: what is narrowing the list, readable at a
-  // glance and undoable one at a time.
+  // Same chips as the job board: what is narrowing the list, readable at a glance and
+  // undoable one at a time.
   const chips: ActiveChip[] = FIELDS.flatMap((field) =>
     filters[field.key].map((value) => ({
       id: `${field.key}:${value}`,
@@ -234,7 +208,7 @@ export function Companies() {
       <header className="about-intro">
         <h1>Startups and scaleups</h1>
         <p>
-          Startups and scaleups found in Victoria, Australia.
+          Startups and scaleups founded in Victoria, Australia.
         </p>
       </header>
 
@@ -245,10 +219,6 @@ export function Companies() {
          which hire international students. A company without those tags hasn't been checked
          yet, so it's worth asking them 'bout this directly.
         </p>
-        {/* The same shape as the job board: a labelled toggle, then one bar
-            holding the controls and the chips together. They were two blocks
-            here, each with its own rule, which drew two lines across the page
-            where the board draws one. */}
         <div className="filters-region companies-filters">
           <button
             type="button"
@@ -295,10 +265,10 @@ export function Companies() {
                     label={field.label}
                     options={options[field.key].map((v) => ({
                       value: v,
-                      // The field's own labeller gets first refusal on a blank,
-                      // because "not specified" is not always the truest word for
-                      // a gap — on the hand-checked columns it means nobody has
-                      // looked yet, which is a different claim.
+                      // The field's own labeller gets first refusal on a blank, because
+                      // "not specified" is not always the truest word for a gap — on the
+                      // hand-checked columns it means nobody has looked yet, which is a
+                      // different claim.
                       label: label(v, field.format),
                       count: counts[field.key].get(v) ?? 0,
                     }))}
@@ -345,8 +315,6 @@ export function Companies() {
 
         {status === 'ready' && (
           <>
-            {/* Count on the left, view on the right, aligned on their shared
-                baseline — the jobs panel heads its list the same way. */}
             <div className="jobs-head company-head">
               <p className="result-count" aria-live="polite">
                 {shown.length} {shown.length === 1 ? 'company' : 'companies'}
@@ -400,18 +368,8 @@ export function Companies() {
 }
 
 /**
- * Card hierarchy, most important first: who they are, what they do, whether
- * they can hire you, what field they're in, and the housekeeping last.
- *
- * The open-roles count is the ordinary chip rather than a filled badge. It sits
- * right beside the company name, and a solid pill there covers more surface
- * area than the name itself does, so it would win an argument it shouldn't be
- * having. Weight goes to the name; the count gets contrast instead.
- *
- * The name is the link, but its ::after covers the whole card, so clicking
- * anywhere opens their site while the markup keeps one link with a real name.
- * The LinkedIn link sits above that overlay, which is why it can live inside a
- * card that is otherwise entirely clickable.
+ * Card hierarchy, most important first: who they are, what they do, whether they can hire
+ * you, what field they're in, and the housekeeping last.
  */
 function CompanyCard({
   company,
@@ -424,8 +382,8 @@ function CompanyCard({
   const meta = [company.segment, company.employees && `${company.employees} people`]
     .filter(Boolean)
     .join(' · ');
-  // Long industry lists crowd out everything under them; the rest stay in the
-  // title so nothing is hidden outright.
+  // Long industry lists crowd out everything under them; the rest stay in the title so
+  // nothing is hidden outright.
   const industries = company.industries.slice(0, 3);
   const extraIndustries = company.industries.length - industries.length;
 

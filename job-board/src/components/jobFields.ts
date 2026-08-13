@@ -1,12 +1,5 @@
-// The Add-a-job field definitions, shared by the public form (PostJob) and the
-// local admin (AdminAddJob). Kept in its own module so AdminAddJob doesn't have
-// to import from PostJob (which imports AdminAddJob) - that cycle put FIELDS in
-// its temporal dead zone at load time.
-//
-// Every `key` is a column name in content/jobs.csv, spelled exactly as the
-// header spells it. That is the whole trick behind the form: a draft is already
-// a row, so saving is `columns.map(name => draft[name])` and no mapping table
-// sits in between to fall out of step with the file.
+// The Add-a-job field definitions, shared by the public form (PostJob) and the local admin
+// (AdminAddJob).
 import { getConstant } from '../constants';
 
 export type FieldType = 'text' | 'url' | 'date' | 'textarea' | 'select';
@@ -22,14 +15,7 @@ export interface Field {
   maxLength?: number;
 }
 
-/**
- * "Not checked yet" leads, and so is the default a blank form starts on.
- *
- * With Yes first, every role saved without touching the field claimed the
- * employer was an accredited sponsor — a claim about someone else's standing
- * with the Department, made by an untouched dropdown. "No" is a real answer
- * here and is saved as one; blank means nobody has looked into it.
- */
+/** "Not checked yet" leads, and so is the default a blank form starts on. */
 const CHECKED = ['Not checked yet', 'Yes', 'No'];
 
 export const FIELDS: Field[] = [
@@ -52,8 +38,8 @@ export const FIELDS: Field[] = [
     type: 'date',
     hint: 'Orders the board and drives the "posted recently" filter. Defaults to today.',
   },
-  // The three occupation columns are written by the picker rather than typed,
-  // so they carry no input of their own — see AdminAddJob.
+  // The three occupation columns are written by the picker rather than typed, so they carry
+  // no input of their own — see AdminAddJob.
   { key: 'ANZSCO occupation', label: 'ANZSCO occupation', type: 'text' },
   { key: 'ANZSCO 2022', label: 'ANZSCO 2022', type: 'text' },
   { key: 'ANZSCO 2013', label: 'ANZSCO 2013', type: 'text' },

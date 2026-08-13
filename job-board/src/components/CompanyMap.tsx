@@ -13,15 +13,7 @@ const esc = (text: string) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string)
   );
 
-/**
- * Companies plotted by the postcode in their address, one marker per suburb.
- * Hovering a marker opens its list of companies; each name links out to that
- * company's own site.
- *
- * Circles rather than pins: a pin points at an address, and this data only
- * knows the suburb. A disc sized by how many companies are in the area says
- * "around here, this many" without pretending to a street corner.
- */
+/** Companies plotted by the postcode in their address, one marker per suburb. */
 export function CompanyMap({
   companies,
   highlight,
@@ -38,8 +30,7 @@ export function CompanyMap({
 
   const { clusters, unplaced } = useMemo(() => clusterCompanies(companies), [companies]);
 
-  // The map itself is created once and kept; only its markers change as the
-  // filters change.
+  // The map itself is created once and kept; only its markers change as the filters change.
   useEffect(() => {
     if (mapRef.current || !containerRef.current) return;
     const map = L.map(containerRef.current, {
@@ -54,11 +45,9 @@ export function CompanyMap({
     layerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
 
-    // Leaflet sizes itself once and never notices the container changing, so
-    // switching between the split and full-width views leaves it drawing at the
-    // old width with grey gaps where tiles should be. Watching the element is
-    // more reliable than reacting to the view prop: it also covers a window
-    // resize and the sidebar reflowing.
+    // Leaflet sizes itself once and never notices the container changing, so switching
+    // between the split and full-width views leaves it drawing at the old width with grey
+    // gaps where tiles should be.
     const observer = new ResizeObserver(() => map.invalidateSize());
     observer.observe(containerRef.current);
 
@@ -81,8 +70,8 @@ export function CompanyMap({
     clusters.forEach((cluster) => {
       const count = cluster.companies.length;
       const marker = L.circleMarker([cluster.lat, cluster.lng], {
-        // Area, not radius, tracks the count — doubling a radius quadruples the
-        // ink and reads as four times as many.
+        // Area, not radius, tracks the count — doubling a radius quadruples the ink and
+        // reads as four times as many.
         radius: 8 + Math.sqrt(count) * 3,
         weight: 2,
         color: '#00171f',
@@ -115,8 +104,8 @@ export function CompanyMap({
         { closeButton: true, maxHeight: 240 }
       );
 
-      // Opens on hover as asked, and stays open so the links inside can be
-      // clicked — a tooltip that vanishes when you reach for it is no use.
+      // Opens on hover as asked, and stays open so the links inside can be clicked — a
+      // tooltip that vanishes when you reach for it is no use.
       marker.on('mouseover', () => marker.openPopup());
       marker.on('click', () => marker.openPopup());
       marker.addTo(layer);
@@ -131,8 +120,8 @@ export function CompanyMap({
     }
   }, [clusters]);
 
-  // Hovering a card in the split view opens that company's suburb on the map,
-  // so the two halves stay in step rather than being read separately.
+  // Hovering a card in the split view opens that company's suburb on the map, so the two
+  // halves stay in step rather than being read separately.
   useEffect(() => {
     const marker = highlight ? markersRef.current.get(highlight) : undefined;
     if (!marker) return;

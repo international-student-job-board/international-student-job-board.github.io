@@ -1,20 +1,7 @@
 import { useMemo, useState } from 'react';
 import { listOccupations, OccupationChoice } from '../references';
 
-/**
- * Picks one or more ANZSCO occupations for a role.
- *
- * It searches the occupation reference — the 714 occupations that are actually
- * on a skilled list — rather than the full ANZSCO classification. An occupation
- * that isn't on a list has no visa consequences to show, so offering it here
- * would only produce roles whose visa section is empty.
- *
- * Picking one writes all three CSV columns at once: the occupation name, the
- * 2022 code and the 2013 code. The last of those is the reason this is a picker
- * and not two number fields — the 2013 code is not derivable from the 2022 one,
- * and looking it up by hand for every role is exactly the kind of work a
- * reference file exists to remove.
- */
+/** Picks one or more ANZSCO occupations for a role. */
 export function OccupationPicker({
   selected,
   onChange,
@@ -25,8 +12,8 @@ export function OccupationPicker({
   const [query, setQuery] = useState('');
   const all = useMemo(() => listOccupations(), []);
 
-  // Matched on the name and on both codes, so "261313" and "software" both
-  // find the same row.
+  // Matched on the name and on both codes, so "261313" and "software" both find the same
+  // row.
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return all.slice(0, 40);

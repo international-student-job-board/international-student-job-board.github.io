@@ -13,11 +13,7 @@ interface Props {
   options: SelectOption[];
   selected: string[];
   onChange: (next: string[]) => void;
-  /**
-   * Multi-select by default. The salary threshold is the one single-choice
-   * control — picking two minimums would only ever mean the lower one — but it
-   * keeps the same trigger and panel so the filter row reads as one control.
-   */
+  /** Multi-select by default. */
   multiple?: boolean;
 }
 
@@ -42,8 +38,8 @@ export function FilterSelect({ label, options, selected, onChange, multiple = tr
     ? options.filter((o) => o.label.toLowerCase().includes(needle))
     : options;
 
-  // An open panel closes on a click anywhere outside it, on Escape, and when
-  // focus tabs away — three ways out, so it never feels like a trap.
+  // An open panel closes on a click anywhere outside it, on Escape, and when focus tabs
+  // away — three ways out, so it never feels like a trap.
   useEffect(() => {
     if (!open) return;
     const root = rootRef.current;
@@ -71,8 +67,8 @@ export function FilterSelect({ label, options, selected, onChange, multiple = tr
     };
   }, [open]);
 
-  // Anchor the panel to whichever edge keeps it on screen — the filter row
-  // wraps, so a control can sit anywhere across the width.
+  // Anchor the panel to whichever edge keeps it on screen — the filter row wraps, so a
+  // control can sit anywhere across the width.
   useLayoutEffect(() => {
     if (!open) return;
     const trigger = triggerRef.current;
@@ -152,9 +148,9 @@ export function FilterSelect({ label, options, selected, onChange, multiple = tr
                     name={multiple ? undefined : panelId}
                     checked={selected.includes(option.value)}
                     onChange={() => toggle(option.value)}
-                    // Re-picking the option a radio already holds fires no
-                    // change event, so close on the click itself — otherwise
-                    // that one option leaves the panel stuck open.
+                    // Re-picking the option a radio already holds fires no change event, so
+                    // close on the click itself — otherwise that one option leaves the
+                    // panel stuck open.
                     onClick={() => {
                       if (!multiple && selected.includes(option.value)) setOpen(false);
                     }}
@@ -163,8 +159,6 @@ export function FilterSelect({ label, options, selected, onChange, multiple = tr
                   {option.count !== undefined && (
                     <span className="fselect-option-count">
                       {option.count}
-                      {/* The number is inside the label, so it reads out as
-                          part of the option. On its own "3" says nothing. */}
                       <span className="visually-hidden">
                         {option.count === 1 ? ' result' : ' results'}
                       </span>

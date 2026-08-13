@@ -1,3 +1,4 @@
+import { pathFor, Route } from '../routes';
 const base = process.env.PUBLIC_URL || '';
 
 const NAV = [
@@ -14,7 +15,7 @@ const NAV = [
 export function Header({ route }: { route: string }) {
   return (
     <header className="topbar">
-      <a className="brand" href="#/jobs" aria-label="International Student Job Board - home">
+      <a className="brand" href={pathFor('jobs')} aria-label="International Student Job Board - home">
         <img
           className="brand-logo"
           src={`${base}/icons/logo.svg`}
@@ -29,7 +30,7 @@ export function Header({ route }: { route: string }) {
         {NAV.map((item) => (
           <a
             key={item.route}
-            href={`#/${item.route}`}
+            href={pathFor(item.route as Route)}
             className={`topnav-link${route === item.route ? ' is-active' : ''}`}
             aria-current={route === item.route ? 'page' : undefined}
           >

@@ -2,20 +2,12 @@ import { useEffect, useState } from 'react';
 
 const base = process.env.PUBLIC_URL || '';
 
-/**
- * Copies a link straight to this role.
- *
- * Copy rather than a share sheet: navigator.share only exists on some
- * browsers, and mostly mobile ones, so a button built on it is missing
- * wherever it isn't supported. The clipboard works everywhere, and the state
- * that matters — "did it work" — is answerable, which a share sheet's outcome
- * is not.
- */
+/** Copies a link straight to this role. */
 export function ShareJob({ url, title }: { url: string; title: string }) {
   const [copied, setCopied] = useState(false);
 
-  // The confirmation clears itself; leaving "Copied" up forever would say
-  // nothing about the next click.
+  // The confirmation clears itself; leaving "Copied" up forever would say nothing about the
+  // next click.
   useEffect(() => {
     if (!copied) return;
     const timer = window.setTimeout(() => setCopied(false), 2200);
@@ -27,9 +19,7 @@ export function ShareJob({ url, title }: { url: string; title: string }) {
       await navigator.clipboard.writeText(url);
       setCopied(true);
     } catch {
-      // Clipboard access can be refused (an insecure origin, or a browser
-      // setting). Falling back to a prompt is uglier, but it still lets
-      // someone copy the link rather than leaving the button dead.
+      // Clipboard access can be refused (an insecure origin, or a browser setting).
       window.prompt(`Copy the link to ${title}:`, url);
     }
   };

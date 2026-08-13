@@ -13,8 +13,8 @@ const occupation = (name: string, anzsco2022: string, anzsco2013: string) => ({
 
 describe('a filled form becomes a CSV row', () => {
   test('every column the form collects reaches the row', () => {
-    // The bug this guards: a row built by walking some subset of the fields
-    // dropped whatever the subset forgot, silently and per-field.
+    // The bug this guards: a row built by walking some subset of the fields dropped
+    // whatever the subset forgot, silently and per-field.
     const filled = Object.fromEntries(FIELDS.map((f) => [f.key, `v-${f.key}`]));
     const row = buildJobRow(draft(filled), []);
     FIELDS.filter((f) => !f.key.startsWith('ANZSCO') && !CHECKED_KEYS.includes(f.key)).forEach(
@@ -27,9 +27,9 @@ describe('a filled form becomes a CSV row', () => {
   });
 
   test('an untouched form claims nothing about the employer', () => {
-    // "Not checked yet" is the default, and it has to reach the file as blank —
-    // otherwise every role saved without touching the field asserts something
-    // about someone else's standing with the Department.
+    // "Not checked yet" is the default, and it has to reach the file as blank — otherwise
+    // every role saved without touching the field asserts something about someone else's
+    // standing with the Department.
     const row = buildJobRow(draft(), []);
     expect(row['Accredited sponsor']).toBe('');
     expect(row['Hires international students']).toBe('');
@@ -80,8 +80,8 @@ describe('the row lands in the right columns', () => {
   test('written out, each value sits under its own header', () => {
     const row = buildJobRow(draft({ 'Job title': 'Engineer', 'Company name': 'Acme, Inc' }), []);
     const cells = toCsvRow(row, [...COLUMNS]).split(',');
-    // "Acme, Inc" is quoted, so it is one cell containing a comma — splitting
-    // naively proves the quoting happened at all.
+    // "Acme, Inc" is quoted, so it is one cell containing a comma — splitting naively
+    // proves the quoting happened at all.
     expect(cells).toHaveLength(COLUMNS.length + 1);
     expect(toCsvRow(row, [...COLUMNS])).toContain('"Acme, Inc"');
   });

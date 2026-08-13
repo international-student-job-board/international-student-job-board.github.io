@@ -1,14 +1,5 @@
-// Enumerated pick-lists used by the local admin: job level, type, arrangement,
-// education level, skills and skills-assessing authority.
-//
-// Fetched at start-up rather than imported. The admin appends to this file
-// through the dev server, and while it lived in src/ every write changed a
-// module webpack was watching — so adding one skill rebuilt the bundle and
-// reloaded the page, emptying the half-filled form that had just added it.
-// Nothing imports it now, so a write is invisible to the compiler.
-//
-// It is loaded once before the app renders, which keeps every caller below
-// synchronous.
+// Enumerated pick-lists used by the local admin: job level, type, arrangement, education
+// level, skills and skills-assessing authority.
 
 export type ConstantKey =
   | 'jobLevel'

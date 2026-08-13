@@ -46,8 +46,8 @@ function Harness() {
   );
 }
 
-// The applied-filter chips carry the field name too, so triggers are matched on
-// aria-expanded — only the dropdown triggers have it.
+// The applied-filter chips carry the field name too, so triggers are matched on aria-
+// expanded — only the dropdown triggers have it.
 const openFilter = (name: RegExp) =>
   fireEvent.click(screen.getByRole('button', { name, expanded: false }));
 
@@ -113,9 +113,7 @@ describe('roles that don’t say', () => {
 
 describe('the company’s own tags', () => {
   test('they filter separately from what the role does', () => {
-    // "Job type" is what you would be doing; this is what the company is. Two
-    // questions, so two controls — a merged list would make the reader work out
-    // which kind of thing each option was before they could use it.
+    // "Job type" is what you would be doing; this is what the company is.
     render(<Harness />);
     openFilter(/job type/i);
     expect(screen.getByRole('checkbox', { name: /Full Time/ })).toBeInTheDocument();
@@ -139,8 +137,8 @@ describe('the company’s own tags', () => {
 
 describe('the company filter', () => {
   test('names are offered as the source wrote them, not re-cased', () => {
-    // Company names are proper nouns; capitalising them would invent brands
-    // that do not exist.
+    // Company names are proper nouns; capitalising them would invent brands that do not
+    // exist.
     render(<Harness />);
     openFilter(/^Company/);
     expect(screen.getByRole('checkbox', { name: /Acme/ })).toBeInTheDocument();
@@ -157,9 +155,7 @@ describe('the company filter', () => {
 
 describe('stage and head office', () => {
   test('the stage stands alone, rather than paired with the segment', () => {
-    // The detail page shows "startup · early stage" as one fact. Filtering on
-    // that pair would make "late stage" and "startup · late stage" separate
-    // options, so asking for late-stage companies would take three ticks.
+    // The detail page shows "startup · early stage" as one fact.
     render(<Harness />);
     openFilter(/^Stage/);
     // Capitalised on the way out — the source writes them lowercase.
@@ -169,8 +165,7 @@ describe('stage and head office', () => {
   });
 
   test('the head office is the company\u2019s, not the role\u2019s city', () => {
-    // "Location" is where the job is; this is where the company is. They differ
-    // often enough that one filter could not answer both.
+    // "Location" is where the job is; this is where the company is.
     render(<Harness />);
     openFilter(/head office/i);
     expect(screen.getByRole('checkbox', { name: /Geelong/ })).toBeInTheDocument();
@@ -190,10 +185,8 @@ describe('stage and head office', () => {
 
 describe('the two hand-checked answers', () => {
   test('they are separate controls, not one "sponsors visas?"', () => {
-    // Accreditation is a formal status with the Department; hiring
-    // international students is a hiring habit. A company can do either without
-    // the other, so one control offering both answers quietly asked the reader
-    // to treat them as the same question.
+    // Accreditation is a formal status with the Department; hiring international students
+    // is a hiring habit.
     render(<Harness />);
     expect(
       screen.getByRole('button', { name: /Accredited sponsor/, expanded: false })
@@ -245,8 +238,8 @@ describe('the recency filter', () => {
     render(<Harness />);
     openFilter(/posted/i);
     fireEvent.click(screen.getByRole('radio', { name: /Last 7 days/ }));
-    // A single-choice panel closes on its answer — there is nothing left to
-    // decide — so asking again means opening it again.
+    // A single-choice panel closes on its answer — there is nothing left to decide — so
+    // asking again means opening it again.
     openFilter(/posted/i);
     fireEvent.click(screen.getByRole('radio', { name: /Last month/ }));
 

@@ -7,10 +7,8 @@ const REFERENCES = [
   { label: 'Skilled employment sponsors - 2025', url: 'https://www.homeaffairs.gov.au/foi/files/2025/fa-250101229-document-released.PDF'},
 ];
 
-// Written from the same seat the readers are in, rather than a government
-// page: networking, resumes, finding roles and interviews, by an international
-// STEM student in Australia. Kept apart from the official references below so
-// neither is mistaken for the other.
+// Written from the same seat the readers are in, rather than a government page: networking,
+// resumes, finding roles and interviews, by an international STEM student in Australia.
 const GUIDES = [
   {
     label: '🐝 My Two Rupees',

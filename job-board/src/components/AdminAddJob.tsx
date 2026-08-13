@@ -19,19 +19,7 @@ import {
 
 const byKey = new Map(FIELDS.map((f) => [f.key, f]));
 
-/**
- * A draft becomes a CSV row.
- *
- * The draft is already keyed by column name, so this is mostly a copy — the
- * work is in the two places where what the form shows and what the file should
- * hold differ:
- *
- * - the occupation columns, which the picker owns rather than any input, and
- * - the two yes/no columns, where "Not checked yet" has to reach the file as an
- *   empty cell. Writing the words through would turn "nobody has looked" into a
- *   value that reads like an answer, and the loader would then have to know
- *   which strings mean nothing.
- */
+/** A draft becomes a CSV row. */
 export function buildJobRow(draft: Draft, occupations: OccupationChoice[]): Record<string, string> {
   const row: Record<string, string> = {};
   for (const field of FIELDS) {
@@ -44,8 +32,8 @@ export function buildJobRow(draft: Draft, occupations: OccupationChoice[]): Reco
     row[key] = answer === 'yes' ? 'Yes' : answer === 'no' ? 'No' : '';
   }
 
-  // Semicolons, because a comma inside a cell only survives quoting and these
-  // are read by eye as often as by code.
+  // Semicolons, because a comma inside a cell only survives quoting and these are read by
+  // eye as often as by code.
   row['ANZSCO occupation'] = occupations.map((o) => o.name).join('; ');
   row['ANZSCO 2022'] = occupations.map((o) => o.anzsco2022).filter(Boolean).join('; ');
   row['ANZSCO 2013'] = occupations.map((o) => o.anzsco2013).filter(Boolean).join('; ');
@@ -128,9 +116,9 @@ export function AdminAddJob() {
     const id = `admin-${field.key.replace(/\s+/g, '-').toLowerCase()}`;
     const value = draft[field.key] ?? '';
 
-    // Two fields are not plain inputs: the company name is matched against the
-    // company list so the employer's details fill themselves in, and the job
-    // type is a pick-list that can be added to.
+    // Two fields are not plain inputs: the company name is matched against the company list
+    // so the employer's details fill themselves in, and the job type is a pick-list that
+    // can be added to.
     if (field.key === 'Company name') {
       return (
         <CompanyPicker

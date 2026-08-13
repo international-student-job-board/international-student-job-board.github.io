@@ -1,21 +1,6 @@
 // Turning the source files' tags into something worth reading.
-//
-// Both CSVs arrive lowercased and abbreviated — "saas", "early stage",
-// "iot internetofthings" — which is fine as data and poor as a list of options
-// to scan. Refactoring UI's chapter on personality makes the point that the
-// words in an interface carry as much of its character as the visuals do; a
-// filter full of "saas" reads as a database dump rather than as a product.
-//
-// The raw value stays the filter's value throughout — only the label changes —
-// so nothing here can affect which roles match.
 
-/**
- * Tags whose correct spelling isn't a capitalisation of the source.
- *
- * Acronyms mostly, plus the few the source ran together. Anything not listed
- * falls through to the general rule below, so this stays short rather than
- * trying to enumerate every tag in the files.
- */
+/** Tags whose correct spelling isn't a capitalisation of the source. */
 const OVERRIDES: Record<string, string> = {
   saas: 'SaaS',
   paas: 'PaaS',
@@ -39,13 +24,7 @@ const OVERRIDES: Record<string, string> = {
   ios: 'iOS',
 };
 
-/**
- * One word, capitalised — unless it already carries a capital of its own.
- *
- * That exception is what keeps "CSM & Support", "DevOps" and "iOS Development"
- * intact: the job-type column is already written properly, and re-casing it
- * would turn correct names into wrong ones.
- */
+/** One word, capitalised — unless it already carries a capital of its own. */
 const capitalise = (word: string) =>
   /[A-Z]/.test(word) ? word : word.charAt(0).toUpperCase() + word.slice(1);
 

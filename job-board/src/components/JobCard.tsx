@@ -24,9 +24,6 @@ export function JobCard({ job, selected, onSelect }: Props) {
         <span className="job-card-meta job-card-posted">
           {job.posted ? `Posted ${formatDate(job.posted)}` : 'Not specified'}
         </span>
-        {/* Only the affirmative answer earns a badge. "Not an accredited
-            sponsor" is a fact about the employer, not a feature of the role,
-            and a badge for it would read as a warning the board can't support. */}
         {job.company.accreditedSponsor && (
           <span className="job-card-flags">
             <span className="flag flag-sponsor">Accredited sponsor</span>

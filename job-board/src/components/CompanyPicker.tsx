@@ -10,24 +10,15 @@ interface Props {
   value: string;
   onChange: (value: string) => void;
   /**
-   * Called when the typed name matches a company on the Melbourne list, so the
-   * form can fill in the blurb and the link. Called with undefined when it
-   * stops matching, letting the form decide whether to clear what it filled.
+   * Called when the typed name matches a company on the Melbourne list, so the form can
+   * fill in the blurb and the link.
    */
   onMatch: (company: Company | undefined) => void;
   required?: boolean;
   hint?: React.ReactNode;
 }
 
-/**
- * Company name field backed by the Melbourne startup list. Picking a known
- * company saves the poster from retyping their own one-liner and website, and
- * keeps those details consistent with the "startups hiring" page.
- *
- * Anything can still be typed: a company not on the list is exactly the sort of
- * employer this board wants to hear from, so an unknown name is a normal case,
- * not an error.
- */
+/** Company name field backed by the Melbourne startup list. */
 export function CompanyPicker({
   id,
   label,
@@ -66,13 +57,12 @@ export function CompanyPicker({
 
   const matched = useMemo(() => findCompany(companies, value), [companies, value]);
 
-  // Reported whenever an exact name match appears or disappears, including
-  // when the list finishes loading after the name was already typed.
+  // Reported whenever an exact name match appears or disappears, including when the list
+  // finishes loading after the name was already typed.
   useEffect(() => {
     onMatch(matched);
-    // onMatch is a fresh closure each render in the parent; depending on it
-    // would fire this on every keystroke.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // onMatch is a fresh closure each render in the parent; depending on it would fire this
+    // on every keystroke. eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matched]);
 
   const matches = useMemo(

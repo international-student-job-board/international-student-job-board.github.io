@@ -22,8 +22,8 @@ describe('reading a tag as a label', () => {
   });
 
   test('a tag already written properly is left alone', () => {
-    // The job-type column is written by hand and is already correct; re-casing
-    // it would turn right names into wrong ones.
+    // The job-type column is written by hand and is already correct; re-casing it would
+    // turn right names into wrong ones.
     expect(prettyLabel('CSM & Support')).toBe('CSM & Support');
     expect(prettyLabel('iOS Development')).toBe('iOS Development');
     expect(prettyLabel('Backend development')).toBe('Backend Development');

@@ -884,6 +884,27 @@ optgroup {
 /* Two font sizes on one line, aligned on the baseline they share rather than
    centred — centring two different sizes offsets their baselines and reads as
    a mistake. */
+/* The board's own heading, above the filters and across the full width — the
+   same order the companies page reads in: what this is, then how to narrow it,
+   then the results. It takes the filter toggle's gutter so the two line up down
+   the left edge. */
+.board-intro {
+  flex-shrink: 0;
+  padding: var(--s6) var(--gutter) 0;
+}
+
+.board-intro .panel-banner {
+  margin-bottom: var(--s5);
+}
+
+/**
+ * The intro spans the page, like the filter bar it sits above.
+ */
+.board-intro .panel-lead,
+.board-intro .panel-banner {
+  max-width: none;
+}
+
 .jobs-head {
   display: flex;
   align-items: baseline;
@@ -919,6 +940,23 @@ optgroup {
   font-size: var(--fs-sm);
   line-height: var(--lh-body);
   color: var(--muted);
+}
+
+/**
+ * A link inside the caveat line.
+ */
+.panel-banner a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+  transition: color 0.15s var(--ease);
+}
+
+.panel-banner a:hover,
+.panel-banner a:focus-visible {
+  color: var(--ink);
+  text-decoration-thickness: 2px;
 }
 
 .panel-note {
@@ -3437,4 +3475,13 @@ a.occ-visa-code:focus-visible {
 .occupation-codes {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+
+/** The one sentence that says what the board is, under the headline. */
+.panel-lead {
+  margin: var(--s2) 0 var(--s3);
+  max-width: 62ch;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--muted-strong);
 }

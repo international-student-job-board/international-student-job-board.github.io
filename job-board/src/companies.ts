@@ -1,16 +1,6 @@
-// The employers behind the "startups currently hiring" page, from
-// content/companies.csv — its own file, separate from the jobs CSV.
-//
-// The two overlap: every row of jobs.csv also carries its employer's columns,
-// and the jobs page reads those (see jobs.ts). They answer different questions,
-// though. This file is "who is hiring in Melbourne", which includes companies
-// with no role listed here; the jobs CSV is "which roles are on the board".
-// Neither is a subset of the other, so neither is derived from the other.
-//
-// Both spellings of the migration columns are read, because the two files
-// disagree: the companies list says "Sponsor visa available" and the jobs list
-// says "Accredited sponsor". Accepting both means whichever file is refreshed
-// first keeps working.
+// The employers behind the "startups currently hiring" page, from content/companies.csv —
+// its own file, separate from the jobs CSV. The two overlap: every row of jobs.csv also
+// carries its employer's columns, and the jobs page reads those (see jobs.ts).
 
 import { Company } from './types';
 import { parseCsv, splitList, triState } from './csv';

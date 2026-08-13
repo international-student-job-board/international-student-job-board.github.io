@@ -173,8 +173,8 @@ describe('filling the employer’s gaps from the companies file', () => {
   const COMPANY_HEADER = COMPANY_COLUMNS.join(',');
 
   /**
-   * loadJobs fetches two files and loadCompanies memoises, so each case needs a
-   * fresh module registry and a stub that answers by URL.
+   * loadJobs fetches two files and loadCompanies memoises, so each case needs a fresh
+   * module registry and a stub that answers by URL.
    */
   const load = async (jobsCsv: string, companiesCsv: string) => {
     jest.resetModules();
@@ -195,8 +195,8 @@ describe('filling the employer’s gaps from the companies file', () => {
     toCsvRow({ 'Company name': 'Acme', ...over }, COMPANY_COLUMNS);
 
   test('an answer only the companies file holds reaches the role', async () => {
-    // The jobs export leaves this column blank on every row; the companies
-    // list is the only place it is recorded.
+    // The jobs export leaves this column blank on every row; the companies list is the only
+    // place it is recorded.
     const [job] = await load(
       `${JOB_HEADER}\n${jobRow()}`,
       `${COMPANY_HEADER}\n${companyRow({ 'Hires international students': 'True' })}`
@@ -262,8 +262,8 @@ describe('roles older than the listing window', () => {
   });
 
   test('a role posted exactly two months ago is still shown', () => {
-    // The boundary belongs to the role: "over two months ago" is what is being
-    // excluded, so two months to the day is not yet over it.
+    // The boundary belongs to the role: "over two months ago" is what is being excluded, so
+    // two months to the day is not yet over it.
     expect(isRecent(job('2026-06-13'), '2026-08-13')).toBe(true);
   });
 
@@ -281,9 +281,9 @@ describe('roles older than the listing window', () => {
   });
 
   test('a short month does not quietly shorten the window', () => {
-    // Two months before 30 April is 28 February, not 2 March — letting the day
-    // roll forward would drop three days of roles in exactly the months where
-    // nobody would think to check.
+    // Two months before 30 April is 28 February, not 2 March — letting the day roll forward
+    // would drop three days of roles in exactly the months where nobody would think to
+    // check.
     expect(isRecent(job('2026-02-28'), '2026-04-30')).toBe(true);
     expect(isRecent(job('2026-02-27'), '2026-04-30')).toBe(false);
   });

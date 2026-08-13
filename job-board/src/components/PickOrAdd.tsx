@@ -1,9 +1,6 @@
 import { useState } from 'react';
 
-// A <select> that picks from a constant list, with an optional "＋ Add new…"
-// path. When `onAdd` is given, choosing "Add new" reveals a text box; adding
-// persists the value (via the caller) and selects it. Without `onAdd` it's a
-// plain picker (used on the public form, which can't write files).
+// A <select> that picks from a constant list, with an optional "＋ Add new…" path.
 export function PickOrAdd({
   id,
   label,

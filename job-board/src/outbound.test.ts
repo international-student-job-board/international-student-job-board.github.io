@@ -8,8 +8,8 @@ import {
 
 describe('the outbound link contract', () => {
   test('keeps noopener but never noreferrer', () => {
-    // The regression this guards: `noreferrer` strips the Referer header, so
-    // every site we send traffic to loses all trace of where it came from.
+    // The regression this guards: `noreferrer` strips the Referer header, so every site we
+    // send traffic to loses all trace of where it came from.
     expect(OUTBOUND.rel).toBe('noopener');
     expect(OUTBOUND.rel).not.toContain('noreferrer');
     expect(OUTBOUND_ATTRS).not.toContain('noreferrer');
@@ -123,8 +123,8 @@ describe('safeHref', () => {
   });
 
   test('refuses anything that can execute', () => {
-    // Stored XSS if any of these reached an href: the data files are edited by
-    // hand and generated from third-party exports.
+    // Stored XSS if any of these reached an href: the data files are edited by hand and
+    // generated from third-party exports.
     expect(safeHref('javascript:alert(1)')).toBe('');
     expect(safeHref('JavaScript:alert(1)')).toBe('');
     expect(safeHref('  javascript:alert(1)  ')).toBe('');

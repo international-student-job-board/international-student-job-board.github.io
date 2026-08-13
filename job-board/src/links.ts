@@ -1,8 +1,7 @@
 export const SITE_NAME = 'International Student Job Board';
 
-// The public home of this board, used when telling an employer where an
-// applicant came from. Falls back to the live address when the page isn't
-// running in a browser (tests).
+// The public home of this board, used when telling an employer where an applicant came
+// from.
 export const SITE_URL =
   typeof window !== 'undefined' && window.location?.origin
     ? `${window.location.origin}${window.location.pathname}`
@@ -13,8 +12,7 @@ export const REPO_URL =
 
 export const FEEDBACK_URL = `${REPO_URL}/issues/new?title=${encodeURIComponent('Feedback: ')}`;
 
-// Where employers send a role. Leave it empty and the Post-a-job page points
-// at the footer contact link instead.
+// Where employers send a role.
 export const JOB_EMAIL = 'milindi.beeloud@gmail.com';
 
 // General "Contact us" mailto for the footer.

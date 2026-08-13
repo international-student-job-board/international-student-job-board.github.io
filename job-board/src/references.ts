@@ -1,15 +1,12 @@
-// Links out to official government / assessing-authority references for the
-// visa, skills-assessment and ANZSCO fields. Every job that names one of these
-// should link to its source - see the "always link gov resources" convention.
+// Links out to official government / assessing-authority references for the visa, skills-
+// assessment and ANZSCO fields.
 
 import { Job } from './types';
 
 export const VISA_LISTING =
   'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing';
 
-// Home Affairs visa-listing page per subclass. Slugs are verified against the
-// live site (some are irregular, e.g. 482's long slug). Codes not listed here
-// simply render as plain text.
+// Home Affairs visa-listing page per subclass.
 const VISA_LINKS: Record<string, string> = {
   '186': `${VISA_LISTING}/employer-nomination-scheme-186`,
   '187': `${VISA_LISTING}/regional-sponsor-migration-scheme-187`,
@@ -37,8 +34,7 @@ export function visaUrl(code: string): string | undefined {
   return VISA_LINKS[code.trim()];
 }
 
-// Friendly names per subclass, used to build the selectable visa tags in the
-// local admin. Keep in step with VISA_LINKS.
+// Friendly names per subclass, used to build the selectable visa tags in the local admin.
 export const VISA_NAMES: Record<string, string> = {
   '186': 'Employer Nomination Scheme',
   '187': 'Regional Sponsored Migration Scheme',
@@ -65,15 +61,13 @@ export const VISA_OPTIONS: { code: string; name: string }[] = Object.entries(VIS
   .map(([code, name]) => ({ code, name }))
   .sort((a, b) => a.code.localeCompare(b.code));
 
-// A friendly name for a subclass ("189" -> "Skilled Independent"), falling back
-// to "Subclass NNN" for codes we don't have a name for.
+// A friendly name for a subclass ("189" -> "Skilled Independent"), falling back to
+// "Subclass NNN" for codes we don't have a name for.
 export function visaName(code: string): string {
   return VISA_NAMES[code.trim()] || `Subclass ${code.trim()}`;
 }
 
-// Known skills-assessing authorities → their migration-assessment page. Matched
-// on a substring of the (lowercased) authority name so "Engineers Australia
-// (MSA)" still resolves. Order matters: first match wins.
+// Known skills-assessing authorities → their migration-assessment page.
 const ASSESSMENT_LINKS: Array<[string, string]> = [
   ['acs', 'https://www.acs.org.au/msa.html'],
   ['engineers australia', 'https://www.engineersaustralia.org.au/migration-skills-assessment'],
@@ -100,13 +94,7 @@ export function assessmentUrl(authority: string): string | undefined {
   return hit?.[1];
 }
 
-// Official ABS ANZSCO 2022 classification browser. The browser is hierarchical
-// and bottoms out at the 4-digit unit group (there is no 6-digit page), so we
-// build the path from the code's nested prefixes:
-//   261313 -> /2/26/261/2613  (major / sub-major / minor / unit group)
-// The unit-group page lists and describes the specific 6-digit occupation.
-// Pulls the leading 6-digit code out of free text like "261313 Software
-// Engineer"; undefined if there's no code to link.
+// Official ABS ANZSCO 2022 classification browser.
 const ANZSCO_BROWSE =
   'https://www.abs.gov.au/statistics/classifications/anzsco-australian-and-new-zealand-standard-classification-occupations/2022/browse-classification';
 
@@ -117,22 +105,7 @@ export function anzscoUrl(code: string): string | undefined {
   return `${ANZSCO_BROWSE}/${major}/${submajor}/${minor}/${unit}`;
 }
 
-/**
- * The occupation reference: content/occupation-index.json, keyed by ANZSCO code.
- *
- * It is generated from the Home Affairs skilled occupation list by
- * `npm run fetch-occupations`, which is the only place any of this is decided.
- * Nothing here is typed in by hand any more — a job carries codes, and the
- * lists, visas and assessing authority all follow from them. That removes a
- * whole class of disagreement: a role could previously name one assessor while
- * its occupation named another, and the page had to pick.
- *
- * Both classification versions key the same entry, so a job resolves whether it
- * carries the 2022 code, the 2013 code or both.
- *
- * Fetched once before first render, which keeps every caller below synchronous —
- * they are used inside filtering and inside render alike.
- */
+/** The occupation reference: content/occupation-index.json, keyed by ANZSCO code. */
 export interface OccupationAssessor {
   name: string;
   url: string;
@@ -143,9 +116,8 @@ interface IndexEntry {
   /** Both classification versions, so the admin can fill both CSV columns. */
   codes: { anzsco2022?: string; anzsco2013?: string };
   /**
-   * The ABS page for each version, taken from the Home Affairs listing rather
-   * than constructed. Only the 2022 URL is constructible — the 2013 ones end in
-   * an opaque document id — so both are carried through from the source.
+   * The ABS page for each version, taken from the Home Affairs listing rather than
+   * constructed.
    */
   urls?: { anzsco2022?: string; anzsco2013?: string };
   /** Skilled-migration lists the occupation sits on, e.g. ["MLTSSL", "CSOL"]. */
@@ -183,12 +155,7 @@ export interface OccupationChoice {
   anzsco2013: string;
 }
 
-/**
- * Every occupation in the reference, deduplicated.
- *
- * The index is keyed by code and the same occupation appears under both of its
- * codes, so walking the keys would list most occupations twice.
- */
+/** Every occupation in the reference, deduplicated. */
 export function listOccupations(): OccupationChoice[] {
   const byName = new Map<string, OccupationChoice>();
   Object.values(OCCUPATIONS).forEach((o) => {
@@ -223,25 +190,10 @@ export interface ResolvedOccupation {
   assessors: OccupationAssessor[];
 }
 
-/**
- * The occupations a role maps to, resolved from its codes.
- *
- * A role usually carries the same occupation twice — once as its 2022 code and
- * once as its 2013 one — so entries are grouped by the occupation they resolve
- * to and carry both codes, rather than being listed twice under one name. Where
- * the two versions genuinely disagree (they do for a handful of occupations)
- * they stay separate, because they are separate occupations.
- *
- * Codes the reference doesn't know still appear, with the name from the CSV if
- * it gave one: an occupation missing from the list is worth showing as a code,
- * and dropping it silently would make the page look like it had nothing to say.
- */
+/** The occupations a role maps to, resolved from its codes. */
 export function resolveOccupations(job: Job): ResolvedOccupation[] {
-  // Each version links to its own ABS page: the 2022 codes to the current
-  // classification browser, the 2013 ones to the archived ausstats lookup.
-  // Both come from the reference; the constructed 2022 URL is a fallback for a
-  // code the reference has no entry for, and a 2013 code without one simply has
-  // no link, since pointing it at a 2022 page would be confidently wrong.
+  // Each version links to its own ABS page: the 2022 codes to the current classification
+  // browser, the 2013 ones to the archived ausstats lookup.
   const pairs: OccupationCode[] = [
     ...job.anzsco2022.map((code) => ({
       version: '2022' as const,
@@ -258,8 +210,8 @@ export function resolveOccupations(job: Job): ResolvedOccupation[] {
   const byOccupation = new Map<string, ResolvedOccupation>();
   pairs.forEach((pair, i) => {
     const entry = OCCUPATIONS[pair.code];
-    // Unknown codes group under themselves rather than under a shared blank
-    // name, which would merge two unrelated occupations into one row.
+    // Unknown codes group under themselves rather than under a shared blank name, which
+    // would merge two unrelated occupations into one row.
     const key = entry ? entry.name : `#${pair.code}`;
     const seen = byOccupation.get(key);
     if (seen) {
@@ -307,21 +259,15 @@ export function occupationListsFor(job: Job): string[] {
 }
 
 /**
- * Every visa a role can lead to: the union across its occupations, since which
- * occupation an applicant is assessed under decides what they can apply for.
- *
- * This is the single answer to "what does this role lead to" — the filter and
- * the detail page both read it, so a role can always be found by the visas it
- * is shown to offer.
+ * Every visa a role can lead to: the union across its occupations, since which occupation
+ * an applicant is assessed under decides what they can apply for.
  */
 export function pathwayVisasFor(job: Job): string[] {
   return Array.from(new Set(resolveOccupations(job).flatMap((occ) => occ.visas))).sort();
 }
 
-// Home Affairs' side-by-side of the employer-sponsored skilled visas, for
-// employers working out which one they could offer. Lives here with the other
-// government references rather than in a component, so there is one place to
-// correct a Home Affairs URL when they move it.
+// Home Affairs' side-by-side of the employer-sponsored skilled visas, for employers working
+// out which one they could offer.
 export const EMPLOYER_VISA_COMPARISON_URL =
   'https://immi.homeaffairs.gov.au/employer-subsite/Pages/compare-sponsored-skilled-visa-options.aspx';
 
@@ -329,9 +275,7 @@ export const EMPLOYER_VISA_COMPARISON_URL =
 export const SKILL_OCCUPATION_LIST_URL =
   'https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list';
 
-// The skilled-migration lists an occupation can sit on. Names and links kept
-// together so they can't drift apart, the same way VISA_NAMES tracks
-// VISA_LINKS.
+// The skilled-migration lists an occupation can sit on.
 export const OCCUPATION_LIST_NAMES: Record<string, string> = {
   MLTSSL: 'Medium and Long-term Strategic Skills List',
   CSOL: 'Core Skills Occupation List',
@@ -339,11 +283,8 @@ export const OCCUPATION_LIST_NAMES: Record<string, string> = {
   ROL: 'Regional Occupation List',
 };
 
-// All four point at the Home Affairs skilled-occupation-list index, which is
-// the page that carries every list and is known to resolve. Per-list deep
-// links can replace an entry here individually once the slug is confirmed
-// against the live site — guessing one is what left the 407 link pointing at a
-// 404. An unknown list renders as plain text rather than a broken link.
+// All four point at the Home Affairs skilled-occupation-list index, which is the page that
+// carries every list and is known to resolve.
 const OCCUPATION_LIST_LINKS: Record<string, string> = {
   MLTSSL: SKILL_OCCUPATION_LIST_URL,
   CSOL: SKILL_OCCUPATION_LIST_URL,

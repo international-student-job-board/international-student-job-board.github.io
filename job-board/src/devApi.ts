@@ -1,20 +1,11 @@
-// Calls to the local admin server (scripts/dev-server.js), which writes
-// jobs.json, occupations.json and constants.json during local development.
+// Calls to the local admin server (scripts/dev-server.js), which writes jobs.json,
+// occupations.json and constants.json during local development.
 
 const NOT_RUNNING =
   "The local admin server isn't running. Start it in a second terminal with " +
   '`npm run dev-server` and try again.';
 
-/**
- * POSTs JSON and returns the parsed reply.
- *
- * The reason this exists rather than a bare `res.json()`: when the admin server
- * is down, it's CRA's dev server that answers, with a plain-text "Proxy error:
- * Could not proxy request…". Parsing that as JSON threw "Unexpected token 'P'",
- * which told the reader nothing about what was wrong or how to fix it. Anything
- * that isn't JSON is treated as the server being unreachable, because that is
- * what it means.
- */
+/** POSTs JSON and returns the parsed reply. */
 export async function postJson<T>(url: string, body: unknown): Promise<T> {
   let res: Response;
   try {

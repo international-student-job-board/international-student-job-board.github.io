@@ -1,18 +1,6 @@
 import { Company } from './types';
 
-/**
- * Approximate centres for the Melbourne postcodes that appear in the company
- * list. The source CSV has street addresses but no coordinates, and geocoding
- * 400 addresses in the browser isn't on — so the postcode, the one reliably
- * machine-readable part of those addresses, places a company in its suburb.
- *
- * That means the map is honest to about a suburb, not to a street. Companies
- * are grouped by postcode rather than scattered around it, because nudging
- * markers apart would invent a precision this data doesn't have.
- *
- * To improve a pin, correct its entry here — or add one for a postcode that is
- * currently unmapped.
- */
+/** Approximate centres for the Melbourne postcodes that appear in the company list. */
 export interface Place {
   suburb: string;
   lat: number;
@@ -104,10 +92,8 @@ export interface MapCluster extends Place {
 }
 
 /**
- * Companies grouped into the suburb each one's postcode points at, biggest
- * group first so the busiest areas draw on top. Anything we can't place is
- * returned separately rather than dropped — a map that quietly loses a fifth
- * of the list is worse than one that says so.
+ * Companies grouped into the suburb each one's postcode points at, biggest group first so
+ * the busiest areas draw on top.
  */
 export function clusterCompanies(companies: Company[]) {
   const byPostcode = new Map<string, MapCluster>();

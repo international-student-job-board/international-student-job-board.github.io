@@ -10,26 +10,23 @@
     "@types/jest": "^27.5.2",
     "@types/leaflet": "^1.9.22",
     "@types/node": "^16.18.126",
-    "@types/papaparse": "^5.5.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "leaflet": "^1.9.4",
-    "papaparse": "^5.5.4",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-scripts": "5.0.1",
     "typescript": "^4.9.5",
-    "web-vitals": "^2.1.4",
-    "zod": "^4.4.3"
+    "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "node scripts/start.js",
     "dev-server": "node scripts/dev-server.js",
     "fetch-occupations": "node scripts/fetch-occupation-lists.js",
     "build": "REACT_APP_BUILD_DATE=$(date +%Y-%m-%d) react-scripts build",
-    "postbuild": "node scripts/sync-data.js build",
+    "postbuild": "node scripts/sync-data.js build && node scripts/seo-assets.js build",
     "build:pages": "REACT_APP_BUILD_DATE=$(date +%Y-%m-%d) BUILD_PATH=../docs react-scripts build && touch ../docs/.nojekyll",
-    "postbuild:pages": "node scripts/sync-data.js ../docs",
+    "postbuild:pages": "node scripts/sync-data.js ../docs && node scripts/seo-assets.js ../docs",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -59,5 +56,16 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "overrides": {
+    "postcss": "^8.5.23",
+    "nth-check": "^2.1.1",
+    "serialize-javascript": "^7.0.5",
+    "svgo": "^3.3.2",
+    "brace-expansion": "^2.0.2",
+    "fast-uri": "^3.1.0",
+    "js-yaml": "^4.1.1",
+    "underscore": "^1.13.7",
+    "uuid": "^9.0.1"
   }
 }

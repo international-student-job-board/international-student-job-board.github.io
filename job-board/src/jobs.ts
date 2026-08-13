@@ -1,11 +1,5 @@
-// content/jobs.csv is the board: one row per open role, with the employer's
-// columns repeated on each of its roles. It replaced a JSON file of roles and a
-// separate CSV of companies — two sources that had to agree about the same
-// employers and periodically didn't.
-//
-// In development the file is served by scripts/dev-server.js; a build copies it
-// into the output. Either way the URL below is what the app asks for. See
-// scripts/data-files.js for why it does not live in public/.
+// content/jobs.csv is the board: one row per open role, with the employer's columns
+// repeated on each of its roles.
 
 import { Job, Company } from './types';
 import { parseCsv, splitList, triState, anzscoCodes } from './csv';
@@ -14,13 +8,7 @@ import { dateValue } from './format';
 
 const JOBS_URL = `${process.env.PUBLIC_URL || ''}/jobs.csv`;
 
-/**
- * The CSV's column names, in file order.
- *
- * Exported because the admin writes rows in this exact order — one list, so a
- * column added here reaches the reader and the writer at the same time instead
- * of shifting every cell in the file by one.
- */
+/** The CSV's column names, in file order. */
 export const COLUMNS = [
   'Company name',
   'Segment',
@@ -69,14 +57,7 @@ function toCompany(row: Record<string, string>): Company {
   };
 }
 
-/**
- * Employers, folded out of the repeated columns.
- *
- * The first row for a company wins, and later rows only fill in what it left
- * blank. Rows for one employer are meant to agree; where they don't, one answer
- * has to be picked, and taking the first consistently at least makes the result
- * stable rather than dependent on which role happens to sort last.
- */
+/** Employers, folded out of the repeated columns. */
 function foldCompanies(rows: Record<string, string>[]): Map<string, Company> {
   const byName = new Map<string, Company>();
   for (const row of rows) {
@@ -117,17 +98,7 @@ function toJob(row: Record<string, string>, company: Company): Job {
   };
 }
 
-/**
- * Rows -> roles, newest first.
- *
- * The ordering happens once, here, so the list, the filtered views and the role
- * picked by default all inherit it and there is one answer to "what order is
- * this in". A missing or unreadable date scores 0 and sinks rather than jumping
- * the queue.
- *
- * A role with no id or no title is dropped: it can't be linked to or read, so
- * listing it only produces a card that goes nowhere.
- */
+/** Rows -> roles, newest first. */
 export function toJobs(rows: Record<string, string>[]): Job[] {
   const companies = foldCompanies(rows);
   return rows
@@ -144,14 +115,7 @@ export const MONTHS_LISTED = 2;
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-/**
- * The same ISO date, that many calendar months earlier.
- *
- * The day is clamped to the target month's length rather than left to roll
- * forward: two months before 30 April is 28 February, not 2 March, and letting
- * it roll would quietly shorten the window in exactly the months where it is
- * hardest to notice.
- */
+/** The same ISO date, that many calendar months earlier. */
 function monthsBefore(iso: string, months: number): string {
   const date = new Date(`${iso}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) return '';
@@ -166,16 +130,9 @@ function monthsBefore(iso: string, months: number): string {
 }
 
 /**
- * Whether a role is recent enough to still be worth showing, both dates being
- * YYYY-MM-DD — ISO dates compare correctly as plain strings, which sidesteps
- * the timezone trap in parsing them.
- *
- * `today` is the viewer's own date, so the board ages as they read it rather
- * than as of whenever it was last built.
- *
- * A role with no readable date stays. There is nothing to judge it by, and
- * dropping it would hide a listing over a fault in its metadata; the sort
- * already sinks it to the bottom.
+ * Whether a role is recent enough to still be worth showing, both dates being YYYY-MM-DD —
+ * ISO dates compare correctly as plain strings, which sidesteps the timezone trap in
+ * parsing them.
  */
 export function isRecent(job: Job, today: string): boolean {
   const posted = job.posted.trim();
@@ -199,20 +156,7 @@ export function companiesFrom(jobs: Job[]): { company: Company; jobs: Job[] }[] 
   );
 }
 
-/**
- * Fills each employer's gaps from the companies file.
- *
- * The two files carry the same company columns, but not the same answers: the
- * jobs export leaves "Hires international students" blank on every row, and
- * that question is only recorded on the companies list. Rather than special-
- * case those two columns, anything the jobs row left empty is taken from the
- * company's own record — the companies file is the fuller account of the
- * employer, and the jobs file is a snapshot of it taken per role.
- *
- * The jobs row still wins wherever it says something. It is the newer of the
- * two, and a role exported today knows more about its employer than a company
- * list compiled earlier.
- */
+/** Fills each employer's gaps from the companies file. */
 function enrich(jobs: Job[], companies: Company[]): Job[] {
   const byName = new Map(companies.map((c) => [c.name.trim().toLowerCase(), c]));
   const merged = new Map<string, Company>();
@@ -222,8 +166,8 @@ function enrich(jobs: Job[], companies: Company[]): Job[] {
     const known = byName.get(key);
     if (!known) return job;
 
-    // Merged once per employer, not once per role: 2,000 roles across 370
-    // companies would otherwise rebuild the same object six times over.
+    // Merged once per employer, not once per role: 2,000 roles across 370 companies would
+    // otherwise rebuild the same object six times over.
     let company = merged.get(key);
     if (!company) {
       company = { ...job.company };
@@ -240,12 +184,11 @@ function enrich(jobs: Job[], companies: Company[]): Job[] {
 }
 
 export async function loadJobs(): Promise<Job[]> {
-  // Both are fetched together rather than in sequence: neither depends on the
-  // other's contents, and the companies file is the larger of the two.
+  // Both are fetched together rather than in sequence: neither depends on the other's
+  // contents, and the companies file is the larger of the two.
   const [res, companies] = await Promise.all([
     fetch(JOBS_URL),
-    // A missing or broken companies file costs the two merged columns, not the
-    // board. Roles are what this page is for.
+    // A missing or broken companies file costs the two merged columns, not the board.
     loadCompanies().catch(() => [] as Company[]),
   ]);
   if (!res.ok) throw new Error(`Could not load jobs (${res.status})`);
