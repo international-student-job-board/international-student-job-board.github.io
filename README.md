@@ -1,7 +1,6 @@
 # International Student Job Board
 
-The landing page for the **International Student Job Board** — curated roles from
-employers who welcome international students and visa holders.
+Roles at startups and scaleups founded in Victoria, Australia : : Mapped with potential visa pathways and skills assessments it can lead to!
 
 ---
 
