@@ -17,3 +17,5 @@ npm run build:pages                               # build into ../docs for Pages
 ### Deploy
 
 Commit the updated `docs/` folder and push to deploy.
+
+Made with ❤️ by Milindi Kodikara
