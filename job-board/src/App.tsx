@@ -1,14 +1,10 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
-import { Job } from './types';
-import { loadJobs, isOpenOn } from './jobs';
+import { Job, jobLocation } from './types';
+import { loadJobs, isRecent } from './jobs';
 import { loadCompanies } from './companies';
-import { dateValue, todayISO, isStartAsap } from './format';
-import {
-  pathwayVisasFor,
-  occupationCodesFor,
-  assessmentsFor,
-} from './references';
+import { dateValue, todayISO } from './format';
+import { pathwayVisasFor, occupationCodesFor } from './references';
 import { Header } from './components/Header';
 import {
   Filters,
@@ -38,18 +34,18 @@ const PAGE_SIZE = 10;
 
 const EMPTY_FILTERS: FilterState = {
   query: '',
+  companies: [],
   types: [],
-  levels: [],
-  arrangements: [],
-  visas: [],
-  pathwayVisas: [],
+  cities: [],
+  industries: [],
+  companyTypes: [],
+  growthStages: [],
+  hqCities: [],
   anzscos: [],
-  skillAssessments: [],
-  skills: [],
-  salaryMin: 0,
-  startsWithinDays: 0,
+  pathwayVisas: [],
+  sponsor: [],
+  students: [],
   postedWithinDays: 0,
-  sponsorship: [],
 };
 
 /**
@@ -64,8 +60,8 @@ const allows = (selected: string[], value: string) =>
   selected.length === 0 || selected.includes(value.trim());
 
 /**
- * Same, for the fields where the job itself holds a list (visas, skills). A
- * role with an empty list matches only when "Not specified" is what was asked
+ * Same, for the fields where the job itself holds a list (occupations, visas).
+ * A role with an empty list matches only when "Not specified" is what was asked
  * for — otherwise a blank field would quietly satisfy every filter.
  */
 const overlaps = (selected: string[], values: string[]) =>
@@ -75,75 +71,54 @@ const overlaps = (selected: string[], values: string[]) =>
     : selected.includes(UNSPECIFIED));
 
 /**
- * Both cutoffs are timestamps resolved once per pass rather than per job, so
- * every card in one run is measured against the same instant.
+ * A hand-checked yes/no/nobody-said column as a filter value.
  *
- * `startsBy`: 0 means the start-date filter is off, and -1 means "roles with no
- * start date given". `postedAfter`: 0 means the recency filter is off.
+ * The blank case is the same UNSPECIFIED sentinel every other filter uses, so
+ * these two need no special handling anywhere downstream — they are ordinary
+ * list filters whose values happen to come from a boolean.
  */
-interface DateCutoffs {
-  startsBy: number;
-  postedAfter: number;
-}
+const answer = (value: boolean | undefined): string[] => [
+  value === true ? 'yes' : value === false ? 'no' : UNSPECIFIED,
+];
 
-function matches(job: Job, filters: FilterState, dates: DateCutoffs): boolean {
+/**
+ * `postedAfter` is a timestamp resolved once per pass rather than per job, so
+ * every card in one run is measured against the same instant. 0 means the
+ * recency filter is off.
+ */
+function matches(job: Job, filters: FilterState, postedAfter: number): boolean {
+  if (!allows(filters.companies, job.company.name)) return false;
   if (!allows(filters.types, job.type)) return false;
-  if (!allows(filters.levels, job.jobLevel)) return false;
-  if (!overlaps(filters.arrangements, job.arrangements)) return false;
-  if (!overlaps(filters.visas, job.visaEligible)) return false;
-  // The occupation's own visas count as pathways too, exactly as the detail
-  // page shows them — filtering has to match what the reader was told.
+  if (!allows(filters.cities, job.city)) return false;
+  if (!overlaps(filters.industries, job.company.industries)) return false;
+  if (!overlaps(filters.companyTypes, job.company.types)) return false;
+  if (!allows(filters.growthStages, job.company.growthStage)) return false;
+  if (!allows(filters.hqCities, job.company.hqCity)) return false;
+  // A role can map to several occupations, so it matches if any of them do.
+  if (!overlaps(filters.anzscos, occupationCodesFor(job))) return false;
+  // The occupations' own visas are what the detail page shows as pathways, so
+  // filtering reads the same function — a role can always be found by the
+  // visas it is shown to offer.
   if (!overlaps(filters.pathwayVisas, pathwayVisasFor(job))) return false;
-  if (!overlaps(filters.skills, job.skills)) return false;
-  // A negative threshold is the "Not specified" band: roles whose salary we
-  // couldn't read a number from at all.
-  if (filters.salaryMin < 0 && job.salaryMaxAnnual > 0) return false;
-  if (filters.salaryMin > 0 && job.salaryMaxAnnual < filters.salaryMin) return false;
-  // '' is the answer for a role that never said, so a blank field matches
-  // "Not specified" and nothing else.
-  if (filters.sponsorship.length) {
-    const answer =
-      job.employerSponsored === true ? 'yes' : job.employerSponsored === false ? 'no' : '';
-    if (!filters.sponsorship.includes(answer)) return false;
-  }
+  if (!overlaps(filters.sponsor, answer(job.company.accreditedSponsor))) return false;
+  if (!overlaps(filters.students, answer(job.company.hiresInternationalStudents))) return false;
 
   // A role we can't date can't be shown to be recent, so it drops out when the
   // reader asks for recent ones.
-  if (dates.postedAfter > 0) {
+  if (postedAfter > 0) {
     const posted = dateValue(job.posted);
-    if (!Number.isFinite(posted) || posted < dates.postedAfter) return false;
-  }
-
-  // A role already under way counts as starting within any window: it is
-  // available now, which is the question the filter is really asking. A role
-  // starting as soon as someone is found is the same answer, stated instead of
-  // dated — so it belongs in every window, and not under "not specified".
-  const { startsBy } = dates;
-  if (startsBy !== 0) {
-    const asap = isStartAsap(job.startDate);
-    const starts = dateValue(job.startDate);
-    const known = asap || Number.isFinite(starts);
-    if (startsBy < 0) {
-      if (known) return false;
-    } else if (!known || (!asap && starts > startsBy)) {
-      return false;
-    }
-  }
-
-  // A role can map to several occupations, so it matches if any of them do.
-  if (filters.anzscos.length && !overlaps(filters.anzscos, occupationCodesFor(job))) {
-    return false;
-  }
-  if (
-    filters.skillAssessments.length &&
-    !overlaps(filters.skillAssessments, assessmentsFor(job))
-  ) {
-    return false;
+    if (!Number.isFinite(posted) || posted < postedAfter) return false;
   }
 
   const q = filters.query.trim().toLowerCase();
   if (!q) return true;
-  const haystack = [job.title, job.company, job.location, ...job.skills]
+  const haystack = [
+    job.title,
+    job.company.name,
+    jobLocation(job),
+    ...job.occupationNames,
+    ...job.company.industries,
+  ]
     .join(' ')
     .toLowerCase();
   return haystack.includes(q);
@@ -151,15 +126,9 @@ function matches(job: Job, filters: FilterState, dates: DateCutoffs): boolean {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** The two date filters, resolved to instants for one filtering pass. */
-const cutoffs = (filters: FilterState): DateCutoffs => ({
-  startsBy:
-    filters.startsWithinDays > 0
-      ? Date.now() + filters.startsWithinDays * DAY_MS
-      : filters.startsWithinDays,
-  postedAfter:
-    filters.postedWithinDays > 0 ? Date.now() - filters.postedWithinDays * DAY_MS : 0,
-});
+/** The recency filter, resolved to an instant for one filtering pass. */
+const cutoff = (filters: FilterState): number =>
+  filters.postedWithinDays > 0 ? Date.now() - filters.postedWithinDays * DAY_MS : 0;
 
 const uniqueSorted = (values: string[]) => Array.from(new Set(values)).sort();
 
@@ -175,6 +144,24 @@ function routeFromHash(): Route {
   if (hash.startsWith('#/companies')) return 'companies';
   if (hash.startsWith('#/admin') && IS_LOCAL) return 'admin';
   return 'jobs';
+}
+
+/**
+ * The job id in the address bar, if there is one: #/jobs/7.
+ *
+ * Which role you are reading used to be state and nothing else, so every job on
+ * the board shared one address and there was nothing to send anyone. It lives
+ * in the URL now, which makes it linkable, bookmarkable, and undoable with the
+ * back button.
+ */
+function jobIdFromHash(): string | null {
+  return window.location.hash.match(/^#\/jobs\/([^/?#]+)/)?.[1] ?? null;
+}
+
+/** The address for one role, absolute so it can be pasted anywhere. */
+export function jobShareUrl(id: string): string {
+  const { origin, pathname } = window.location;
+  return `${origin}${pathname}#/jobs/${encodeURIComponent(id)}`;
 }
 
 function App() {
@@ -200,9 +187,26 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const onHashChange = () => setRoute(routeFromHash());
+    const onHashChange = () => {
+      setRoute(routeFromHash());
+      // Covers the back button and a pasted link alike.
+      const shared = jobIdFromHash();
+      if (shared) {
+        setSelectedId(shared);
+        setShowDetail(true);
+      }
+    };
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  // A link opened cold: the id is in the address before the jobs have loaded.
+  useEffect(() => {
+    const shared = jobIdFromHash();
+    if (shared) {
+      setSelectedId(shared);
+      setShowDetail(true);
+    }
   }, []);
 
   // Leaving the jobs page (or switching routes) drops back to the list view.
@@ -213,6 +217,9 @@ function App() {
   const openJob = (id: string) => {
     setSelectedId(id);
     setShowDetail(true);
+    // replaceState rather than assigning the hash: picking through a list
+    // shouldn't bury the page you arrived from under twenty back-button steps.
+    window.history.replaceState(null, '', `#/jobs/${encodeURIComponent(id)}`);
     window.scrollTo({ top: 0 });
   };
 
@@ -221,13 +228,14 @@ function App() {
     setPage(1);
   }, [filters]);
 
-  // Closed roles are dropped here rather than inside the filtering, so they are
+  // Stale roles are dropped here rather than inside the filtering, so they are
   // gone from everything downstream: the count, the default selection, and the
-  // filter dropdowns — which would otherwise offer a skill or a visa that no
-  // listed role has. Evaluated against the viewer's own date.
+  // filter dropdowns — which would otherwise offer a company or an occupation
+  // that no listed role has. Measured against the viewer's own date, so the
+  // board ages as it is read rather than as of whenever it was built.
   const openJobs = useMemo(() => {
     const today = todayISO();
-    return jobs.filter((job) => isOpenOn(job, today));
+    return jobs.filter((job) => isRecent(job, today));
   }, [jobs]);
 
   /**
@@ -243,13 +251,13 @@ function App() {
    * happens if I tick this."
    */
   const counts = useMemo(() => {
-    const dates = cutoffs(filters);
+    const postedAfter = cutoff(filters);
     const without = (key: FilterListKey) =>
-      openJobs.filter((job) => matches(job, { ...filters, [key]: [] }, dates));
+      openJobs.filter((job) => matches(job, { ...filters, [key]: [] }, postedAfter));
 
-    const tally = (jobs: Job[], pick: (job: Job) => string[]) => {
+    const tally = (list: Job[], pick: (job: Job) => string[]) => {
       const counted = new Map<string, number>();
-      jobs.forEach((job) => {
+      list.forEach((job) => {
         const values = pick(job).filter(Boolean);
         const keys = values.length ? Array.from(new Set(values)) : [UNSPECIFIED];
         keys.forEach((key) => counted.set(key, (counted.get(key) ?? 0) + 1));
@@ -257,19 +265,18 @@ function App() {
       return counted;
     };
 
-    const sponsorshipOf = (job: Job) => [
-      job.employerSponsored === true ? 'yes' : job.employerSponsored === false ? 'no' : '',
-    ];
-
     const pickers: Record<FilterListKey, (job: Job) => string[]> = {
+      companies: (j) => [j.company.name],
       types: (j) => [j.type],
-      levels: (j) => [j.jobLevel],
-      arrangements: (j) => j.arrangements,
-      visas: (j) => j.visaEligible,
-      pathwayVisas: pathwayVisasFor,
+      cities: (j) => [j.city],
+      industries: (j) => j.company.industries,
+      companyTypes: (j) => j.company.types,
+      growthStages: (j) => [j.company.growthStage],
+      hqCities: (j) => [j.company.hqCity],
       anzscos: occupationCodesFor,
-      skillAssessments: assessmentsFor,
-      skills: (j) => j.skills,
+      pathwayVisas: pathwayVisasFor,
+      sponsor: (j) => answer(j.company.accreditedSponsor),
+      students: (j) => answer(j.company.hiresInternationalStudents),
     };
 
     const byFilter = Object.fromEntries(
@@ -279,37 +286,19 @@ function App() {
       ])
     ) as Record<FilterListKey, Map<string, number>>;
 
-    // Sponsorship isn't one of the list filters, so it counts on its own — with
-    // its own selection lifted, like the rest.
-    const forSponsorship = openJobs.filter((job) =>
-      matches(job, { ...filters, sponsorship: [] }, dates)
-    );
-
     /**
-     * The single-choice filters — salary and the two date windows — can't be
-     * tallied by walking a job's values, because their options are thresholds
-     * rather than things a job "has". Each option is counted by running the
-     * filter as if it were picked, with its own current choice lifted.
+     * The recency filter can't be tallied by walking a job's values, because
+     * its options are thresholds rather than things a job "has". Each window is
+     * counted by running the filter as if it were picked, with the current
+     * choice lifted.
      */
-    const countThresholds = (key: 'salaryMin' | 'postedWithinDays' | 'startsWithinDays', values: string[]) => {
-      const counted = new Map<string, number>();
-      values.forEach((value) => {
-        const asked = { ...filters, [key]: Number(value) };
-        counted.set(
-          value,
-          openJobs.filter((job) => matches(job, asked, cutoffs(asked))).length
-        );
-      });
-      return counted;
-    };
+    const postedCounts = new Map<string, number>();
+    ['1', '2', '7', '14', '30', '60'].forEach((value) => {
+      const asked = { ...filters, postedWithinDays: Number(value) };
+      postedCounts.set(value, openJobs.filter((job) => matches(job, asked, cutoff(asked))).length);
+    });
 
-    return {
-      ...byFilter,
-      sponsorship: tally(forSponsorship, sponsorshipOf),
-      salaryMin: countThresholds('salaryMin', ['40000', '60000', '80000', '100000', '-1']),
-      postedWithinDays: countThresholds('postedWithinDays', ['1', '2', '7', '14', '30', '60']),
-      startsWithinDays: countThresholds('startsWithinDays', ['30', '90', '180', '-1']),
-    };
+    return { ...byFilter, postedWithinDays: postedCounts };
   }, [openJobs, filters]);
 
   const options: FilterOptions = useMemo(() => {
@@ -323,14 +312,21 @@ function App() {
     };
 
     return {
+      companies: from((j) => [j.company.name]),
       types: from((j) => [j.type]),
-      levels: from((j) => [j.jobLevel]),
-      arrangements: from((j) => j.arrangements),
-      visas: from((j) => j.visaEligible),
-      pathwayVisas: from(pathwayVisasFor),
+      cities: from((j) => [j.city]),
+      industries: from((j) => j.company.industries),
+      companyTypes: from((j) => j.company.types),
+      growthStages: from((j) => [j.company.growthStage]),
+      hqCities: from((j) => [j.company.hqCity]),
       anzscos: from(occupationCodesFor),
-      skillAssessments: from(assessmentsFor),
-      skills: from((j) => j.skills),
+      pathwayVisas: from(pathwayVisasFor),
+      // These two carry a value for every role — 'yes', 'no' or the blank
+      // sentinel — so they never need the "any blank?" pass the others do.
+      sponsor: uniqueSorted(openJobs.flatMap((j) => answer(j.company.accreditedSponsor))),
+      students: uniqueSorted(
+        openJobs.flatMap((j) => answer(j.company.hiresInternationalStudents))
+      ),
     };
   }, [openJobs]);
 
@@ -351,7 +347,8 @@ function App() {
   }, [status, openJobs.length]);
 
   const visible = useMemo(() => {
-    return openJobs.filter((job) => matches(job, filters, cutoffs(filters)));
+    const postedAfter = cutoff(filters);
+    return openJobs.filter((job) => matches(job, filters, postedAfter));
   }, [openJobs, filters]);
   const activeFilters = countActiveFilters(filters);
 
@@ -433,7 +430,7 @@ function App() {
             )}
           </div>
           <p className="panel-banner">
-            Curated startup roles that welcome international students and graduates.
+            We're working through this list manually to confirm which startups sponsor visas and which hire international students and graduates.
           </p>
 
           {/* Placeholder cards rather than a line of text: the list keeps its

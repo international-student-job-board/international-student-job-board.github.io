@@ -1,17 +1,15 @@
-// The Post-a-job field definitions, shared by the public form (PostJob) and the
+// The Add-a-job field definitions, shared by the public form (PostJob) and the
 // local admin (AdminAddJob). Kept in its own module so AdminAddJob doesn't have
 // to import from PostJob (which imports AdminAddJob) - that cycle put FIELDS in
 // its temporal dead zone at load time.
+//
+// Every `key` is a column name in content/jobs.csv, spelled exactly as the
+// header spells it. That is the whole trick behind the form: a draft is already
+// a row, so saving is `columns.map(name => draft[name])` and no mapping table
+// sits in between to fall out of step with the file.
 import { getConstant } from '../constants';
 
-export type FieldType =
-  | 'text'
-  | 'url'
-  | 'date'
-  | 'textarea'
-  | 'select'
-  /** A date, or the "as soon as possible" answer instead of one. */
-  | 'date-asap';
+export type FieldType = 'text' | 'url' | 'date' | 'textarea' | 'select';
 
 export interface Field {
   key: string;
@@ -24,42 +22,99 @@ export interface Field {
   maxLength?: number;
 }
 
+/**
+ * "Not checked yet" leads, and so is the default a blank form starts on.
+ *
+ * With Yes first, every role saved without touching the field claimed the
+ * employer was an accredited sponsor — a claim about someone else's standing
+ * with the Department, made by an untouched dropdown. "No" is a real answer
+ * here and is saved as one; blank means nobody has looked into it.
+ */
+const CHECKED = ['Not checked yet', 'Yes', 'No'];
+
 export const FIELDS: Field[] = [
-  { key: 'title', label: 'Job title', type: 'text', required: true, placeholder: 'Graduate Software Engineer' },
-  { key: 'company', label: 'Company name', type: 'text', required: true, placeholder: 'Acme' },
-  { key: 'company_about', label: 'About the company', type: 'textarea', maxLength: 300, placeholder: 'What the company does. Up to about 300 characters.' },
-  { key: 'company_url', label: 'Company link', type: 'url', placeholder: 'https://www.acme.com' },
-  { key: 'apply_url', label: 'Application link or email', type: 'url', required: true, placeholder: 'https://www.acme.com/careers', hint: 'Careers page or job-board link, or an email link (mailto:jobs@acme.com) if you take applications by email.' },
-  { key: 'job_level', label: 'Level', type: 'select', options: getConstant('jobLevel') },
-  { key: 'type', label: 'Type', type: 'select', options: getConstant('type') },
-  { key: 'arrangement', label: 'Work arrangement', type: 'select', options: getConstant('arrangement') },
-  { key: 'location', label: 'Location', type: 'text', placeholder: 'Richmond, Melbourne VIC' },
-  { key: 'salary', label: 'Salary or pay range', type: 'text', placeholder: '$85,000-$95,000', hint: 'Optional : : left blank it shows as "Not specified".' },
-  { key: 'start_date', label: 'Role start date', type: 'date-asap', hint: 'Optional : : when the successful applicant would start.' },
-  // Not "when the ad went live" but "when we listed it": it orders the board,
-  // drives the "posted in the last N days" filter, and starts the three-month
-  // clock for a role with no closing date.
-  { key: 'posted', label: 'Date listed', type: 'date', hint: 'Orders the board and drives the "posted recently" filter. Defaults to today.' },
-  { key: 'closes', label: 'Application closes', type: 'date', hint: 'The role drops off the board the day after this.' },
-  { key: 'education_level', label: 'Education needed', type: 'select', options: getConstant('educationLevel') },
-  { key: 'summary', label: 'Summary of the role', type: 'textarea', placeholder: 'What the person will do day to day. Add as much as you like.' },
-  { key: 'skills', label: 'Skills needed', type: 'text', placeholder: 'Software, Backend, Python, React', hint: 'Separate with commas.' },
-  { key: 'visa_eligible', label: 'Visa(s) a candidate can apply on', type: 'text', placeholder: '485, 500', hint: 'Optional : : Leave blank if unsure. Separate with commas.' },
-  { key: 'visa_pathways', label: 'Visa(s) this role can lead to', type: 'text', placeholder: '189, 190, 186', hint: 'Optional : : Separate with commas.' },
-  { key: 'skill_assessment', label: 'Skills assessing authority', type: 'text', placeholder: 'ACS', hint: 'Optional : : e.g. ACS, Engineers Australia, VETASSESS.' },
-  { key: 'anzsco', label: 'ANZSCO occupation & code', type: 'text', placeholder: '261313 Software Engineer', hint: 'The 6-digit code and occupation name. Both forms collect this with the occupation picker rather than as free text.' },
-  // "Not specified" leads, and so is the default a blank form starts on. With
-  // Yes first, every job saved without touching this field claimed the employer
-  // sponsors visas — a claim about someone else's hiring, made by an untouched
-  // dropdown. "No" is a real answer here and is saved as one.
-  { key: 'employer_sponsored', label: 'Offer employer-sponsored visas?', type: 'select', options: ['Not specified', 'Yes', 'No'], hint: 'Leave as Not specified unless you know. It shows on the listing either way.' },
-  { key: 'contact_public', label: 'Show your details on the listing?', type: 'select', options: ['No', 'Yes'], hint: 'Yes puts your name, position and LinkedIn on the job post so students know who they would be writing to.' },
-  { key: 'contact_name', label: 'Your name', type: 'text', placeholder: 'Alex Nguyen', hint: 'Shown only if you said yes above.' },
-  { key: 'contact_position', label: 'Your position', type: 'text', placeholder: 'Head of Engineering', hint: 'Shown only if you said yes above.' },
-  { key: 'contact_linkedin', label: 'Your LinkedIn', type: 'url', placeholder: 'https://www.linkedin.com/in/…', hint: 'Shown only if you said yes above.' },
-  { key: 'contact_website', label: 'Your website', type: 'url', placeholder: 'https://www.acme.com/team/alex', hint: 'Not published : : so we can check who you are.' },
-  { key: 'contact_email', label: 'Your email', type: 'text', placeholder: 'alex@acme.com', hint: 'Not published : : so we can come back to you about the role.' },
+  // ---- The role ----------------------------------------------------------
+  { key: 'Job title', label: 'Job title', type: 'text', required: true, placeholder: 'Graduate Software Engineer' },
+  { key: 'Job type', label: 'Job type', type: 'select', options: getConstant('type') },
+  { key: 'Job city', label: 'City', type: 'text', placeholder: 'Melbourne' },
+  { key: 'Job country', label: 'Country', type: 'text', placeholder: 'Australia' },
+  {
+    key: 'Job URL',
+    label: 'Application link or email',
+    type: 'url',
+    required: true,
+    placeholder: 'https://www.acme.com/careers',
+    hint: 'Careers page or job-board link, or an email link (mailto:jobs@acme.com) if you take applications by email.',
+  },
+  {
+    key: 'Date posted',
+    label: 'Date posted',
+    type: 'date',
+    hint: 'Orders the board and drives the "posted recently" filter. Defaults to today.',
+  },
+  // The three occupation columns are written by the picker rather than typed,
+  // so they carry no input of their own — see AdminAddJob.
+  { key: 'ANZSCO occupation', label: 'ANZSCO occupation', type: 'text' },
+  { key: 'ANZSCO 2022', label: 'ANZSCO 2022', type: 'text' },
+  { key: 'ANZSCO 2013', label: 'ANZSCO 2013', type: 'text' },
+
+  // ---- The employer ------------------------------------------------------
+  { key: 'Company name', label: 'Company name', type: 'text', required: true, placeholder: 'Acme' },
+  { key: 'Tagline', label: 'Tagline', type: 'textarea', maxLength: 300, placeholder: 'The company’s own one-liner.' },
+  { key: 'Website', label: 'Website', type: 'url', placeholder: 'https://www.acme.com' },
+  { key: 'LinkedIn', label: 'LinkedIn', type: 'url', placeholder: 'https://www.linkedin.com/company/acme' },
+  { key: 'Profile', label: 'Profile', type: 'url', hint: 'Its page on whichever startup directory the row came from.' },
+  { key: 'Segment', label: 'Segment', type: 'text', placeholder: 'startup' },
+  { key: 'Type', label: 'Builds', type: 'text', placeholder: 'saas; machine learning', hint: 'Separate with semicolons.' },
+  { key: 'Industries', label: 'Industries', type: 'text', placeholder: 'fintech; health', hint: 'Separate with semicolons.' },
+  { key: 'Growth stage', label: 'Growth stage', type: 'text', placeholder: 'early growth' },
+  { key: 'Employees', label: 'Employees', type: 'text', placeholder: '101-250' },
+  { key: 'HQ city', label: 'HQ city', type: 'text', placeholder: 'Melbourne' },
+  { key: 'HQ address', label: 'HQ address', type: 'text', placeholder: 'Cremorne VIC 3121' },
+  { key: 'Job openings', label: 'Job openings', type: 'text', hint: 'How many roles the company says it has open.' },
+  { key: 'Accredited sponsor', label: 'Accredited sponsor?', type: 'select', options: CHECKED },
+  {
+    key: 'Hires international students',
+    label: 'Hires international students?',
+    type: 'select',
+    options: CHECKED,
+    hint: 'Leave as "Not checked yet" unless you know. It shows on the listing either way.',
+  },
 ];
+
+/** Rendered in these groups, in this order; anything left over goes last. */
+export const FIELD_GROUPS: { title: string; keys: string[] }[] = [
+  {
+    title: 'The role',
+    keys: ['Job title', 'Job type', 'Job city', 'Job country', 'Job URL', 'Date posted'],
+  },
+  {
+    title: 'The employer',
+    keys: [
+      'Company name',
+      'Tagline',
+      'Website',
+      'LinkedIn',
+      'Profile',
+      'Segment',
+      'Type',
+      'Industries',
+      'Growth stage',
+      'Employees',
+      'HQ city',
+      'HQ address',
+      'Job openings',
+      'Accredited sponsor',
+      'Hires international students',
+    ],
+  },
+];
+
+/** Written by the occupation picker, not by an input of their own. */
+export const OCCUPATION_KEYS = ['ANZSCO occupation', 'ANZSCO 2022', 'ANZSCO 2013'];
+
+/** The yes/no columns, whose "Not checked yet" answer is saved as an empty cell. */
+export const CHECKED_KEYS = ['Accredited sponsor', 'Hires international students'];
 
 export type Draft = Record<string, string>;
 
@@ -68,6 +123,3 @@ export const emptyDraft = (): Draft =>
     acc[f.key] = f.type === 'select' && f.options ? f.options[0] : '';
     return acc;
   }, {} as Draft);
-
-// Fields that hold pipe-separated lists in jobs.json (the form takes commas).
-export const LIST_KEYS = ['visa_eligible', 'visa_pathways', 'skills', 'arrangement'];

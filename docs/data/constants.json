@@ -4,7 +4,8 @@
     "Graduate",
     "Junior",
     "Mid",
-    "Senior"
+    "Senior",
+    "Lead"
   ],
   "type": [
     "Full-time",
@@ -43,6 +44,9 @@
     "AI",
     "dbt",
     "Databricks",
-    "Omni"
+    "Omni",
+    "LLMs",
+    "Python",
+    "SQL"
   ]
 }

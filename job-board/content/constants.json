@@ -1,0 +1,52 @@
+{
+  "jobLevel": [
+    "Internship",
+    "Graduate",
+    "Junior",
+    "Mid",
+    "Senior",
+    "Lead"
+  ],
+  "type": [
+    "Full-time",
+    "Part-time",
+    "Casual",
+    "Contract",
+    "Freelance"
+  ],
+  "arrangement": [
+    "On-site",
+    "Hybrid",
+    "Remote"
+  ],
+  "educationLevel": [
+    "Diploma",
+    "Certification",
+    "Bachelor",
+    "Final year of degree",
+    "Master",
+    "Graduate Diploma",
+    "Graduate Certification",
+    "PhD"
+  ],
+  "assessment": [
+    "ACS",
+    "Engineers Australia",
+    "VETASSESS",
+    "CPA Australia",
+    "Chartered Accountants ANZ",
+    "AHPRA",
+    "ANMAC",
+    "Trades Recognition Australia"
+  ],
+  "skills": [
+    "SaaS",
+    "AI",
+    "dbt",
+    "Databricks",
+    "Omni",
+    "LLMs",
+    "Python",
+    "SQL"
+  ]
+}

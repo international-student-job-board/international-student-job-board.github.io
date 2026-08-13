@@ -1,119 +1,45 @@
-// The Melbourne companies reference (public/melbourne_companies_hiring.csv).
-// Like the ANZSCO list it lives in public/ and is fetched on demand: 400-odd
-// rows are only needed by the "startups hiring" page and the posting form, not
-// by every visitor to the job board.
+// The employers behind the "startups currently hiring" page, from
+// content/companies.csv — its own file, separate from the jobs CSV.
+//
+// The two overlap: every row of jobs.csv also carries its employer's columns,
+// and the jobs page reads those (see jobs.ts). They answer different questions,
+// though. This file is "who is hiring in Melbourne", which includes companies
+// with no role listed here; the jobs CSV is "which roles are on the board".
+// Neither is a subset of the other, so neither is derived from the other.
+//
+// Both spellings of the migration columns are read, because the two files
+// disagree: the companies list says "Sponsor visa available" and the jobs list
+// says "Accredited sponsor". Accepting both means whichever file is refreshed
+// first keeps working.
 
-const CSV_URL = `${process.env.PUBLIC_URL || ''}/melbourne_companies_hiring.csv`;
+import { Company } from './types';
+import { parseCsv, splitList, triState } from './csv';
 
-export interface Company {
-  name: string;
-  /** "startup" or "scaleup". */
-  segment: string;
-  /** What the company builds — big data, saas, machine learning… */
-  types: string[];
-  /** The markets it sells into — fintech, health, marketing… */
-  industries: string[];
-  website: string;
-  linkedin: string;
-  /** Free-text HQ address; the postcode in it is what places the map pin. */
-  address: string;
-  /** The company's own one-liner, reused as the blurb on its job listings. */
-  tagline: string;
-  growthStage: string;
-  employees: string;
-  /** Roles the company had open when the list was compiled. */
-  openings: number;
-  status: string;
-  /** Both come from the last two CSV columns, filled in as each company is
-      checked by hand. Blank means "not reviewed yet", not "no". */
-  sponsorsVisas: boolean;
-  hiresInternationalStudents: boolean;
-}
+export type { Company } from './types';
 
-/** Reads the yes/no columns tolerantly — they're filled in by hand. */
-const isYes = (value: string) =>
-  ['yes', 'y', 'true', '1'].includes((value ?? '').trim().toLowerCase());
+const CSV_URL = `${process.env.PUBLIC_URL || ''}/companies.csv`;
 
-/**
- * A small RFC-4180 reader, rather than a CSV library: this is the only CSV the
- * site reads, and a parser dependency cost more in bundle size than the whole
- * companies feature. It handles the two things that actually appear in this
- * file — commas inside quoted fields (addresses, taglines) and doubled quotes
- * as an escape.
- */
-function parseCsv(text: string): Record<string, string>[] {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let field = '';
-  let quoted = false;
-
-  for (let i = 0; i < text.length; i += 1) {
-    const char = text[i];
-
-    if (quoted) {
-      if (char !== '"') {
-        field += char;
-      } else if (text[i + 1] === '"') {
-        field += '"';
-        i += 1;
-      } else {
-        quoted = false;
-      }
-      continue;
-    }
-
-    if (char === '"') quoted = true;
-    else if (char === ',') {
-      row.push(field);
-      field = '';
-    } else if (char === '\n') {
-      row.push(field);
-      rows.push(row);
-      row = [];
-      field = '';
-    } else if (char !== '\r') {
-      field += char;
-    }
-  }
-  if (field || row.length) {
-    row.push(field);
-    rows.push(row);
-  }
-
-  const [header, ...body] = rows;
-  if (!header) return [];
-  return body
-    .filter((cells) => cells.some((c) => c.trim()))
-    .map((cells) =>
-      header.reduce<Record<string, string>>((obj, name, i) => {
-        obj[name.trim()] = cells[i] ?? '';
-        return obj;
-      }, {})
-    );
-}
-
-const splitList = (value: string) =>
-  (value ?? '')
-    .split(';')
-    .map((v) => v.trim())
-    .filter(Boolean);
+/** The first of these columns the row actually has. */
+const pick = (row: Record<string, string>, ...names: string[]) =>
+  names.map((name) => row[name]).find((value) => value !== undefined) ?? '';
 
 function toCompany(row: Record<string, string>): Company {
   return {
-    name: (row['Company name'] ?? '').trim(),
-    segment: (row['Segment'] ?? '').trim(),
-    types: splitList(row['Type']),
-    industries: splitList(row['Industries']),
-    website: (row['Website'] ?? '').trim(),
-    linkedin: (row['LinkedIn'] ?? '').trim(),
-    address: (row['HQ address'] ?? '').trim(),
-    tagline: (row['Tagline'] ?? '').trim(),
-    growthStage: (row['Growth stage'] ?? '').trim(),
-    employees: (row['Employees'] ?? '').trim(),
-    openings: Number.parseInt(row['Job openings'] ?? '', 10) || 0,
-    status: (row['Status'] ?? '').trim(),
-    sponsorsVisas: isYes(row['Sponsor visa available']),
-    hiresInternationalStudents: isYes(row['Hires international students']),
+    name: pick(row, 'Company name').trim(),
+    segment: pick(row, 'Segment').trim(),
+    types: splitList(pick(row, 'Type')),
+    industries: splitList(pick(row, 'Industries')),
+    website: pick(row, 'Website').trim(),
+    growthStage: pick(row, 'Growth stage').trim(),
+    employees: pick(row, 'Employees').trim(),
+    hqCity: pick(row, 'HQ city').trim(),
+    hqAddress: pick(row, 'HQ address').trim(),
+    tagline: pick(row, 'Tagline').trim(),
+    linkedin: pick(row, 'LinkedIn').trim(),
+    profile: pick(row, 'Profile').trim(),
+    openings: Number.parseInt(pick(row, 'Job openings'), 10) || 0,
+    accreditedSponsor: triState(pick(row, 'Accredited sponsor', 'Sponsor visa available')),
+    hiresInternationalStudents: triState(pick(row, 'Hires international students')),
   };
 }
 
@@ -147,9 +73,7 @@ export function sortCompanies(companies: Company[], sort: CompanySort): Company[
   const sorted = [...companies];
   if (sort === 'name') return sorted.sort((a, b) => a.name.localeCompare(b.name));
   // Ties fall back to the name, so equal counts don't shuffle between renders.
-  return sorted.sort(
-    (a, b) => b.openings - a.openings || a.name.localeCompare(b.name)
-  );
+  return sorted.sort((a, b) => b.openings - a.openings || a.name.localeCompare(b.name));
 }
 
 /** Companies matching a query on name, industry or what they build. */

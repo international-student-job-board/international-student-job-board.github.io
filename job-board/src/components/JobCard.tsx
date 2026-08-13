@@ -1,4 +1,4 @@
-import { Job } from '../types';
+import { Job, jobLocation } from '../types';
 import { formatDate } from '../format';
 
 interface Props {
@@ -8,6 +8,7 @@ interface Props {
 }
 
 export function JobCard({ job, selected, onSelect }: Props) {
+  const meta = [job.type, jobLocation(job)].filter(Boolean).join(' · ');
   return (
     <li>
       <button
@@ -17,24 +18,18 @@ export function JobCard({ job, selected, onSelect }: Props) {
         onClick={() => onSelect(job.id)}
       >
         <span className="job-card-title">{job.title}</span>
-        <span className="job-card-company">{job.company}</span>
+        <span className="job-card-company">{job.company.name}</span>
 
-        <span className="job-card-meta">
-          {[job.jobLevel, job.type, ...job.arrangements].filter(Boolean).join(' · ')}
-        </span>
-        {/* The application window, which is what decides whether a reader can
-            still act on this card at all. */}
+        {meta && <span className="job-card-meta">{meta}</span>}
         <span className="job-card-meta job-card-posted">
-          {[
-            job.posted ? `Open ${formatDate(job.posted)}` : '',
-            job.closes ? `closes ${formatDate(job.closes)}` : '',
-          ]
-            .filter(Boolean)
-            .join(' · ') || 'Application dates not specified'}
+          {job.posted ? `Posted ${formatDate(job.posted)}` : 'Not specified'}
         </span>
-        {job.employerSponsored && (
+        {/* Only the affirmative answer earns a badge. "Not an accredited
+            sponsor" is a fact about the employer, not a feature of the role,
+            and a badge for it would read as a warning the board can't support. */}
+        {job.company.accreditedSponsor && (
           <span className="job-card-flags">
-            <span className="flag flag-sponsor">Visa sponsorship available</span>
+            <span className="flag flag-sponsor">Accredited sponsor</span>
           </span>
         )}
       </button>

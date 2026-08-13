@@ -2,7 +2,7 @@ const base = process.env.PUBLIC_URL || '';
 
 const NAV = [
   { route: 'jobs', label: 'Jobs' },
-  { route: 'companies', label: 'Startups currently hiring' },
+  { route: 'companies', label: 'Startups and scaleups' },
   { route: 'post', label: 'Post a job' },
   { route: 'about', label: 'About' },
   // Only ever built into a local dev bundle, so it can't reach the live site.

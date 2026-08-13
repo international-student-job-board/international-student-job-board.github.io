@@ -1,16 +1,22 @@
-import { Job } from '../types';
-import { formatDate, formatStart, orNotSpecified, NOT_SPECIFIED } from '../format';
+import { Fragment } from 'react';
+import { Job, jobLocation } from '../types';
+import { formatDate, orNotSpecified, NOT_SPECIFIED } from '../format';
 import {
   visaUrl,
   resolveOccupations,
   pathwayVisasFor,
+  assessorsFor,
+  occupationListsFor,
   occupationListUrl,
   occupationListLabel,
   VISA_DISCLAIMER,
 } from '../references';
 import { InfoTooltip } from './InfoTooltip';
+import { ShareJob } from './ShareJob';
+import { jobShareUrl } from '../App';
 import { OUTBOUND, outboundHref, emailApplyHref, safeHref } from '../outbound';
 import { SITE_NAME, SITE_URL } from '../links';
+import { prettyLabels } from '../labels';
 
 // The skilled-migration lists an occupation sits on. Outlined chips rather than
 // the filled pills used for visa subclasses just above them: both are codes
@@ -75,8 +81,65 @@ function Pills({ items }: { items: string[] }) {
   );
 }
 
-// A single free-text value (skills assessor, ANZSCO occupation) that becomes a
-// link out to its official source when we can resolve one.
+/**
+ * A role's occupations, each with the codes it is known by:
+ *
+ *   Electronics Engineer (233411 - 2022, 233411 - 2013)
+ *
+ * One line per occupation. The name carries the weight and the bracket
+ * qualifies it, which is the shape of the sentence being read — a row of
+ * equal-looking chips made "233411" and "ANZSCO 2022" run together as one
+ * token.
+ *
+ * Each code links to its own version's page on the ABS. That is worth the two
+ * links: subclasses 186 and 482 are assessed against ANZSCO 2022 and every
+ * other visa against ANZSCO 2013, the two classifications live on different ABS
+ * sites, and for a handful of occupations the codes themselves differ — so a
+ * reader following the wrong one is reading about a code their visa does not
+ * use. A code with no page stays as plain text rather than borrowing the other
+ * version's link.
+ */
+function Occupations({ occupations }: { occupations: ReturnType<typeof resolveOccupations> }) {
+  if (!occupations.length) return <>Not specified</>;
+  return (
+    <span className="fact-values">
+      {occupations.map((occ) => (
+        <span className="occupation" key={occ.name || occ.codes[0]?.code}>
+          {occ.name && <span className="occupation-name">{occ.codes[0]?.code} {occ.name}</span>}
+          <span className="occupation-codes">
+            {occ.name ? ' (' : ''}
+            {occ.codes.map((c, i) => {
+              const text = `${c.version}`;
+              return (
+                <Fragment key={`${c.version}-${c.code}`}>
+                  {i > 0 && ', '}
+                  {c.href ? (
+                    <a
+                      className="reference-link"
+                      href={c.href}
+                      target="_blank"
+                      rel="noopener"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      title={`${occ.name || c.code} in the ABS ANZSCO ${c.version} classification`}
+                    >
+                      {text}
+                    </a>
+                  ) : (
+                    text
+                  )}
+                </Fragment>
+              );
+            })}
+            {occ.name ? ')' : ''}
+          </span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
+// A single free-text value that becomes a link out to its official source when
+// we can resolve one.
 function Reference({ text, href }: { text: string; href?: string }) {
   if (!text) return <>Not specified</>;
   const safe = safeHref(href ?? '');
@@ -87,11 +150,18 @@ function Reference({ text, href }: { text: string; href?: string }) {
       href={safe}
       target="_blank"
       rel="noopener"
-            referrerPolicy="strict-origin-when-cross-origin"
+      referrerPolicy="strict-origin-when-cross-origin"
     >
       {text}
     </a>
   );
+}
+
+/** yes / no / nobody has checked — said in words rather than left blank. */
+function Answer({ value, yes, no }: { value: boolean | undefined; yes: string; no: string }) {
+  if (value === true) return <>{yes}</>;
+  if (value === false) return <>{no}</>;
+  return <>Not checked yet</>;
 }
 
 // Apply action. When the employer takes applications by email (a mailto: link)
@@ -133,233 +203,199 @@ function ApplyButton({ url, jobTitle }: { url: string; jobTitle: string }) {
 }
 
 export function JobDetail({ job }: { job: Job }) {
+  const { company } = job;
   const occupations = resolveOccupations(job);
   const applyByEmail = job.applyUrl.trim().toLowerCase().startsWith('mailto:');
   const pathwayVisas = pathwayVisasFor(job);
-  // Assessors and lists are pooled across every occupation the role maps to,
-  // deduplicated — two occupations often share an assessor and a list.
-  const assessments = Array.from(
-    new Map(
-      occupations
-        .filter((o) => o.assessment)
-        .map((o) => [o.assessment, { text: o.assessment, href: o.assessmentHref }])
-    ).values()
-  );
-  const lists = Array.from(new Set(occupations.flatMap((o) => o.lists)));
+  const assessors = assessorsFor(job);
+  const lists = occupationListsFor(job);
+  const companyHref = outboundHref(company.website, 'employer');
+
   return (
     <article className="job-detail" aria-labelledby="job-detail-title">
       {/* Who, then what, then when — the company and title read as one unit
-          and the dates and sponsorship badge as another. The badge sits with
-          the dates rather than above the title: a solid pill is the heaviest
+          and the date and sponsorship badge as another. The badge sits with
+          the date rather than above the title: a solid pill is the heaviest
           thing in this block, and ahead of the headline it takes the lead
-          away from it. */}
-      <p className="detail-company">
-        {outboundHref(job.companyUrl, 'employer') ? (
-          <a
-            className="company-link"
-            href={outboundHref(job.companyUrl, 'employer')}
-            target="_blank"
-            rel="noopener"
-            referrerPolicy="strict-origin-when-cross-origin"
-          >
-            {job.company}
-          </a>
-        ) : (
-          job.company
-        )}
-      </p>
+          away from it.
 
-      <h1 id="job-detail-title" className="detail-title">
-        {job.title}
-      </h1>
+          The header spans the full width; below it the article splits into a
+          reading column and a column of actions. */}
+      <header className="detail-head">
+        <p className="detail-company">
+          {companyHref ? (
+            <a
+              className="company-link"
+              href={companyHref}
+              target="_blank"
+              rel="noopener"
+              referrerPolicy="strict-origin-when-cross-origin"
+            >
+              {company.name}
+            </a>
+          ) : (
+            company.name
+          )}
+        </p>
 
-      <div className="detail-meta">
-        {/* A matched pair, worded the same way round: both halves are about
-            the application window, so both read "Applications …". When the role
-            itself starts is a fact about the job, and lives with the other
-            facts below. */}
-        <span className="detail-posted">
-          {[
-            job.posted ? `Applications open ${formatDate(job.posted)}` : '',
-            job.closes ? `Applications close ${formatDate(job.closes)}` : '',
-          ]
-            .filter(Boolean)
-            .join(' · ') || 'Application dates not specified'}
-        </span>
-        {job.employerSponsored && (
-          <span className="flag flag-sponsor">Visa sponsorship available</span>
-        )}
+        <h1 id="job-detail-title" className="detail-title">
+          {job.title}
+        </h1>
+
+        <div className="detail-meta">
+          <span className="detail-posted">
+            {job.posted ? `Posted ${formatDate(job.posted)}` : 'Not specified'}
+          </span>
+          {company.accreditedSponsor && (
+            <span className="flag flag-sponsor">Accredited sponsor</span>
+          )}
+          <ShareJob url={jobShareUrl(job.id)} title={job.title} />
+        </div>
+      </header>
+
+      <div className="detail-main">
+        <section>
+          <h2 className="detail-heading">In a nutshell</h2>
+          <dl className="detail-facts">
+            <div className="fact">
+              <dt className="fact-label">Job type</dt>
+              <dd className="fact-value">{orNotSpecified(job.type)}</dd>
+            </div>
+            <div className="fact">
+              <dt className="fact-label">Location</dt>
+              <dd className="fact-value">{orNotSpecified(jobLocation(job))}</dd>
+            </div>
+            <div className="fact">
+              <dt className="fact-label">Posted</dt>
+              <dd className="fact-value">
+                {job.posted ? formatDate(job.posted) : NOT_SPECIFIED}
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        <section className="visa-box" aria-labelledby="visa-heading">
+          <h2 id="visa-heading">
+            Visa &amp; pathway{' '}
+            <InfoTooltip text={VISA_DISCLAIMER} label="Visa guidance disclaimer" />
+          </h2>
+          <dl className="visa-facts">
+            <div className="fact">
+              <dt className="fact-label">
+                Occupation{occupations.length > 1 ? 's' : ''}
+              </dt>
+              <dd className="fact-value">
+                <Occupations occupations={occupations} />
+              </dd>
+            </div>
+            <div className="fact">
+              <dt className="fact-label">Can lead to</dt>
+              <dd className="fact-value">
+                <Pills items={pathwayVisas} />
+              </dd>
+            </div>
+            {lists.length > 0 && (
+              <div className="fact">
+                <dt className="fact-label">
+                  Occupation lists{' '}
+                  <InfoTooltip
+                    label="What the occupation lists mean"
+                    text={lists.map(occupationListLabel).join('\n')}
+                  />
+                </dt>
+                <dd className="fact-value">
+                  <OccupationLists lists={lists} />
+                </dd>
+              </div>
+            )}
+            <div className="fact">
+              <dt className="fact-label">
+                Skills assessment{assessors.length > 1 ? 's' : ''}
+              </dt>
+              <dd className="fact-value">
+                {assessors.length === 0 ? (
+                  'Not specified'
+                ) : (
+                  <span className="fact-values">
+                    {assessors.map((a) => (
+                      <Reference key={a.name} text={a.name} href={a.url} />
+                    ))}
+                  </span>
+                )}
+              </dd>
+            </div>
+            <div className="fact">
+              <dt className="fact-label">Accredited sponsor</dt>
+              <dd className="fact-value">
+                <Answer value={company.accreditedSponsor} yes="Yes" no="No" />
+              </dd>
+            </div>
+            <div className="fact">
+              <dt className="fact-label">Hires international students</dt>
+              <dd className="fact-value">
+                <Answer value={company.hiresInternationalStudents} yes="Yes" no="No" />
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        <section className="detail-section">
+          <h2>About the employer</h2>
+          {company.tagline && <p className="detail-about">{company.tagline}</p>}
+          <dl className="detail-facts">
+            {company.industries.length > 0 && (
+              <div className="fact">
+                <dt className="fact-label">Industry</dt>
+                <dd className="fact-value">{prettyLabels(company.industries).join(', ')}</dd>
+              </div>
+            )}
+            {/* The CSV's "Type" column, which holds two different kinds of
+                thing at once: what the company makes (saas, big data,
+                manufacturing) and how it makes money (commission,
+                subscription, advertising). This was labelled "Builds", which
+                is true of the first half and nonsense next to "commission". */}
+            {company.types.length > 0 && (
+              <div className="fact">
+                <dt className="fact-label">Model &amp; tech</dt>
+                <dd className="fact-value">{prettyLabels(company.types).join(', ')}</dd>
+              </div>
+            )}
+            {company.growthStage && (
+              <div className="fact">
+                <dt className="fact-label">Stage</dt>
+                <dd className="fact-value">
+                  {prettyLabels([company.segment, company.growthStage].filter(Boolean)).join(' · ')}
+                </dd>
+              </div>
+            )}
+            {company.employees && (
+              <div className="fact">
+                <dt className="fact-label">Employees</dt>
+                <dd className="fact-value">{company.employees}</dd>
+              </div>
+            )}
+            {company.hqCity && (
+              <div className="fact">
+                <dt className="fact-label">Head office</dt>
+                <dd className="fact-value">{company.hqCity}</dd>
+              </div>
+            )}
+          </dl>
+        </section>
       </div>
 
-      <section>
-      <h2 className="detail-heading">In a nutshell</h2>
-      <ul className="detail-facts">
-        <li>
-          <span className="fact-label">Start date</span>
-          {formatStart(job.startDate)}
-        </li>
-        <li>
-          <span className="fact-label">Location</span>
-          {orNotSpecified(job.location)}
-        </li>
-        <li>
-          <span className="fact-label">Type</span>
-          {orNotSpecified(job.type)}
-        </li>
-        <li>
-          <span className="fact-label">
-            Arrangement{job.arrangements.length > 1 ? 's' : ''}
-          </span>
-          {job.arrangements.join(', ') || NOT_SPECIFIED}
-        </li>
-        <li>
-          <span className="fact-label">Salary</span>
-          {orNotSpecified(job.salary)}
-        </li>
-        <li>
-          <span className="fact-label">Education</span>
-          {orNotSpecified(job.educationLevel)}
-        </li>
-        <li>
-          <span className="fact-label">Level</span>
-          {orNotSpecified(job.jobLevel)}
-        </li>
-      </ul>
-      </section>
-
-      <section className="visa-box" aria-labelledby="visa-heading">
-        <h2 id="visa-heading">
-          Visa &amp; pathway{' '}
-          <InfoTooltip text={VISA_DISCLAIMER} label="Visa guidance disclaimer" />
-        </h2>
-        <ul className="visa-facts">
-          <li>
-            <span className="fact-label">Apply if you're on</span>
-            <Pills items={job.visaEligible} />
-          </li>
-          <li>
-            <span className="fact-label">Can lead to</span>
-            <Pills items={pathwayVisas} />
-          </li>
-          <li>
-            <span className="fact-label">
-              Skills assessment{assessments.length > 1 ? 's' : ''}
-            </span>
-            {assessments.length === 0 ? (
-              'Not specified'
-            ) : (
-              <span className="fact-values">
-                {assessments.map((a) => (
-                  <Reference key={a.text} text={a.text} href={a.href} />
-                ))}
-              </span>
-            )}
-          </li>
-          <li>
-            <span className="fact-label">
-              ANZSCO occupation{occupations.length > 1 ? 's' : ''}
-            </span>
-            {occupations.length === 0 ? (
-              'Not specified'
-            ) : (
-              <span className="fact-values">
-                {occupations.map((occ) => (
-                  <Reference
-                    key={occ.code || occ.name}
-                    text={[occ.code, occ.name].filter(Boolean).join(' ')}
-                    href={occ.anzscoHref}
-                  />
-                ))}
-              </span>
-            )}
-          </li>
-          {lists.length > 0 && (
-            <li>
-              <span className="fact-label">
-                Occupation lists{' '}
-                <InfoTooltip
-                  label="What the occupation lists mean"
-                  text={lists.map(occupationListLabel).join('\n')}
-                />
-              </span>
-              <OccupationLists lists={lists} />
-            </li>
-          )}
-          <li>
-            <span className="fact-label">Employer sponsorship</span>
-            {job.employerSponsored === true
-              ? 'Available'
-              : job.employerSponsored === false
-                ? 'Not offered'
-                : NOT_SPECIFIED}
-          </li>
-        </ul>
-
+      {/* Everything you do rather than read. Given its own column when there is
+          room for one, where it stays put as the role scrolls past. */}
+      <aside className="detail-side">
         <div className="detail-actions">
           <ApplyButton url={job.applyUrl} jobTitle={job.title} />
+          <p className="apply-note">
+            {applyByEmail
+              ? 'Applications for this role are sent by email to the employer.'
+              : "Applications are handled on the employer's preferred website."}
+          </p>
         </div>
-      </section>
-
-      {job.companyAbout && (<section className="detail-section">
-          <h2>About the employer</h2>
-          <p className="detail-about">{job.companyAbout}</p>
-          </section>
-          )}
-
-
-      {job.summary && (
-        <section className="detail-section">
-          <h2>About the role</h2>
-          <p className="detail-description">{job.summary}</p>
-        </section>
-      )}
-
-      {job.skills.length > 0 && (
-        <section className="detail-section">
-          <h2>Skills</h2>
-          <ul className="detail-tags" aria-label="Skills needed">
-            {job.skills.map((skill) => (
-              <li key={skill} className="tag">
-                {skill}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/* Right above the apply action, because that is when knowing who you are
-          writing to actually changes what you do. */}
-      {/* Both conditions: details we hold but were not given permission to
-          publish stay unpublished. */}
-      {job.contactPublic && job.contactName && (
-        <section className="detail-section hiring-contact">
-          <h2>Who posted this</h2>
-          {/* Name leads, position sits under it: one is who they are, the other
-              is context for it, and stacking says that without a separator. */}
-          <p className="hiring-contact-name">{job.contactName}</p>
-          {job.contactPosition && (
-            <p className="hiring-contact-role">{job.contactPosition}</p>
-          )}
-          {outboundHref(job.contactLinkedin, 'contact') && (
-            <a
-              className="reference-link"
-              href={outboundHref(job.contactLinkedin, 'contact')}
-              {...OUTBOUND}
-            >
-              LinkedIn profile
-            </a>
-          )}
-        </section>
-      )}
-
-      <div className="detail-actions">
-        <ApplyButton url={job.applyUrl} jobTitle={job.title} />
-        <p className="apply-note">
-          {applyByEmail
-            ? "Applications for this role are sent by email to the employer."
-            : "Applications are handled on the employer's preferred website."}
-        </p>
-      </div>
+      </aside>
     </article>
   );
 }

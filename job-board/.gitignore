@@ -21,3 +21,8 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Build artefacts: copies of content/*.json, written by scripts/sync-data.js.
+# The sources live in content/ — see scripts/data-files.js.
+/public/jobs.json
+/public/data

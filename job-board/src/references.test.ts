@@ -1,176 +1,189 @@
 import {
-  pathwayVisasFor,
-  resolveOccupation,
+  setOccupations,
   resolveOccupations,
   occupationCodesFor,
+  pathwayVisasFor,
   assessmentsFor,
+  assessorsFor,
+  occupationListsFor,
+  occupationName,
+  listOccupations,
+  visaUrl,
+  occupationListLabel,
 } from './references';
 import { Job } from './types';
 
-/**
- * The reference file is stood in for, rather than read.
- *
- * These tests used to assert against whatever occupations.json happened to
- * contain, so emptying or editing that file — a normal thing to do while
- * curating — broke seven of them. What is being tested here is how a code is
- * resolved, not which occupations we have got round to writing up.
- */
-jest.mock('./data/occupations.json', () => ({
-  '261313': {
-    name: 'Software Engineer',
-    anzscoUrl: 'https://abs.example/2/26/261/2613',
-    assessment: 'ACS',
-    assessmentUrl: 'https://acs.example',
-    lists: ['MLTSSL', 'CSOL'],
-    visas: [
-      { code: '189', name: 'Skilled Independent' },
-      { code: '190', name: 'Skilled Nominated' },
-      { code: '186', name: 'Employer Nomination Scheme' },
-      { code: '482', name: 'Skills in Demand' },
-      { code: '485', name: 'Temporary Graduate' },
-      { code: '491', name: 'Skilled Work Regional' },
-      // Listed twice for different streams, exactly as the real file does.
-      { code: '491', name: 'Skilled Work Regional (Family)' },
-    ],
+/** The reference as the generated index holds it: keyed by every code. */
+const SOFTWARE = {
+  name: 'Software Engineer',
+  codes: { anzsco2022: '261313', anzsco2013: '261313' },
+  urls: {
+    anzsco2022: 'https://www.abs.gov.au/statistics/classifications/2022/browse/2/26/261/2613',
+    anzsco2013: 'http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/SOFTWARE?opendocument',
   },
-  '233999': {
-    name: 'Engineering Professionals nec',
-    anzscoUrl: 'https://abs.example/2/23/233/2339',
-    assessment: 'Engineers Australia',
-    assessmentUrl: 'https://ea.example',
-    lists: ['MLTSSL', 'CSOL'],
-    visas: [
-      { code: '189', name: 'Skilled Independent' },
-      { code: '190', name: 'Skilled Nominated' },
-      { code: '186', name: 'Employer Nomination Scheme' },
-      { code: '482', name: 'Skills in Demand' },
-    ],
-  },
-}));
+  lists: ['MLTSSL', 'CSOL'],
+  visas: ['189', '482', '186'],
+  assessors: [{ name: 'ACS', url: 'https://www.acs.org.au/' }],
+};
 
-// A job carrying one occupation, unless a test says otherwise.
+const ANALYST = {
+  name: 'Data Analyst',
+  codes: { anzsco2022: '224114', anzsco2013: '224999' },
+  urls: { anzsco2022: 'https://www.abs.gov.au/statistics/classifications/2022/browse/2/22/224/2241' },
+  lists: ['CSOL'],
+  visas: ['482'],
+  assessors: [{ name: 'VETASSESS', url: 'https://www.vetassess.com.au/' }],
+};
+
+beforeEach(() => {
+  setOccupations({
+    '261313': SOFTWARE,
+    '224114': ANALYST,
+    '224999': ANALYST,
+  });
+});
+
 const job = (over: Partial<Job> = {}): Job =>
   ({
-    anzscos: ['261313'],
-    skillAssessment: '',
-    visaPathways: ['189', '190', '186'],
+    id: '1',
+    title: 'Engineer',
+    type: '',
+    occupationNames: [],
+    anzsco2022: [],
+    anzsco2013: [],
+    city: '',
+    country: '',
+    posted: '',
+    applyUrl: '',
+    company: {} as Job['company'],
     ...over,
-  } as Job);
+  }) as Job;
 
-test('pathways include the visas the occupation opens up, not just the job', () => {
-  const pathways = pathwayVisasFor(job());
-  const fromOccupation = resolveOccupation('261313', '').visas.map((v) => v.code);
-
-  // The regression: the job names three, the occupation opens up more, and
-  // every one of them has to be filterable.
-  expect(job().visaPathways.length).toBeLessThan(pathways.length);
-  fromOccupation.forEach((code) => expect(pathways).toContain(code));
-});
-
-test('the job’s own pathways survive even when the occupation is unknown', () => {
-  const pathways = pathwayVisasFor(job({ anzscos: ['999999'] }));
-  expect(pathways).toEqual(['189', '190', '186']);
-});
-
-test('a role mapped to two occupations pools the visas of both', () => {
-  const one = pathwayVisasFor(job({ anzscos: ['261313'], visaPathways: [] }));
-  const both = pathwayVisasFor(job({ anzscos: ['261313', '233999'], visaPathways: [] }));
-
-  // Both occupations resolve, and nothing is counted twice where they overlap.
-  expect(both.length).toBeGreaterThanOrEqual(one.length);
-  expect(new Set(both).size).toBe(both.length);
-});
-
-test('every occupation a role maps to is reported, in order', () => {
-  expect(occupationCodesFor(job({ anzscos: ['261313', '233999'] }))).toEqual([
-    '261313',
-    '233999',
-  ]);
-});
-
-test('assessors are pooled across occupations and deduplicated', () => {
-  const assessors = assessmentsFor(job({ anzscos: ['261313', '233999'] }));
-  expect(new Set(assessors).size).toBe(assessors.length);
-});
-
-test('a subclass listed by both the job and the occupation appears once', () => {
-  const pathways = pathwayVisasFor(job());
-  expect(new Set(pathways).size).toBe(pathways.length);
-  expect(pathways.filter((c) => c === '189')).toHaveLength(1);
-});
-
-test('a role with no pathways of its own still inherits the occupation’s', () => {
-  const pathways = pathwayVisasFor(job({ visaPathways: [] }));
-  expect(pathways.length).toBeGreaterThan(0);
-  expect(pathways).toContain('482');
-});
-
-describe('naming an occupation', () => {
-  test('a code we have written up gets its proper name', () => {
-    const occ = resolveOccupation('261313', '');
-    expect(occ.code).toBe('261313');
-    expect(occ.name).toBe('Software Engineer');
-  });
-
-  test('a bare code we do not know is not made its own name', () => {
-    // The regression: this produced name === code, and the detail page then
-    // rendered "261312 261312".
-    const occ = resolveOccupation('261312', '');
-    expect(occ.code).toBe('261312');
-    expect(occ.name).toBe('');
-    expect([occ.code, occ.name].filter(Boolean).join(' ')).toBe('261312');
-  });
-
-  test('code plus name keeps just the name', () => {
-    expect(resolveOccupation('261312 Developer Programmer', '').name).toBe(
-      'Developer Programmer'
+describe('resolving a role’s occupations', () => {
+  test('the same occupation under both codes is one entry carrying both', () => {
+    const [occ, ...rest] = resolveOccupations(
+      job({ anzsco2022: ['261313'], anzsco2013: ['261313'] })
     );
+    expect(rest).toHaveLength(0);
+    expect(occ.name).toBe('Software Engineer');
+    expect(occ.codes.map((c) => `${c.version}:${c.code}`)).toEqual(['2022:261313', '2013:261313']);
   });
 
-  test('free text with no code is kept as the name', () => {
-    const occ = resolveOccupation('Developer Programmer', '');
-    expect(occ.code).toBe('');
-    expect(occ.name).toBe('Developer Programmer');
+  test('codes that differ between versions still resolve to one occupation', () => {
+    // Data Analyst is 224114 in ANZSCO 2022 and 224999 in 2013 — the case the
+    // two columns exist for.
+    const occupations = resolveOccupations(job({ anzsco2022: ['224114'], anzsco2013: ['224999'] }));
+    expect(occupations).toHaveLength(1);
+    expect(occupations[0].codes.map((c) => c.code)).toEqual(['224114', '224999']);
+  });
+
+  test('a role across two occupations keeps both', () => {
+    const occupations = resolveOccupations(job({ anzsco2022: ['261313', '224114'] }));
+    expect(occupations.map((o) => o.name)).toEqual(['Software Engineer', 'Data Analyst']);
+  });
+
+  test('each version links to its own ABS page, not to the other one\u2019s', () => {
+    // The two classifications live on different ABS sites, and for some
+    // occupations the codes differ — so borrowing one link for both would send
+    // a reader to a code their visa does not use.
+    const [occ] = resolveOccupations(job({ anzsco2022: ['261313'], anzsco2013: ['261313'] }));
+    expect(occ.codes.find((c) => c.version === '2022')?.href).toBe(SOFTWARE.urls.anzsco2022);
+    expect(occ.codes.find((c) => c.version === '2013')?.href).toBe(SOFTWARE.urls.anzsco2013);
+  });
+
+  test('a version with no page of its own stays unlinked', () => {
+    // Data Analyst has no 2013 URL in the fixture; it must not inherit the
+    // 2022 one.
+    const [occ] = resolveOccupations(job({ anzsco2022: ['224114'], anzsco2013: ['224999'] }));
+    expect(occ.codes.find((c) => c.version === '2013')?.href).toBeUndefined();
+  });
+
+  test('a 2022 code the reference has no entry for falls back to a built URL', () => {
+    const [occ] = resolveOccupations(job({ anzsco2022: ['999999'] }));
+    expect(occ.codes[0].href).toContain('/9/99/999/9999');
+  });
+
+  test('a code the reference has never heard of still shows, named from the CSV', () => {
+    const [occ] = resolveOccupations(
+      job({ anzsco2022: ['999999'], occupationNames: ['Clinical Coding Specialist'] })
+    );
+    expect(occ.name).toBe('Clinical Coding Specialist');
+    expect(occ.codes[0].code).toBe('999999');
+    expect(occ.visas).toEqual([]);
+  });
+
+  test('two unknown codes stay two occupations rather than merging under one blank name', () => {
+    expect(resolveOccupations(job({ anzsco2022: ['999999', '888888'] }))).toHaveLength(2);
+  });
+
+  test('a role with no codes resolves to nothing', () => {
+    expect(resolveOccupations(job())).toEqual([]);
   });
 });
 
-describe('what the ANZSCO code alone can answer', () => {
-  test('the name, assessor and visas all come from the code', () => {
-    // Nothing but a code on the job: everything else is looked up.
-    const occ = resolveOccupation('261313', '');
-    expect(occ.name).toBe('Software Engineer');
-    expect(occ.assessment).toBe('ACS');
-    expect(occ.assessmentHref).toBeTruthy();
-    expect(occ.anzscoHref).toBeTruthy();
-    expect(occ.visas.length).toBeGreaterThan(0);
+describe('what the detail page and the filters both read', () => {
+  test('the visas are the union across every occupation, deduplicated and sorted', () => {
+    expect(pathwayVisasFor(job({ anzsco2022: ['261313', '224114'] }))).toEqual([
+      '186',
+      '189',
+      '482',
+    ]);
   });
 
-  test('the reference file wins over an assessor typed on the job', () => {
-    // The regression: a job saying "Engineers Australia" against 261313 used to
-    // override the file and contradict every other listing for that occupation.
-    expect(resolveOccupation('261313', 'Engineers Australia').assessment).toBe('ACS');
+  test('the assessors are pooled and deduplicated by name', () => {
+    setOccupations({ '261313': SOFTWARE, '261312': { ...SOFTWARE, name: 'Developer Programmer' } });
+    expect(assessmentsFor(job({ anzsco2022: ['261313', '261312'] }))).toEqual(['ACS']);
+    expect(assessorsFor(job({ anzsco2022: ['261313'] }))[0].url).toBe('https://www.acs.org.au/');
   });
 
-  test('a typed assessor still covers an occupation nobody has written up', () => {
-    expect(resolveOccupation('261312', 'ACS').assessment).toBe('ACS');
+  test('the occupation lists are pooled too', () => {
+    expect(occupationListsFor(job({ anzsco2022: ['261313', '224114'] }))).toEqual([
+      'MLTSSL',
+      'CSOL',
+    ]);
   });
 
-  test('two occupations keep their own assessors rather than sharing one', () => {
-    const both = resolveOccupations({
-      anzscos: ['261313', '233999'],
-      skillAssessment: 'ACS',
-    } as Job);
-    expect(both.map((o) => o.assessment)).toEqual(['ACS', 'Engineers Australia']);
+  test('the codes a role can be filtered by are both versions', () => {
+    expect(occupationCodesFor(job({ anzsco2022: ['224114'], anzsco2013: ['224999'] }))).toEqual([
+      '224114',
+      '224999',
+    ]);
+  });
+});
+
+describe('the reference itself', () => {
+  test('a code resolves to its occupation name', () => {
+    expect(occupationName('261313')).toBe('Software Engineer');
+    expect(occupationName('000000')).toBe('');
   });
 
-  test('pathways come from the code, so a job need not list them', () => {
-    const pathways = pathwayVisasFor({
-      anzscos: ['261313'],
-      skillAssessment: '',
-      visaPathways: [],
-    } as unknown as Job);
-    expect(pathways).toEqual(
-      expect.arrayContaining(['189', '190', '186', '482', '485'])
+  test('listing occupations does not repeat one that has two codes', () => {
+    const names = listOccupations().map((o) => o.name);
+    expect(names).toEqual(['Data Analyst', 'Software Engineer']);
+  });
+
+  test('an occupation carries both codes, so the admin can write both columns', () => {
+    const analyst = listOccupations().find((o) => o.name === 'Data Analyst');
+    expect(analyst).toEqual({ name: 'Data Analyst', anzsco2022: '224114', anzsco2013: '224999' });
+  });
+});
+
+describe('government links', () => {
+  test('a known subclass links to its Home Affairs page', () => {
+    expect(visaUrl('482')).toContain('skills-in-demand-visa-subclass-482');
+  });
+
+  test('the 407 slug drops the word "visa", which an earlier guess got wrong', () => {
+    expect(visaUrl('407')).toMatch(/\/training-407$/);
+  });
+
+  test('an unknown subclass has no link rather than a guessed one', () => {
+    expect(visaUrl('999')).toBeUndefined();
+  });
+
+  test('a list label spells out what the acronym means', () => {
+    expect(occupationListLabel('MLTSSL')).toBe(
+      'MLTSSL - Medium and Long-term Strategic Skills List'
     );
   });
 });

@@ -1,8 +1,8 @@
 import { postcodeOf, clusterCompanies, POSTCODE_PLACES } from './geo';
-import { Company } from './companies';
+import { Company } from './types';
 
 const company = (name: string, address: string): Company =>
-  ({ name, address, website: `https://${name}.test`, openings: 1 } as Company);
+  ({ name, hqAddress: address, website: `https://${name}.test`, openings: 1 } as Company);
 
 describe('postcodeOf', () => {
   test('finds the postcode in a full address', () => {

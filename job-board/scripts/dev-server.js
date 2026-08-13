@@ -1,5 +1,5 @@
 // Tiny dependency-free helper for LOCAL development only. It lets the "Add a
-// job (local)" admin panel write straight into public/jobs.json so you can add
+// job (local)" admin panel write straight into content/jobs.json so you can add
 // roles without hand-editing the file. Run it alongside `npm start`:
 //
 //   node scripts/dev-server.js      (or: npm run dev-server)
@@ -12,22 +12,40 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
+const { DATA_FILES, JOB_COLUMNS, contentPath } = require('./data-files');
+
 const PORT = 4000;
-const JOBS_FILE = path.join(__dirname, '..', 'public', 'jobs.json');
-const OCC_FILE = path.join(__dirname, '..', 'src', 'data', 'occupations.json');
-const CONST_FILE = path.join(__dirname, '..', 'src', 'data', 'constants.json');
+const JOBS_FILE = contentPath('jobs.csv');
+const OCC_FILE = contentPath('occupations.json');
+const CONST_FILE = contentPath('constants.json');
 const CONST_KEYS = ['jobLevel', 'type', 'arrangement', 'educationLevel', 'assessment', 'skills'];
 
-function readJobs() {
-  const raw = fs.readFileSync(JOBS_FILE, 'utf8');
-  const data = JSON.parse(raw);
-  if (!Array.isArray(data)) throw new Error('jobs.json is not an array');
-  return data;
+/**
+ * Reads a file, creating it from `fallback` if it isn't there.
+ *
+ * A missing file used to surface as a bare ENOENT from inside a POST, which
+ * says nothing about which file or why — and "why" is usually that these files
+ * moved, or that this is a fresh clone. Creating it is the right answer either
+ * way: an empty reference is a valid starting state.
+ *
+ * A string fallback is written as-is (the CSV's header line); anything else is
+ * written as JSON.
+ */
+function readOrCreate(file, fallback) {
+  if (!fs.existsSync(file)) {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(
+      file,
+      typeof fallback === 'string' ? fallback : JSON.stringify(fallback, null, 2) + '\n'
+    );
+    console.log(`Created ${file}`);
+  }
+  const text = fs.readFileSync(file, 'utf8');
+  return typeof fallback === 'string' ? text : JSON.parse(text);
 }
 
 function readOccupations() {
-  const raw = fs.readFileSync(OCC_FILE, 'utf8');
-  const data = JSON.parse(raw);
+  const data = readOrCreate(OCC_FILE, {});
   if (Array.isArray(data) || typeof data !== 'object') {
     throw new Error('occupations.json is not an object');
   }
@@ -35,58 +53,69 @@ function readOccupations() {
 }
 
 function readConstants() {
-  const raw = fs.readFileSync(CONST_FILE, 'utf8');
-  const data = JSON.parse(raw);
+  const data = readOrCreate(CONST_FILE, {
+    jobLevel: [],
+    type: [],
+    arrangement: [],
+    educationLevel: [],
+    assessment: [],
+    skills: [],
+  });
   if (Array.isArray(data) || typeof data !== 'object') {
     throw new Error('constants.json is not an object');
   }
   return data;
 }
 
-// jobs.json is grouped by company: [{ company, company_about, company_url,
-// jobs: [...] }]. Every role in the file, flat, for id allocation.
-function allRoles(groups) {
-  return groups.flatMap((g) => (Array.isArray(g.jobs) ? g.jobs : [g]));
+const HEADER = JOB_COLUMNS.join(',') + '\n';
+
+function readJobsCsv() {
+  const text = readOrCreate(JOBS_FILE, HEADER);
+  // A file that lost its header (hand-edited, or truncated) would silently turn
+  // its first role into column names, so it is restored rather than trusted.
+  return text.trimStart().startsWith(JOB_COLUMNS[0]) ? text : HEADER + text;
 }
 
-function nextId(groups) {
-  const max = allRoles(groups).reduce((m, j) => {
-    const n = parseInt(j.id, 10);
-    return Number.isNaN(n) ? m : Math.max(m, n);
-  }, 0);
+/** One cell, quoted only when it has to be. Mirrors escapeCell in src/csv.ts. */
+function escapeCell(value) {
+  const text = String(value ?? '').replace(/\r?\n/g, ' ').trim();
+  return /[",]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+/**
+ * The next free Job ID.
+ *
+ * Only numeric ids count towards the maximum: the CSV arrives with whatever ids
+ * its source used, and a hand-added role must not collide with one. A file full
+ * of non-numeric ids simply starts this at 1.
+ */
+function nextJobId(text) {
+  const idColumn = JOB_COLUMNS.indexOf('Job ID');
+  const max = text
+    .split(/\r?\n/)
+    .slice(1)
+    .map((line) => Number.parseInt(splitCsvLine(line)[idColumn] ?? '', 10))
+    .reduce((m, n) => (Number.isNaN(n) ? m : Math.max(m, n)), 0);
   return String(max + 1);
 }
 
-// Adds a role under its company, creating the company group the first time it
-// posts. The company's blurb and link live on the group, not on the role, so a
-// second role for the same employer can't disagree with the first.
-function addRole(groups, incoming) {
-  const { company, company_about: about, company_url: url, ...role } = incoming;
-  const key = String(company).trim().toLowerCase();
-  let group = groups.find(
-    (g) => String(g.company || '').trim().toLowerCase() === key && Array.isArray(g.jobs)
-  );
-  if (!group) {
-    // Only fields that carry a value: an empty string in the file is a row of
-    // noise that the loader treats exactly as a missing key anyway. `jobs` is
-    // added last so the company's own details read first in the file.
-    group = { company };
-    if (about) group.company_about = about;
-    if (url) group.company_url = url;
-    group.jobs = [];
-    groups.push(group);
-  } else {
-    // A later posting fills in details the first one left blank.
-    if (!group.company_about && about) group.company_about = about;
-    if (!group.company_url && url) group.company_url = url;
+/** Splits one CSV line, respecting quoted cells. */
+function splitCsvLine(line) {
+  const cells = [];
+  let field = '';
+  let quoted = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    if (quoted) {
+      if (char !== '"') field += char;
+      else if (line[i + 1] === '"') (field += '"'), (i += 1);
+      else quoted = false;
+    } else if (char === '"') quoted = true;
+    else if (char === ',') (cells.push(field), (field = ''));
+    else field += char;
   }
-  // Same on the role itself, so a blank field never reaches the file.
-  const clean = {};
-  for (const [key, value] of Object.entries(role)) {
-    if (value !== '' && value !== null && value !== undefined) clean[key] = value;
-  }
-  group.jobs.push(clean);
-  return clean;
+  cells.push(field);
+  return cells;
 }
 
 function sendJson(res, status, body) {
@@ -119,6 +148,30 @@ const server = http.createServer((req, res) => {
         'Open the site at http://localhost:3000 (npm start).\n' +
         'Endpoints here: POST /api/jobs, /api/occupations, /api/constants.\n'
     );
+  }
+
+  // The data files themselves. In development these are not in public/, so
+  // CRA's dev server has nothing to serve and forwards the request here (it
+  // proxies any GET for a path that doesn't exist in public/ and doesn't ask
+  // for HTML). The site therefore reads the same file the admin writes, live,
+  // with no reload — which is the entire point of them living in content/.
+  if (req.method === 'GET') {
+    const file = DATA_FILES.find((f) => f.url === req.url.split('?')[0]);
+    if (file) {
+      try {
+        const body = readOrCreate(contentPath(file.name), file.fallback);
+        if (file.csv) {
+          res.writeHead(200, {
+            'Content-Type': 'text/csv; charset=utf-8',
+            'Access-Control-Allow-Origin': '*',
+          });
+          return res.end(body);
+        }
+        return sendJson(res, 200, body);
+      } catch (err) {
+        return sendJson(res, 500, { error: String(err && err.message) || 'read failed' });
+      }
+    }
   }
 
   // Append a value to a constant list (level, type, arrangement, education,
@@ -191,19 +244,30 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Append one role to content/jobs.csv.
+  //
+  // The row is built from JOB_COLUMNS rather than from whatever keys the form
+  // sent, so a field the form forgets lands as an empty cell in the right
+  // column instead of shifting every cell after it by one.
   if (req.method === 'POST' && req.url === '/api/jobs') {
     readBody(req, (raw) => {
       try {
         const incoming = JSON.parse(raw || '{}');
-        if (!incoming.title || !incoming.company) {
-          return sendJson(res, 400, { error: 'title and company are required' });
+        const title = String(incoming['Job title'] || '').trim();
+        const company = String(incoming['Company name'] || '').trim();
+        if (!title || !company) {
+          return sendJson(res, 400, { error: 'a job title and a company name are required' });
         }
-        const groups = readJobs();
-        const job = { id: nextId(groups), ...incoming };
-        addRole(groups, job);
-        fs.writeFileSync(JOBS_FILE, JSON.stringify(groups, null, 2) + '\n');
-        console.log(`Added job #${job.id}: ${job.title} @ ${job.company}`);
-        return sendJson(res, 201, { job });
+
+        const text = readJobsCsv();
+        const id = String(incoming['Job ID'] || '').trim() || nextJobId(text);
+        const row = { ...incoming, 'Job ID': id };
+        const line = JOB_COLUMNS.map((name) => escapeCell(row[name])).join(',');
+
+        const separator = text.endsWith('\n') ? '' : '\n';
+        fs.writeFileSync(JOBS_FILE, text + separator + line + '\n');
+        console.log(`Added job #${id}: ${title} @ ${company}`);
+        return sendJson(res, 201, { job: row });
       } catch (err) {
         return sendJson(res, 500, { error: String(err && err.message) || 'write failed' });
       }
@@ -214,7 +278,7 @@ const server = http.createServer((req, res) => {
   sendJson(res, 404, { error: 'not found' });
 });
 
-// Bound to the loopback address on purpose. This server writes to jobs.json,
+// Bound to the loopback address on purpose. This server writes to jobs.csv,
 // occupations.json and constants.json with no authentication, and it answers
 // any origin — which is fine for a tool only this machine can reach, and not
 // fine on a shared network. Without the host argument Node listens on every

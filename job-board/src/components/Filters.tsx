@@ -1,5 +1,7 @@
-import { resolveOccupation, VISA_NAMES } from '../references';
+import { occupationName, VISA_NAMES } from '../references';
 import { NOT_SPECIFIED } from '../format';
+import { prettyLabel } from '../labels';
+import { ActiveFilters, ActiveChip } from './ActiveFilters';
 import { FilterSelect, SelectOption } from './FilterSelect';
 
 const base = process.env.PUBLIC_URL || '';
@@ -9,71 +11,65 @@ const base = process.env.PUBLIC_URL || '';
  * visas and three occupations at once. Values inside one filter are OR'd;
  * separate filters are AND'd — pick "485" and "482" and you see roles matching
  * either, but a job type on top of that still has to match as well.
+ *
+ * There is one filter per thing the board actually knows. The set shrank with
+ * the data: level, work arrangement, education and salary went when the source
+ * stopped carrying them, and a filter over a column that is blank on every role
+ * is worse than no filter — it looks like a way to narrow the list and returns
+ * nothing.
  */
 export interface FilterState {
   query: string;
+  companies: string[];
   types: string[];
-  levels: string[];
-  arrangements: string[];
-  visas: string[];
-  pathwayVisas: string[];
+  cities: string[];
+  industries: string[];
+  /** The company's own tags — what it makes and how it makes money. */
+  companyTypes: string[];
+  growthStages: string[];
+  hqCities: string[];
   anzscos: string[];
-  skillAssessments: string[];
-  skills: string[];
-  /** A band floor, 0 for any, or -1 for "roles with no salary given". */
-  salaryMin: number;
-  /** Only roles starting within this many days; 0 means any start date. */
-  startsWithinDays: number;
+  pathwayVisas: string[];
+  /** Each 'yes' | 'no' | '' (not checked yet), any combination. */
+  sponsor: string[];
+  students: string[];
   /** Only roles posted within this many days; 0 means any age. */
   postedWithinDays: number;
-  /** 'yes' | 'no' | '' (never said), any combination. */
-  sponsorship: string[];
 }
 
 /** The list-valued keys, which are exactly the keys of FilterOptions. */
 export type FilterListKey =
+  | 'companies'
   | 'types'
-  | 'levels'
-  | 'arrangements'
-  | 'visas'
-  | 'pathwayVisas'
+  | 'cities'
+  | 'industries'
+  | 'companyTypes'
+  | 'growthStages'
+  | 'hqCities'
   | 'anzscos'
-  | 'skillAssessments'
-  | 'skills';
+  | 'pathwayVisas'
+  | 'sponsor'
+  | 'students';
 
 export type FilterOptions = Record<FilterListKey, string[]>;
 
 // "261313" -> "261313 Software Engineer" for the occupation options.
 const anzscoLabel = (code: string) => {
-  const { name } = resolveOccupation(code, '');
+  const name = occupationName(code);
   return name ? `${code} ${name}` : code;
 };
 
-// "189" -> "189 - Skilled Independent" for the two visa filters. Codes with no
-// entry in VISA_NAMES fall back to the bare code.
+// "189" -> "189 - Skilled Independent". Codes with no entry in VISA_NAMES fall
+// back to the bare code.
 const visaLabel = (code: string) => {
   const name = VISA_NAMES[code.trim()];
   return name ? `${code} - ${name}` : code;
 };
 
-const SALARY_BANDS = [
-  { value: '40000', label: '$40k+' },
-  { value: '60000', label: '$60k+' },
-  { value: '80000', label: '$80k+' },
-  { value: '100000', label: '$100k+' },
-  // Negative is the sentinel for "no salary we could read a number from" — see
-  // matches() in App.tsx. Last in the list because it narrows rather than
-  // raises the floor.
-  { value: '-1', label: NOT_SPECIFIED },
-];
-
-/* Windows measured forward from today, so they stay true whenever the page is
-   open. Single-choice for the same reason as salary: asking for "within a
-   month" and "within six" at once only ever means six. A role that has already
-   started counts as starting within any window — it is available now. */
-/* Looking back, where the start filter looks forward. Fine-grained at the near
-   end because "since I last looked" is usually a day or two, and nobody needs
-   to tell 45 days from 50. */
+/* Looking back from today, so the windows stay true whenever the page is open.
+   Single-choice: asking for "within a week" and "within a month" at once only
+   ever means a month. Fine-grained at the near end because "since I last
+   looked" is usually a day or two, and nobody needs to tell 45 days from 50. */
 const POSTED_WINDOWS = [
   { value: '1', label: 'Last 24 hours' },
   { value: '2', label: 'Last 2 days' },
@@ -83,31 +79,46 @@ const POSTED_WINDOWS = [
   { value: '60', label: 'Last 2 months' },
 ];
 
-const START_WINDOWS = [
-  { value: '30', label: 'Within a month' },
-  { value: '90', label: 'Within 3 months' },
-  { value: '180', label: 'Within 6 months' },
-  { value: '-1', label: NOT_SPECIFIED },
-];
+/**
+ * The three answers the two hand-checked columns can hold. Blank means nobody
+ * has checked, which is not "no" — so it is labelled rather than left as an
+ * unnamed tick box.
+ */
+const answerLabel = (value: string) =>
+  value === 'yes' ? 'Yes' : value === 'no' ? 'No' : 'Not checked yet';
 
-/* The one filter this audience comes for, so it keeps the accent on its
-   trigger — but it is a filter like the others now, with the same three
-   answers the data actually holds. */
-const SPONSORSHIP = [
-  { value: 'yes', label: 'Available' },
-  { value: 'no', label: 'Not offered' },
-  { value: '', label: NOT_SPECIFIED },
-];
-
-const FIELDS: { key: FilterListKey; label: string; format?: (value: string) => string }[] = [
-  { key: 'types', label: 'Job type' },
-  { key: 'levels', label: 'Level' },
-  { key: 'arrangements', label: 'Arrangement' },
-  { key: 'visas', label: 'Apply on visa', format: visaLabel },
-  { key: 'pathwayVisas', label: 'Leads to visa', format: visaLabel },
+const FIELDS: {
+  key: FilterListKey;
+  label: string;
+  format?: (value: string) => string;
+  /** Given the accent, because it is what this audience came for. */
+  accent?: boolean;
+}[] = [
+  { key: 'companies', label: 'Company' },
+  { key: 'types', label: 'Job type', format: prettyLabel },
+  { key: 'cities', label: 'Location', format: prettyLabel },
+  { key: 'industries', label: 'Industry', format: prettyLabel },
+  // Named the same as the fact on the job detail page. One thing, one name —
+  // "Job type" is what the role does, this is what the company is.
+  { key: 'companyTypes', label: 'Model & tech', format: prettyLabel },
+  // The growth stage on its own, not the "startup · early stage" pair the
+  // detail page shows. Combined, "late stage" and "startup · late stage" are
+  // separate options and finding late-stage companies takes three ticks.
+  { key: 'growthStages', label: 'Stage', format: prettyLabel },
+  { key: 'hqCities', label: 'Head office', format: prettyLabel },
   { key: 'anzscos', label: 'Occupation', format: anzscoLabel },
-  { key: 'skillAssessments', label: 'Skills assessment' },
-  { key: 'skills', label: 'Skills' },
+  { key: 'pathwayVisas', label: 'Leads to visa', format: visaLabel },
+  // Two questions, so two controls. Being an accredited sponsor is a formal
+  // status with the Department; hiring international students is a hiring
+  // habit. A company can do either without the other, and one control offering
+  // both answers quietly asked the reader to treat them as the same question.
+  { key: 'sponsor', label: 'Accredited sponsor', format: answerLabel, accent: true },
+  {
+    key: 'students',
+    label: 'Hires international students',
+    format: answerLabel,
+    accent: true,
+  },
 ];
 
 /**
@@ -117,10 +128,7 @@ const FIELDS: { key: FilterListKey; label: string; format?: (value: string) => s
 export function countActiveFilters(filters: FilterState): number {
   return (
     FIELDS.reduce((total, field) => total + filters[field.key].length, 0) +
-    (filters.salaryMin !== 0 ? 1 : 0) +
-    (filters.startsWithinDays !== 0 ? 1 : 0) +
     (filters.postedWithinDays > 0 ? 1 : 0) +
-    filters.sponsorship.length +
     (filters.query.trim() ? 1 : 0)
   );
 }
@@ -129,29 +137,26 @@ interface Props {
   filters: FilterState;
   options: FilterOptions;
   /** How many roles each option would leave, keyed by filter then by value. */
-  counts?: Partial<
-    Record<
-      FilterListKey | 'sponsorship' | 'salaryMin' | 'postedWithinDays' | 'startsWithinDays',
-      Map<string, number>
-    >
-  >;
+  counts?: Partial<Record<FilterListKey | 'postedWithinDays', Map<string, number>>>;
   onChange: (next: FilterState) => void;
   onClear: () => void;
-}
-
-/** One removable summary of something the reader has narrowed by. */
-interface ActiveChip {
-  id: string;
-  field: string;
-  value: string;
-  remove: () => void;
 }
 
 export function Filters({ filters, options, counts, onChange, onClear }: Props) {
   const set = (patch: Partial<FilterState>) => onChange({ ...filters, ...patch });
 
-  // A blank value is the "not specified" marker; it needs a label or it renders
-  // as an unlabelled tick box.
+  /**
+   * A blank value is the "not specified" marker; it needs a label or it renders
+   * as an unlabelled tick box.
+   *
+   * The field's own labeller gets first refusal on it, because "not specified"
+   * is not always the truest word for a gap: on the two hand-checked columns a
+   * blank means nobody has looked yet, which is a different claim. Labellers
+   * with nothing to say about a blank return an empty string and fall through.
+   */
+  const label = (value: string, format?: (v: string) => string) =>
+    (format ? format(value) : value) || NOT_SPECIFIED;
+
   const toOptions = (
     key: FilterListKey,
     values: string[],
@@ -159,7 +164,7 @@ export function Filters({ filters, options, counts, onChange, onClear }: Props) 
   ): SelectOption[] =>
     values.map((value) => ({
       value,
-      label: value ? (format ? format(value) : value) : NOT_SPECIFIED,
+      label: label(value, format),
       count: counts?.[key]?.get(value) ?? 0,
     }));
 
@@ -173,21 +178,12 @@ export function Filters({ filters, options, counts, onChange, onClear }: Props) 
       chips.push({
         id: `${field.key}:${value}`,
         field: field.label,
-        value: value ? (field.format ? field.format(value) : value) : NOT_SPECIFIED,
+        value: label(value, field.format),
         remove: () =>
           set({ [field.key]: filters[field.key].filter((v) => v !== value) } as Partial<FilterState>),
       });
     });
   });
-
-  if (filters.salaryMin !== 0) {
-    chips.push({
-      id: 'salary',
-      field: 'Salary',
-      value: SALARY_BANDS.find((b) => b.value === String(filters.salaryMin))?.label ?? '',
-      remove: () => set({ salaryMin: 0 }),
-    });
-  }
 
   if (filters.postedWithinDays > 0) {
     chips.push({
@@ -198,26 +194,6 @@ export function Filters({ filters, options, counts, onChange, onClear }: Props) 
       remove: () => set({ postedWithinDays: 0 }),
     });
   }
-
-  if (filters.startsWithinDays !== 0) {
-    chips.push({
-      id: 'starts',
-      field: 'Starts',
-      value:
-        START_WINDOWS.find((w) => w.value === String(filters.startsWithinDays))?.label ?? '',
-      remove: () => set({ startsWithinDays: 0 }),
-    });
-  }
-
-  filters.sponsorship.forEach((value) => {
-    chips.push({
-      id: `sponsorship:${value}`,
-      field: 'Sponsorship',
-      value: SPONSORSHIP.find((o) => o.value === value)?.label ?? NOT_SPECIFIED,
-      remove: () =>
-        set({ sponsorship: filters.sponsorship.filter((v) => v !== value) }),
-    });
-  });
 
   return (
     <div className="filterbar" role="search">
@@ -237,32 +213,33 @@ export function Filters({ filters, options, counts, onChange, onClear }: Props) 
           <input
             id="job-search"
             type="search"
-            placeholder="Search company, title or skill"
+            placeholder="Search company, title or occupation"
             value={filters.query}
             onChange={(e) => set({ query: e.target.value })}
           />
         </div>
 
-        {FIELDS.map((field) => (
-          <FilterSelect
-            key={field.key}
-            label={field.label}
-            options={toOptions(field.key, options[field.key], field.format)}
-            selected={filters[field.key]}
-            onChange={(next) => set({ [field.key]: next } as Partial<FilterState>)}
-          />
-        ))}
-
-        <FilterSelect
-          label="Salary"
-          multiple={false}
-          options={SALARY_BANDS.map((b) => ({
-            ...b,
-            count: counts?.salaryMin?.get(b.value) ?? 0,
-          }))}
-          selected={filters.salaryMin !== 0 ? [String(filters.salaryMin)] : []}
-          onChange={(next) => set({ salaryMin: Number(next[0] ?? 0) })}
-        />
+        {FIELDS.map((field) => {
+          const select = (
+            <FilterSelect
+              key={field.key}
+              label={field.label}
+              options={toOptions(field.key, options[field.key], field.format)}
+              selected={filters[field.key]}
+              onChange={(next) => set({ [field.key]: next } as Partial<FilterState>)}
+            />
+          );
+          return field.accent ? (
+            <div
+              key={field.key}
+              className={`fselect-sponsor${filters[field.key].length ? ' is-set' : ''}`}
+            >
+              {select}
+            </div>
+          ) : (
+            select
+          );
+        })}
 
         <FilterSelect
           label="Posted"
@@ -275,57 +252,9 @@ export function Filters({ filters, options, counts, onChange, onClear }: Props) 
           onChange={(next) => set({ postedWithinDays: Number(next[0] ?? 0) })}
         />
 
-        <FilterSelect
-          label="Starts"
-          multiple={false}
-          options={START_WINDOWS.map((w) => ({
-            ...w,
-            count: counts?.startsWithinDays?.get(w.value) ?? 0,
-          }))}
-          selected={filters.startsWithinDays !== 0 ? [String(filters.startsWithinDays)] : []}
-          onChange={(next) => set({ startsWithinDays: Number(next[0] ?? 0) })}
-        />
-
-        <div className={`fselect-sponsor${filters.sponsorship.length ? ' is-set' : ''}`}>
-          <FilterSelect
-            label="Sponsorship"
-            options={SPONSORSHIP.map((o) => ({
-              ...o,
-              count: counts?.sponsorship?.get(o.value) ?? 0,
-            }))}
-            selected={filters.sponsorship}
-            onChange={(next) => set({ sponsorship: next })}
-          />
-        </div>
       </div>
 
-      {chips.length > 0 && (
-        <div className="active-filters">
-          <h2 className="visually-hidden">Active filters</h2>
-          <ul className="active-chips">
-            {chips.map((chip) => (
-              <li key={chip.id}>
-                <button
-                  type="button"
-                  className="active-chip"
-                  onClick={chip.remove}
-                  title={`${chip.field}: ${chip.value}`}
-                >
-                  <span className="active-chip-field">{chip.field}</span>
-                  <span className="active-chip-value">{chip.value}</span>
-                  <span className="active-chip-x" aria-hidden="true" />
-                  <span className="visually-hidden">Remove filter</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-
-          <button type="button" className="filter-clear" onClick={onClear}>
-            Clear all
-            <span className="filter-clear-count">{chips.length}</span>
-          </button>
-        </div>
-      )}
+      <ActiveFilters chips={chips} onClear={onClear} />
     </div>
   );
 }

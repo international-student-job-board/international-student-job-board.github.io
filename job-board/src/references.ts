@@ -2,7 +2,6 @@
 // visa, skills-assessment and ANZSCO fields. Every job that names one of these
 // should link to its source - see the "always link gov resources" convention.
 
-import occupations from './data/occupations.json';
 import { Job } from './types';
 
 export const VISA_LISTING =
@@ -118,135 +117,205 @@ export function anzscoUrl(code: string): string | undefined {
   return `${ANZSCO_BROWSE}/${major}/${submajor}/${minor}/${unit}`;
 }
 
-// The canonical occupation reference (src/data/occupations.json), keyed by the
-// 6-digit ANZSCO code. Holds the occupation name and the two links so the file
-// is the single source of truth; the code just looks entries up.
-// One visa an occupation can be used for, e.g. { code: '189', name: 'Skilled
-// Independent', stream: 'Points-Tested' }.
-export interface OccupationVisa {
-  code: string;
+/**
+ * The occupation reference: content/occupation-index.json, keyed by ANZSCO code.
+ *
+ * It is generated from the Home Affairs skilled occupation list by
+ * `npm run fetch-occupations`, which is the only place any of this is decided.
+ * Nothing here is typed in by hand any more — a job carries codes, and the
+ * lists, visas and assessing authority all follow from them. That removes a
+ * whole class of disagreement: a role could previously name one assessor while
+ * its occupation named another, and the page had to pick.
+ *
+ * Both classification versions key the same entry, so a job resolves whether it
+ * carries the 2022 code, the 2013 code or both.
+ *
+ * Fetched once before first render, which keeps every caller below synchronous —
+ * they are used inside filtering and inside render alike.
+ */
+export interface OccupationAssessor {
   name: string;
-  stream?: string;
+  url: string;
 }
 
-interface OccupationRecord {
+interface IndexEntry {
   name: string;
-  anzscoUrl: string;
-  assessment: string;
-  assessmentUrl?: string;
-  // Skilled-migration lists the occupation sits on, e.g. ["MLTSSL", "CSOL"].
-  lists?: string[];
-  // Visas the occupation can be used for (from the skilled occupation list).
-  visas?: OccupationVisa[];
-}
-
-const OCCUPATIONS = occupations as unknown as Record<string, OccupationRecord>;
-
-// Occupations currently in the reference file, for the local admin picker.
-export function listOccupations(): { code: string; name: string }[] {
-  return Object.entries(OCCUPATIONS)
-    .map(([code, o]) => ({ code, name: o.name }))
-    .sort((a, b) => a.code.localeCompare(b.code));
-}
-
-// Everything the UI needs to render a job's occupation, resolved from the
-// reference file with sensible fallbacks so a job whose code isn't in the file
-// yet still links correctly. `anzsco` may be a bare code ("261313") or code
-// plus name ("261313 Software Engineer"); `skillAssessment` is a fallback used
-// only when the occupation isn't in the reference file.
-export interface ResolvedOccupation {
-  code: string;
-  name: string;
-  anzscoHref?: string;
-  assessment: string;
-  assessmentHref?: string;
+  /** Both classification versions, so the admin can fill both CSV columns. */
+  codes: { anzsco2022?: string; anzsco2013?: string };
+  /**
+   * The ABS page for each version, taken from the Home Affairs listing rather
+   * than constructed. Only the 2022 URL is constructible — the 2013 ones end in
+   * an opaque document id — so both are carried through from the source.
+   */
+  urls?: { anzsco2022?: string; anzsco2013?: string };
+  /** Skilled-migration lists the occupation sits on, e.g. ["MLTSSL", "CSOL"]. */
   lists: string[];
-  visas: OccupationVisa[];
+  /** Subclass numbers the occupation can be used for. */
+  visas: string[];
+  assessors: OccupationAssessor[];
 }
 
-export function resolveOccupation(
-  anzsco: string,
-  skillAssessment: string
-): ResolvedOccupation {
-  const code = anzsco.match(/\b(\d{6})\b/)?.[1] ?? '';
-  const record = code ? OCCUPATIONS[code] : undefined;
+let OCCUPATIONS: Record<string, IndexEntry> = {};
+let RETRIEVED = '';
 
-  // Occupation name: the reference file wins; otherwise the free text minus the
-  // code (so "261313 Software Engineer" still shows "Software Engineer").
-  //
-  // The last fallback is only for text with no code in it at all. Without that
-  // guard a bare "261312" fell through to itself and became its own name, which
-  // the detail page then printed as "261312 261312". An occupation we can't
-  // name has no name; it should show its code once and nothing else.
-  const name =
-    record?.name ||
-    anzsco.replace(/\b\d{6}\b/, '').trim() ||
-    (code ? '' : anzsco.trim());
+export async function loadOccupations(): Promise<void> {
+  const res = await fetch(`${process.env.PUBLIC_URL || ''}/data/occupation-index.json`);
+  if (!res.ok) throw new Error(`Could not load the occupation index (${res.status})`);
+  const payload = (await res.json()) as { retrieved?: string; occupations?: Record<string, IndexEntry> };
+  OCCUPATIONS = payload.occupations ?? {};
+  RETRIEVED = payload.retrieved ?? '';
+}
 
-  // The assessing authority belongs to the occupation, not to the job, so the
-  // reference file is the answer whenever it has one. A job's own value is only
-  // a fallback for an occupation nobody has written up yet.
-  //
-  // This used to be the other way round, which had two costs: every job
-  // repeated a fact the reference file already held and could contradict it,
-  // and a role mapped to two occupations put the same typed assessor against
-  // both even where they differ.
-  const assessment = record?.assessment || skillAssessment.trim() || '';
+/** Replaces the whole reference. Used by tests to stand in a fixture. */
+export function setOccupations(records: Record<string, IndexEntry>): void {
+  OCCUPATIONS = records;
+}
 
-  return {
-    code,
-    name,
-    anzscoHref: record?.anzscoUrl || anzscoUrl(anzsco),
-    assessment,
-    assessmentHref:
-      (record?.assessment ? record.assessmentUrl : undefined) || assessmentUrl(assessment),
-    lists: record?.lists ?? [],
-    visas: record?.visas ?? [],
-  };
+/** When the occupation list was last downloaded, for the on-page disclaimer. */
+export function occupationIndexDate(): string {
+  return RETRIEVED;
+}
+
+/** One occupation as the admin picks it: a name and the codes it writes. */
+export interface OccupationChoice {
+  name: string;
+  anzsco2022: string;
+  anzsco2013: string;
 }
 
 /**
- * Every occupation a role maps to. A job can sit across more than one ANZSCO
- * code — a "Data Engineer" is plausibly 261313 and 261311 — and which one an
- * applicant is assessed under changes their visa options, so the board keeps
- * all of them rather than forcing a single choice.
+ * Every occupation in the reference, deduplicated.
+ *
+ * The index is keyed by code and the same occupation appears under both of its
+ * codes, so walking the keys would list most occupations twice.
+ */
+export function listOccupations(): OccupationChoice[] {
+  const byName = new Map<string, OccupationChoice>();
+  Object.values(OCCUPATIONS).forEach((o) => {
+    if (!byName.has(o.name)) {
+      byName.set(o.name, {
+        name: o.name,
+        anzsco2022: o.codes?.anzsco2022 ?? '',
+        anzsco2013: o.codes?.anzsco2013 ?? '',
+      });
+    }
+  });
+  return Array.from(byName.values()).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** The occupation name for a code, or '' when the reference doesn't have it. */
+export function occupationName(code: string): string {
+  return OCCUPATIONS[code.trim()]?.name ?? '';
+}
+
+/** One ANZSCO code as shown: which classification it belongs to, and its link. */
+export interface OccupationCode {
+  version: '2022' | '2013';
+  code: string;
+  href?: string;
+}
+
+export interface ResolvedOccupation {
+  name: string;
+  codes: OccupationCode[];
+  lists: string[];
+  visas: string[];
+  assessors: OccupationAssessor[];
+}
+
+/**
+ * The occupations a role maps to, resolved from its codes.
+ *
+ * A role usually carries the same occupation twice — once as its 2022 code and
+ * once as its 2013 one — so entries are grouped by the occupation they resolve
+ * to and carry both codes, rather than being listed twice under one name. Where
+ * the two versions genuinely disagree (they do for a handful of occupations)
+ * they stay separate, because they are separate occupations.
+ *
+ * Codes the reference doesn't know still appear, with the name from the CSV if
+ * it gave one: an occupation missing from the list is worth showing as a code,
+ * and dropping it silently would make the page look like it had nothing to say.
  */
 export function resolveOccupations(job: Job): ResolvedOccupation[] {
-  return job.anzscos
-    .map((entry) => resolveOccupation(entry, job.skillAssessment))
-    .filter((occ) => occ.code || occ.name);
+  // Each version links to its own ABS page: the 2022 codes to the current
+  // classification browser, the 2013 ones to the archived ausstats lookup.
+  // Both come from the reference; the constructed 2022 URL is a fallback for a
+  // code the reference has no entry for, and a 2013 code without one simply has
+  // no link, since pointing it at a 2022 page would be confidently wrong.
+  const pairs: OccupationCode[] = [
+    ...job.anzsco2022.map((code) => ({
+      version: '2022' as const,
+      code,
+      href: OCCUPATIONS[code]?.urls?.anzsco2022 || anzscoUrl(code),
+    })),
+    ...job.anzsco2013.map((code) => ({
+      version: '2013' as const,
+      code,
+      href: OCCUPATIONS[code]?.urls?.anzsco2013,
+    })),
+  ];
+
+  const byOccupation = new Map<string, ResolvedOccupation>();
+  pairs.forEach((pair, i) => {
+    const entry = OCCUPATIONS[pair.code];
+    // Unknown codes group under themselves rather than under a shared blank
+    // name, which would merge two unrelated occupations into one row.
+    const key = entry ? entry.name : `#${pair.code}`;
+    const seen = byOccupation.get(key);
+    if (seen) {
+      if (!seen.codes.some((c) => c.code === pair.code && c.version === pair.version)) {
+        seen.codes.push(pair);
+      }
+      return;
+    }
+    byOccupation.set(key, {
+      name: entry?.name || job.occupationNames[i] || job.occupationNames[0] || '',
+      codes: [pair],
+      lists: entry?.lists ?? [],
+      visas: entry?.visas ?? [],
+      assessors: entry?.assessors ?? [],
+    });
+  });
+
+  return Array.from(byOccupation.values());
 }
 
-/** The 6-digit codes a role maps to, skipping any entry we couldn't read. */
+/** Every ANZSCO code a role carries, both versions. */
 export function occupationCodesFor(job: Job): string[] {
-  return Array.from(
-    new Set(resolveOccupations(job).map((occ) => occ.code).filter(Boolean))
-  );
+  return Array.from(new Set([...job.anzsco2022, ...job.anzsco2013]));
 }
 
-/** The assessing authorities across all of a role's occupations. */
+/** The assessing authorities across all of a role's occupations, by name. */
 export function assessmentsFor(job: Job): string[] {
   return Array.from(
-    new Set(resolveOccupations(job).map((occ) => occ.assessment).filter(Boolean))
+    new Set(resolveOccupations(job).flatMap((occ) => occ.assessors.map((a) => a.name)))
   );
+}
+
+/** The assessing authorities, with their links, deduplicated by name. */
+export function assessorsFor(job: Job): OccupationAssessor[] {
+  const byName = new Map<string, OccupationAssessor>();
+  resolveOccupations(job).forEach((occ) =>
+    occ.assessors.forEach((a) => !byName.has(a.name) && byName.set(a.name, a))
+  );
+  return Array.from(byName.values());
+}
+
+/** The skilled-migration lists a role's occupations sit on. */
+export function occupationListsFor(job: Job): string[] {
+  return Array.from(new Set(resolveOccupations(job).flatMap((occ) => occ.lists)));
 }
 
 /**
- * Every visa a role can lead to: the pathways named on the job itself, plus
- * every visa any of its ANZSCO occupations can be used for. Deduplicated by
- * subclass, since an occupation can list the same code more than once for
- * different streams, and two occupations routinely share visas.
+ * Every visa a role can lead to: the union across its occupations, since which
+ * occupation an applicant is assessed under decides what they can apply for.
  *
- * This has to be the single answer to "what does this role lead to". The union
- * used to be computed inside the detail page only, so the filter offered just
- * the subclasses typed onto the job — a role whose occupation opened up a 482
- * showed it on the page but could not be found by filtering for it.
+ * This is the single answer to "what does this role lead to" — the filter and
+ * the detail page both read it, so a role can always be found by the visas it
+ * is shown to offer.
  */
 export function pathwayVisasFor(job: Job): string[] {
-  const fromOccupations = resolveOccupations(job).flatMap((occ) =>
-    occ.visas.map((v) => v.code)
-  );
-  return Array.from(new Set([...job.visaPathways, ...fromOccupations]));
+  return Array.from(new Set(resolveOccupations(job).flatMap((occ) => occ.visas))).sort();
 }
 
 // Home Affairs' side-by-side of the employer-sponsored skilled visas, for

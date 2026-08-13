@@ -23,10 +23,13 @@
     "zod": "^4.4.3"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "node scripts/start.js",
     "dev-server": "node scripts/dev-server.js",
+    "fetch-occupations": "node scripts/fetch-occupation-lists.js",
     "build": "REACT_APP_BUILD_DATE=$(date +%Y-%m-%d) react-scripts build",
+    "postbuild": "node scripts/sync-data.js build",
     "build:pages": "REACT_APP_BUILD_DATE=$(date +%Y-%m-%d) BUILD_PATH=../docs react-scripts build && touch ../docs/.nojekyll",
+    "postbuild:pages": "node scripts/sync-data.js ../docs",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

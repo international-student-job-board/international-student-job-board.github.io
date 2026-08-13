@@ -1,51 +1,71 @@
+// The shape of one row of content/jobs.csv, split into the two things a row
+// actually describes: an employer and one of its open roles.
+//
+// The CSV repeats the employer's columns on every one of its roles, which is
+// the right trade for a file people edit by hand but the wrong one for the app —
+// so the loader folds the repeats back into a single Company that every role at
+// that employer shares. See COLUMNS in jobs.ts for the mapping.
+
+export interface Company {
+  name: string;
+  /** "startup" or "scaleup". */
+  segment: string;
+  /** What the company builds — big data, saas, machine learning… */
+  types: string[];
+  /** The markets it sells into — fintech, health, marketing… */
+  industries: string[];
+  website: string;
+  growthStage: string;
+  employees: string;
+  hqCity: string;
+  /** Free-text HQ address; the postcode in it is what places the map pin. */
+  hqAddress: string;
+  /** The company's own one-liner. */
+  tagline: string;
+  linkedin: string;
+  /** Its page on whichever startup directory the row was compiled from. */
+  profile: string;
+  /** Roles the company said it had open, which is not the same as how many of
+      them are listed here. Kept for reference; the board counts its own. */
+  openings: number;
+  /**
+   * The two migration answers, and both are three-valued on purpose: yes, no,
+   * or nobody has checked yet. Blank means unchecked, not "no" — collapsing
+   * them would have the site tell a student a company had been ruled out when
+   * nobody had ruled anything.
+   */
+  accreditedSponsor: boolean | undefined;
+  hiresInternationalStudents: boolean | undefined;
+}
+
 export interface Job {
   id: string;
   title: string;
-  company: string;
-  companyAbout: string;
-  companyUrl: string;
-  location: string;
-  jobLevel: string;
+  /** Full-time, Part-time, Internship… as written in the CSV. */
   type: string;
-  /** On-site, Hybrid, Remote — a role often offers more than one. */
-  arrangements: string[];
-  salary: string;
-  salaryMinAnnual: number;
-  salaryMaxAnnual: number;
-  educationLevel: string;
-  visaEligible: string[];
-  visaPathways: string[];
-  skillAssessment: string;
-  /** One or more ANZSCO occupations; a role can map to several. */
-  anzscos: string[];
   /**
-   * Whether the employer sponsors visas: true, false, or undefined when the
-   * listing never said. Blank and "no" are different answers — one is a
-   * decision, the other is a gap — and collapsing them told readers a role
-   * had been ruled out when nobody had ruled anything.
+   * The ANZSCO occupations this role maps to, by name. A role can sit across
+   * more than one, and which one an applicant is assessed under changes their
+   * visa options — so the board keeps all of them rather than forcing a choice.
    */
-  employerSponsored: boolean | undefined;
+  occupationNames: string[];
   /**
-   * Whether the poster asked for their details to appear on the listing. False
-   * by default: publishing a person's name is something they opt into, not
-   * something they have to notice and switch off.
+   * The codes, kept apart by classification version because the visas are:
+   * subclasses 186 and 482 use ANZSCO 2022, every other visa still uses ANZSCO
+   * 2013. They agree for most occupations but not all, and merging them would
+   * silently hand the wrong code to whichever visa lost.
    */
-  contactPublic: boolean;
-  /**
-   * Whoever posted the role. The name, position and LinkedIn are shown only
-   * when contactPublic is set; the email and website are never shown at all.
-   */
-  contactName: string;
-  contactPosition: string;
-  contactLinkedin: string;
-  contactWebsite: string;
-  contactEmail: string;
-  /** When we listed the role. Internal: it orders the board, and isn't shown. */
+  anzsco2022: string[];
+  anzsco2013: string[];
+  city: string;
+  country: string;
+  /** When the role was posted. Orders the board and drives the recency filter. */
   posted: string;
-  /** When the role itself starts. This is the date students care about. */
-  startDate: string;
-  closes: string;
-  skills: string[];
-  summary: string;
   applyUrl: string;
+  company: Company;
+}
+
+/** "Melbourne, Australia" — what the card and the detail page both show. */
+export function jobLocation(job: Job): string {
+  return [job.city, job.country].map((s) => s.trim()).filter(Boolean).join(', ');
 }

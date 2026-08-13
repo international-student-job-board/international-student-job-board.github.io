@@ -2,7 +2,7 @@ import { FEEDBACK_URL } from '../links';
 import { Resources } from './AboutSections';
 
 const HOW_STUDENTS = [
-  { n: 1, title: 'Checkout local startups', body: 'Every job posted here is open to international students and graduates.' },
+  { n: 1, title: 'Checkout local startups', body: 'We have tagged jobs manually verified to accept international students and graduates.' },
   { n: 2, title: 'Vibe check', body: 'See the visa you can apply on, where it can lead, and if the role actually matches your skills.' },
   { n: 3, title: 'Apply on the employer’s site', body: 'We link you to the startup’s preferred hiring method.' },
 ];
@@ -14,26 +14,24 @@ const HOW_STARTUPS = [
 ];
 
 const NOW = [
-  'Every role shown here accepts international students and graduates',
-  'See which visa you need to be on to apply',
-  'See which visas you can apply for with this job',
-  'Possible visa pathway mapped out, including the skills assessment to get',
+  'Tagged roles that accept international students and graduates',
+  'See which visas you can apply for with this job, including the skills assessment to get',
   'Whether the role offers an employer-sponsored visa',
-  'Roles being mapped with their potential ANZSCO occupation',
-  'Salary',
-  'The usual like the employer details, job level, type and location',
-  'Browse Melbourne startups that are hiring, as cards or on a map',
+  'Roles being mapped with possible ANZSCO occupations',
+  'The usual like the employer details, type and location',
+  'Browse Melbourne/Victorian startups that are hiring',
   'A bomb search filter to find matching roles and startups!',
 ];
 
 const NEXT = [
+  'Salary information for each role',
   'Newsletter of roles that match your visa and skills delivered to your inbox',
   'A map view of jobs by location, coz that\'s easier to find where to work',
   'Create one resume and use that to apply to many job applications (bye bye bye to forms!)',
   'Track how your application is progressing',
   'Interview tips and reviews from international students who applied to these startups before',
   'Networking events',
-  '. . . a working backend',
+  '. . . a backend',
 ];
 
 export function About() {
@@ -42,12 +40,12 @@ export function About() {
       <header className="about-hero">
         <h1>International students 🤝🏿 local startups</h1>
         <p className="about-lede">
-          We have created this website to connect international students and graduates studying STEM with early-career roles at
-          Melbourne startups.
+          We have created this website to connect international students and graduates studying with roles at
+          startups and scaleups founded in Victoria, Australia.
           </p>
           <br></br>
           <p className="about-lede">
-          This way international students and graduates get a chance to build their career here in Melbourne, and local startups gain
+          This way international students and graduates get a chance to build their career here in Melbourne, and local budding businesses gain
           access to a diverse talent pool who are eager to learn, grow and contribute to their new community.
         </p>
       </header>
@@ -117,8 +115,7 @@ export function About() {
       <section className="about-section" aria-labelledby="scope-heading">
         <h2 id="scope-heading">Where we start</h2>
         <p>
-          We're starting small by focusing on <strong>STEM focused roles in Melbourne,
-          Victoria</strong> and then expand to more fields, cities and countries over time.
+          We're starting with <strong>roles from startups and scaleups that were found in Victoria, Australia</strong> and then expand to more states and countries over time.
         </p>
         <p>
          We are not migration lawyers, please work with registered migration agents or lawyers for any visa advice. Always check the <a href="https://immi.homeaffairs.gov.au/" target="_blank" rel="noopener"

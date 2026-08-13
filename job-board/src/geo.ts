@@ -1,4 +1,4 @@
-import { Company } from './companies';
+import { Company } from './types';
 
 /**
  * Approximate centres for the Melbourne postcodes that appear in the company
@@ -114,7 +114,7 @@ export function clusterCompanies(companies: Company[]) {
   const unplaced: Company[] = [];
 
   for (const company of companies) {
-    const postcode = postcodeOf(company.address);
+    const postcode = postcodeOf(company.hqAddress);
     const place = postcode ? POSTCODE_PLACES[postcode] : undefined;
     if (!postcode || !place) {
       unplaced.push(company);
