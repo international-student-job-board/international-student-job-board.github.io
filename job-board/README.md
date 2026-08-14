@@ -16,6 +16,15 @@ requests to it. Starting CRA alone gives you a board with no jobs on it — see
 
 ---
 
+## Design
+
+The interface follows *Refactoring UI*; the reasoning behind specific choices is
+in comments in `src/App.css` next to the rules they explain.
+[DESIGN-AUDIT.md](DESIGN-AUDIT.md) measures the current screens against it and
+lists what is worth changing next, in order.
+
+---
+
 ## Where the data lives
 
 | File | What it is | Written by |

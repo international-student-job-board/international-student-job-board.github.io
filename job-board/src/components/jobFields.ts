@@ -43,6 +43,17 @@ export const FIELDS: Field[] = [
   { key: 'ANZSCO occupation', label: 'ANZSCO occupation', type: 'text' },
   { key: 'ANZSCO 2022', label: 'ANZSCO 2022', type: 'text' },
   { key: 'ANZSCO 2013', label: 'ANZSCO 2013', type: 'text' },
+  // The unit group is filled from the picked code; the rest are typed.
+  { key: 'ANZSCO unit group', label: 'ANZSCO unit group', type: 'text' },
+  {
+    key: 'ANZSCO unit group title',
+    label: 'Unit group title',
+    type: 'text',
+    placeholder: 'Software and Applications Programmers',
+    hint: 'Used when a role cannot be matched to a single six-digit occupation.',
+  },
+  { key: 'OSCA occupation', label: 'OSCA occupation', type: 'text', placeholder: 'Data Engineer' },
+  { key: 'OSCA code', label: 'OSCA code', type: 'text', placeholder: '223233' },
 
   // ---- The employer ------------------------------------------------------
   { key: 'Company name', label: 'Company name', type: 'text', required: true, placeholder: 'Acme' },
@@ -61,7 +72,7 @@ export const FIELDS: Field[] = [
   { key: 'Accredited sponsor', label: 'Accredited sponsor?', type: 'select', options: CHECKED },
   {
     key: 'Hires international students',
-    label: 'Hires international students?',
+    label: 'Hires international students and graduates?',
     type: 'select',
     options: CHECKED,
     hint: 'Leave as "Not checked yet" unless you know. It shows on the listing either way.',
@@ -73,6 +84,10 @@ export const FIELD_GROUPS: { title: string; keys: string[] }[] = [
   {
     title: 'The role',
     keys: ['Job title', 'Job type', 'Job city', 'Job country', 'Job URL', 'Date posted'],
+  },
+  {
+    title: 'Occupation codes',
+    keys: ['ANZSCO unit group title', 'OSCA occupation', 'OSCA code'],
   },
   {
     title: 'The employer',
@@ -97,7 +112,12 @@ export const FIELD_GROUPS: { title: string; keys: string[] }[] = [
 ];
 
 /** Written by the occupation picker, not by an input of their own. */
-export const OCCUPATION_KEYS = ['ANZSCO occupation', 'ANZSCO 2022', 'ANZSCO 2013'];
+export const OCCUPATION_KEYS = [
+  'ANZSCO occupation',
+  'ANZSCO 2022',
+  'ANZSCO 2013',
+  'ANZSCO unit group',
+];
 
 /** The yes/no columns, whose "Not checked yet" answer is saved as an empty cell. */
 export const CHECKED_KEYS = ['Accredited sponsor', 'Hires international students'];

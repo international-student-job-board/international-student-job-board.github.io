@@ -1,3 +1,4 @@
+import { OUTBOUND, outboundHref } from '../outbound';
 const REFERENCES = [
   { label: 'Study Melbourne', url: 'https://www.studymelbourne.vic.gov.au/' },
   { label: 'Study VIC', url: 'https://www.study.vic.gov.au/' },
@@ -15,9 +16,13 @@ const GUIDES = [
     url: 'https://medium.com/@milindi.beeloud/list/my-two-rupees-2311414b6960',
   },
   {
-      label: 'Levels.fyi',
-      url: 'https://www.levels.fyi/?tab=levels'
-  }
+    label: 'Levels.fyi',
+    url: 'https://www.levels.fyi/?tab=levels',
+  },
+  {
+    label: 'Glassdoor company reviews',
+    url: 'https://www.glassdoor.com.au/Reviews/index.htm',
+  },
 ];
 
 export function Resources() {
@@ -29,12 +34,7 @@ export function Resources() {
       <ul className="ref-list">
         {GUIDES.map((guide) => (
           <li key={guide.url}>
-            <a
-              href={guide.url}
-              target="_blank"
-              rel="noopener"
-              referrerPolicy="strict-origin-when-cross-origin"
-            >
+            <a href={outboundHref(guide.url, 'resources')} {...OUTBOUND}>
               {guide.label}
             </a>
           </li>
@@ -45,8 +45,7 @@ export function Resources() {
       <ul className="ref-list">
         {REFERENCES.map((ref) => (
           <li key={ref.url}>
-            <a href={ref.url} target="_blank" rel="noopener"
-            referrerPolicy="strict-origin-when-cross-origin">
+            <a href={ref.url} {...OUTBOUND}>
               {ref.label}
             </a>
           </li>

@@ -28,6 +28,7 @@ const JOB_COLUMNS = [
   'Industries', 'HQ city', 'HQ address', 'Tagline', 'LinkedIn', 'Profile',
   'Job openings', 'Accredited sponsor', 'Hires international students',
   'Job title', 'Job type', 'ANZSCO occupation', 'ANZSCO 2022', 'ANZSCO 2013',
+  'ANZSCO unit group', 'ANZSCO unit group title', 'OSCA occupation', 'OSCA code',
   'Job city', 'Job country', 'Date posted', 'Job URL', 'Job ID',
 ];
 
@@ -57,6 +58,12 @@ const DATA_FILES = [
   },
   // Derived from the Home Affairs list by scripts/fetch-occupation-lists.js.
   // Everything the site knows about visas comes from here, keyed by ANZSCO code.
+  {
+    name: 'osca-index.json',
+    url: '/data/osca-index.json',
+    publicPath: 'data/osca-index.json',
+    fallback: { retrieved: '', occupations: {} },
+  },
   {
     name: 'occupation-index.json',
     url: '/data/occupation-index.json',

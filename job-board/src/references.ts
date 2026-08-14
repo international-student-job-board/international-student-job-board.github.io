@@ -304,6 +304,147 @@ export function occupationListLabel(list: string): string {
   return name ? `${key} - ${name}` : key;
 }
 
+// ---- OSCA -----------------------------------------------------------------
+
+const OSCA_BROWSE =
+  'https://www.abs.gov.au/statistics/classifications/osca-occupation-standard-classification-australia/2024-version-1-0/browse-classification';
+
+interface OscaEntry {
+  name: string;
+  unitGroup?: string;
+}
+
+let OSCA: Record<string, OscaEntry> = {};
+
+export async function loadOscaOccupations(): Promise<void> {
+  const res = await fetch(`${process.env.PUBLIC_URL || ''}/data/osca-index.json`);
+  if (!res.ok) throw new Error(`Could not load the OSCA index (${res.status})`);
+  const payload = (await res.json()) as { occupations?: Record<string, OscaEntry> };
+  OSCA = payload.occupations ?? {};
+}
+
+/** Replaces the whole reference. Used by tests to stand in a fixture. */
+export function setOscaOccupations(records: Record<string, OscaEntry>): void {
+  OSCA = records;
+}
+
+/**
+ * The ABS page for an OSCA code.
+ *
+ * A six-digit code contains its own path — 111131 sits under 1 / 11 / 111 /
+ * 1111 — so the URL is built rather than stored, which keeps 1,156 long strings
+ * out of the file the browser downloads.
+ */
+export function oscaUrl(code: string): string | undefined {
+  const match = code.trim().match(/^(\d{6})$/)?.[1];
+  if (!match) return undefined;
+  const path = [1, 2, 3, 4].map((n) => match.slice(0, n)).join('/');
+  return `${OSCA_BROWSE}/${path}/${match}`;
+}
+
+export interface ResolvedOsca {
+  code: string;
+  name: string;
+  href?: string;
+}
+
+/** The OSCA occupations a role maps to, named from the reference. */
+export function resolveOsca(job: Job): ResolvedOsca[] {
+  return job.oscaCodes.map((code, i) => ({
+    code,
+    name: OSCA[code]?.name || job.oscaNames[i] || job.oscaNames[0] || '',
+    href: oscaUrl(code),
+  }));
+}
+
+/** Every OSCA code a role carries, for filtering. */
+export function oscaCodesFor(job: Job): string[] {
+  return Array.from(new Set(job.oscaCodes));
+}
+
+/** The name for an OSCA code, or '' when the reference doesn't have it. */
+export function oscaName(code: string): string {
+  return OSCA[code.trim()]?.name ?? '';
+}
+
+// ---- ANZSCO unit groups ---------------------------------------------------
+
+/**
+ * The unit group a role sits in: the four-digit level above the occupation.
+ *
+ * Taken from the CSV where it is given, and derived from a six-digit code where
+ * it isn't — the first four digits of an ANZSCO code are its unit group, so a
+ * role with a code always has one even when the column is blank.
+ */
+export function unitGroupFor(job: Job): { code: string; title: string } | undefined {
+  const code =
+    job.anzscoUnitGroup ||
+    (job.anzsco2022[0] || job.anzsco2013[0] || '').slice(0, 4);
+  if (!/^\d{4}$/.test(code)) return undefined;
+  return { code, title: job.anzscoUnitGroupTitle };
+}
+
+/**
+ * Unit-group titles, keyed by code.
+ *
+ * Neither reference file has these — the four-digit titles come only from the
+ * jobs CSV, so the loader registers what it saw and the filter reads it back.
+ */
+let UNIT_GROUP_TITLES: Record<string, string> = {};
+
+export function setUnitGroupTitles(titles: Record<string, string>): void {
+  UNIT_GROUP_TITLES = titles;
+}
+
+/** "2613" -> "Software and Applications Programmers", or '' if unknown. */
+export function unitGroupTitle(code: string): string {
+  return UNIT_GROUP_TITLES[code.trim()] ?? '';
+}
+
+/** The unit-group code a role sits in, for filtering. */
+export function unitGroupCodesFor(job: Job): string[] {
+  const group = unitGroupFor(job);
+  return group ? [group.code] : [];
+}
+
+/** The ABS page for a four-digit ANZSCO unit group. */
+export function unitGroupUrl(code: string): string | undefined {
+  const match = code.trim().match(/^(\d{4})$/)?.[1];
+  if (!match) return undefined;
+  const path = [1, 2, 3, 4].map((n) => match.slice(0, n)).join('/');
+  return `${ANZSCO_BROWSE}/${path}`;
+}
+
+/** What OSCA is, wherever one of its codes is shown. */
+export const OSCA_NOTE =
+  'OSCA - Occupation Standard Classification for Australia.\n\n' +
+  'OSCA replaced ANZSCO as the ABS classification in December 2024, but it is ' +
+  'not yet used in visa processing. Visa eligibility still depends on the ' +
+  'ANZSCO occupation, so treat OSCA as context rather than as what a visa is ' +
+  'assessed against.';
+
+/** How the two hand-checked columns are filled in, on both pages. */
+export const MANUAL_REVIEW_NOTE =
+  "We're working through this list by hand to confirm which companies sponsor " +
+  'visas and which hire international students and graduates.\n\n' +
+  "A company without those tags hasn't been checked yet!";
+
+/** What a unit group is, for the roles that can only be placed that far. */
+export const UNIT_GROUP_NOTE =
+  'The four-digit ANZSCO group an occupation belongs to. Roles we cannot match ' +
+  'to a single six-digit occupation are placed at this level instead.';
+
+/** What ANZSCO stands for, wherever a code or occupation is shown. */
+export const ANZSCO_NOTE =
+  'ANZSCO - Australian and New Zealand Standard Classification of Occupations.';
+
+/** The skilled-migration lists, spelled out for the filter. */
+export const OCCUPATION_LIST_NOTE = [
+  'The skilled-migration lists an occupation sits on.',
+  '',
+  ...Object.entries(OCCUPATION_LIST_NAMES).map(([code, name]) => `${code} - ${name}`),
+].join('\n');
+
 export const VISA_DISCLAIMER =
   'This is a general guide, not legal or immigration advice.\n\nThe visa, pathway and ' +
   'occupation details are compiled from the Department of Home Affairs skill occupation ' +

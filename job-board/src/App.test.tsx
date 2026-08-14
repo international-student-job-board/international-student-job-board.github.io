@@ -2,9 +2,14 @@ import { render, screen } from '@testing-library/react';
 import App from './App';
 import { jobShareUrl, parsePath, pathFor, pathFromLegacyHash } from './routes';
 
-test('renders the jobs panel heading', () => {
+test('the board leads with exactly one top-level heading', () => {
+  // Not the wording, which is marketing copy and changes often. What has to
+  // hold is that there is one h1 and it says something — an earlier edit left
+  // two on the page, which this catches.
   render(<App />);
-  expect(screen.getByRole('heading', { name: /jobs/i })).toBeInTheDocument();
+  const headings = screen.getAllByRole('heading', { level: 1 });
+  expect(headings).toHaveLength(1);
+  expect(headings[0].textContent?.trim().length).toBeGreaterThan(0);
 });
 
 describe('a role has its own address', () => {

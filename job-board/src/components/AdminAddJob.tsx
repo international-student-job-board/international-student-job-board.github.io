@@ -37,6 +37,11 @@ export function buildJobRow(draft: Draft, occupations: OccupationChoice[]): Reco
   row['ANZSCO occupation'] = occupations.map((o) => o.name).join('; ');
   row['ANZSCO 2022'] = occupations.map((o) => o.anzsco2022).filter(Boolean).join('; ');
   row['ANZSCO 2013'] = occupations.map((o) => o.anzsco2013).filter(Boolean).join('; ');
+  // The first four digits of an ANZSCO code are its unit group, so the picker
+  // fills that column too rather than asking for it again.
+  row['ANZSCO unit group'] = Array.from(
+    new Set(occupations.map((o) => (o.anzsco2022 || o.anzsco2013).slice(0, 4)).filter(Boolean))
+  ).join('; ');
   return row;
 }
 

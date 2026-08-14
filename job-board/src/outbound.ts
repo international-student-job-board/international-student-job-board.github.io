@@ -23,6 +23,27 @@ export const OUTBOUND = {
 } as const;
 
 /**
+ * Hosts that are handed the URL exactly as it was given.
+ *
+ * LinkedIn is the only one so far, and it is here for local development rather
+ * than for production: two thirds of the board's apply links are
+ * linkedin.com/jobs/view/… pages, and they open fine from the live site with
+ * the parameters attached. From localhost they don't — that request arrives
+ * with utm_source=localhost and Referer: http://localhost:3000/, an insecure
+ * non-public origin, and LinkedIn sends signed-out visitors to its login wall
+ * instead of the job.
+ *
+ * Passing LinkedIn URLs through untouched makes an apply link testable locally,
+ * and costs nothing: the page belongs to LinkedIn, so the employer never sees
+ * the campaign anyway, and the Referer header still says where the visitor came
+ * from.
+ */
+const UNTAGGED_HOSTS = ['linkedin.com'];
+
+const isUntagged = (hostname: string) =>
+  UNTAGGED_HOSTS.some((host) => hostname === host || hostname.endsWith(`.${host}`));
+
+/**
  * Tags a destination with UTM parameters so it shows up in the receiving site's analytics
  * as referral traffic from us, belt-and-braces alongside the Referer header.
  */
@@ -31,6 +52,7 @@ export function outboundHref(url: string, campaign: string): string {
   if (!/^https?:\/\//i.test(trimmed)) return trimmed;
   try {
     const parsed = new URL(trimmed);
+    if (isUntagged(parsed.hostname.toLowerCase())) return trimmed;
     parsed.searchParams.set('utm_source', window.location.hostname);
     parsed.searchParams.set('utm_medium', 'referral');
     parsed.searchParams.set('utm_campaign', campaign);

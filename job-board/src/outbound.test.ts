@@ -143,3 +143,31 @@ test('outbound links inherit the scheme allowlist', () => {
   expect(outboundHref('javascript:alert(1)', 'apply')).toBe('');
   expect(emailApplyHref('javascript:alert(1)', 'Role', 'Site', 'https://s.test')).toBe('');
 });
+
+describe('destinations that are handed the URL untouched', () => {
+  test('a LinkedIn job link is passed through exactly as given', () => {
+    // These work from the live site either way; passing them through untouched
+    // is what makes an apply link testable from localhost, where the request
+    // arrives from an insecure non-public origin.
+    const url = 'https://www.linkedin.com/jobs/view/4442983703/';
+    expect(outboundHref(url, 'apply')).toBe(url);
+  });
+
+  test('any LinkedIn subdomain, and the company pages too', () => {
+    expect(outboundHref('https://au.linkedin.com/jobs/view/1/', 'apply')).toBe(
+      'https://au.linkedin.com/jobs/view/1/'
+    );
+    expect(outboundHref('https://www.linkedin.com/company/acme/', 'employer')).toBe(
+      'https://www.linkedin.com/company/acme/'
+    );
+  });
+
+  test('a host that merely ends in the same letters is still tagged', () => {
+    // "notlinkedin.com" is not LinkedIn.
+    expect(outboundHref('https://notlinkedin.com/x', 'apply')).toContain('utm_source');
+  });
+
+  test('every other destination is still tagged', () => {
+    expect(outboundHref('https://jobs.lever.co/acme/1', 'apply')).toContain('utm_campaign=apply');
+  });
+});

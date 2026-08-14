@@ -44,6 +44,16 @@ export interface Job {
    */
   anzsco2022: string[];
   anzsco2013: string[];
+  /**
+   * The four-digit ANZSCO unit group, which is as far as some roles can be
+   * placed. A job title that maps to no single six-digit occupation often still
+   * belongs clearly to a group of them.
+   */
+  anzscoUnitGroup: string;
+  anzscoUnitGroupTitle: string;
+  /** OSCA, the classification that replaced ANZSCO in December 2024. */
+  oscaCodes: string[];
+  oscaNames: string[];
   city: string;
   country: string;
   /** When the role was posted. Orders the board and drives the recency filter. */

@@ -59,7 +59,7 @@
      section heading, body, small); h3 and xs are the subhead and label
      wildcards. Everything is in rem, so it still scales with the reader's own
      browser font-size setting. */
-  --fs-display: clamp(1.75rem, 1.456rem + 1.3vw, 2.5rem); /* 28 → 40 */
+  --fs-display: clamp(1.375rem, 1.228rem + 0.65vw, 1.75rem); /* 22 → 28 */
   --fs-h2: clamp(1.25rem, 1.103rem + 0.65vw, 1.625rem); /* 20 → 26 */
   --fs-h3: clamp(1.0625rem, 0.989rem + 0.33vw, 1.25rem); /* 17 → 20 */
   --fs-body: clamp(1rem, 0.976rem + 0.11vw, 1.0625rem); /* 16 → 17 */
@@ -162,9 +162,8 @@ h6 {
 }
 
 h1 {
-  font-size: var(--fs-display);
-  line-height: var(--lh-tight);
-  letter-spacing: -0.01em;
+  font-size: var(--fs-h2);
+  line-height: var(--lh-heading);
 }
 
 h2 {
@@ -468,11 +467,18 @@ optgroup {
    values themselves are spelled out in the chip row below. */
 .fselect {
   position: relative;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.fselect-sponsor {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .fselect-trigger,
 .chip-toggle {
-  height: 40px;
+  min-height: 40px;
   border: 1px solid var(--line);
   border-radius: var(--ctrl-radius);
   background: var(--white);
@@ -488,8 +494,12 @@ optgroup {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  max-width: 260px;
-  padding: 0 14px;
+  max-width: 100%;
+  min-width: 0;
+  padding: var(--s2) 14px;
+  /* Buttons centre their text; a wrapped label reads as a paragraph and wants
+     to start at the same edge on every line. */
+  text-align: left;
 }
 
 .fselect-trigger::after {
@@ -523,10 +533,15 @@ optgroup {
   font-weight: var(--fw-strong);
 }
 
+/**
+ * The label reads in full: it wraps onto a second line and the control grows to
+ * fit, rather than the text running out the side of it.
+ */
 .fselect-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  /* A single long word — a company name, an occupation title — breaks rather
+     than pushing the control past the edge of a phone screen. */
+  overflow-wrap: anywhere;
 }
 
 .fselect-count {
@@ -547,7 +562,7 @@ optgroup {
 .fselect-panel {
   position: absolute;
   top: calc(100% + 8px);
-  z-index: 30;
+  z-index: 50;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -633,6 +648,16 @@ optgroup {
   margin: 2px 4px 6px;
   font-size: var(--fs-sm);
   color: var(--muted);
+}
+
+/**
+ * The tooltip travels with the count, leaving Clear alone on the right.
+ */
+.fselect-foot-info {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
 }
 
 .fselect-foot {
@@ -778,6 +803,11 @@ optgroup {
   list-style: none;
 }
 
+.active-chips > li {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .active-chip {
   display: inline-flex;
   align-items: center;
@@ -790,7 +820,11 @@ optgroup {
   max-width: 100%;
   padding: 5px 10px 5px 12px;
   border: 1px solid var(--line);
+  /* The radius stays a pill on one line and a stadium on two — either way it
+     reads as one removable thing. */
   border-radius: 999px;
+  /* Buttons centre their text; a wrapped chip wants a common left edge. */
+  text-align: left;
   background: var(--soft);
   font-family: inherit;
   font-size: var(--fs-xs);
@@ -808,12 +842,20 @@ optgroup {
    longer one first — which is the field name, not the value. The value is the
    answer the reader picked; the field is context they already have from having
    picked it. The full text stays available on the chip's title. */
-.active-chip-field,
-.active-chip-value {
+/**
+ * The field and its value flow as one sentence, so a wrapped label carries its
+ * value with it.
+ *
+ * They used to be two flex items with a gap between them, which was fine on one
+ * line and wrong on two: the value sat centred beside the wrapped label with a
+ * fixed gap, reading as something separate rather than as the answer to it. As
+ * inline text they wrap together and the space between them is just a space.
+ */
+.active-chip-text {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* A single long value — a company name, an occupation title — breaks rather
+     than pushing the chip past the edge of a phone screen. */
+  overflow-wrap: anywhere;
 }
 
 .active-chip-field {
@@ -888,20 +930,18 @@ optgroup {
    same order the companies page reads in: what this is, then how to narrow it,
    then the results. It takes the filter toggle's gutter so the two line up down
    the left edge. */
-.board-intro {
+.page-intro {
   flex-shrink: 0;
-  padding: var(--s6) var(--gutter) 0;
 }
 
-.board-intro .panel-banner {
-  margin-bottom: var(--s5);
+.app > .page-intro {
+  padding: var(--s6) var(--gutter) var(--s5);
 }
 
 /**
  * The intro spans the page, like the filter bar it sits above.
  */
-.board-intro .panel-lead,
-.board-intro .panel-banner {
+.page-intro .panel-banner {
   max-width: none;
 }
 
@@ -1076,6 +1116,7 @@ optgroup {
 /* The badge inverts on the ink card — the accent on ink is too close in weight
    to read, so the pill goes white and carries the accent in its text instead. */
 .job-card.is-selected .flag-sponsor {
+  border-color: var(--white);
   background: var(--white);
   color: var(--sponsor);
 }
@@ -1162,17 +1203,32 @@ optgroup {
 }
 
 /* Badges */
+/**
+ * A tag wraps rather than running off the edge of the card it sits on.
+ */
 .flag {
   display: inline-block;
+  max-width: 100%;
   padding: var(--s1) var(--s3);
+  /* A tag carries its own surface wherever it lands. This lived on the company
+     card only, so the same tag on the job detail page rendered as bare text. */
+  border: 1px solid var(--line);
   border-radius: 999px;
+  background: var(--chip);
+  color: var(--ink);
   font-size: var(--fs-xs);
   font-weight: var(--fw-strong);
   line-height: var(--lh-heading);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+}
+
+.company-card-flags > .flag,
+.job-card-flags > .flag {
+  min-width: 0;
 }
 
 .flag-sponsor {
+  border-color: var(--sponsor);
   background: var(--sponsor);
   color: var(--white);
 }
@@ -1303,11 +1359,14 @@ optgroup {
    so the grouping reads without a divider. */
 .detail-title {
   margin: var(--s1) 0 0;
-  font-size: var(--fs-display);
-  font-weight: var(--fw-bold);
-  line-height: var(--lh-tight);
-  letter-spacing: -0.01em;
-  text-wrap: balance;
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-strong);
+  line-height: var(--lh-heading);
+  /* Not `balance`, which evens the lines out and so wraps early, leaving the
+     headline visibly narrower than the page. `pretty` fills each line and only
+     steps in to stop a single word dangling on the last one. */
+  text-wrap: pretty;
+  overflow-wrap: break-word;
   color: var(--ink);
 }
 
@@ -1740,7 +1799,9 @@ optgroup {
   bottom: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%);
-  z-index: 20;
+  /* Above everything: the sticky header sits at 40 and the filter panel at 50,
+     and a tooltip is the last thing opened so it belongs on top of both. */
+  z-index: 100;
   width: max-content;
   max-width: min(320px, 80vw);
   padding: 12px 14px;
@@ -1771,6 +1832,21 @@ optgroup {
   transform: translateX(-50%);
   border: 5px solid transparent;
   border-top-color: var(--ink);
+}
+
+/**
+ * Opening downward, for tooltips with no room above them.
+ */
+.info-tip-bottom .info-tip-bubble {
+  top: calc(100% + 10px);
+  bottom: auto;
+}
+
+.info-tip-bottom .info-tip-bubble::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: var(--ink);
 }
 
 .info-tip-btn:hover + .info-tip-bubble,
@@ -1856,6 +1932,13 @@ a.occ-visa-code:focus-visible {
   margin: 0 auto;
 }
 
+/**
+ * The companies page is a listing, not something to read top to bottom.
+ */
+.companies-panel .about {
+  max-width: none;
+}
+
 .about-hero {
   padding: var(--s2) 0 0;
   margin-bottom: var(--s2);
@@ -1870,10 +1953,9 @@ a.occ-visa-code:focus-visible {
    leaving one word stranded on the last line. */
 .about-hero h1 {
   margin: 0 0 var(--s4);
-  font-size: var(--fs-display);
-  font-weight: var(--fw-bold);
-  line-height: var(--lh-tight);
-  letter-spacing: -0.01em;
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-strong);
+  line-height: var(--lh-heading);
   text-wrap: balance;
   color: var(--ink);
 }
@@ -2032,22 +2114,42 @@ a.occ-visa-code:focus-visible {
 }
 
 /* Now / Next columns */
+/**
+ * Every page opens the same way: one headline, a line saying what the page
+ * holds, and any caveat below that.
+ *
+ * Three levels, and each is set apart by more than size alone — the headline is
+ * display-sized and bold in ink, the lead is a step down and a shade back, the
+ * caveat is small, grey and behind a rule. Size on its own would leave the lead
+ * competing with the headline at a glance.
+ */
+.page-intro h1,
 .about-intro h1 {
-  margin: 0 0 var(--s4);
-  font-size: var(--fs-display);
-  font-weight: var(--fw-bold);
-  line-height: var(--lh-tight);
-  letter-spacing: -0.01em;
-  text-wrap: balance;
+  margin: 0 0 var(--s3);
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-strong);
+  line-height: var(--lh-heading);
+  /* Not `balance`, which evens the lines out and so wraps early, leaving the
+     headline narrower than the page it sits on. `pretty` fills each line and
+     only steps in to stop one word dangling on the last. */
+  text-wrap: pretty;
+  overflow-wrap: break-word;
   color: var(--ink);
 }
 
-.about-intro p {
-  margin: 0;
+.page-lead,
+.about-intro > p {
+  margin: 0 0 var(--s4);
   max-width: var(--measure-lede);
   font-size: var(--fs-h3);
   line-height: var(--lh-body);
-  color: var(--ink);
+  color: var(--muted-strong);
+}
+
+/** The last thing in an intro sits flush, whatever it happens to be. */
+.page-intro > :last-child,
+.about-intro > :last-child {
+  margin-bottom: 0;
 }
 
 /* Subheading between an h2 and the steps under it: the label treatment rather
@@ -2992,11 +3094,6 @@ a.occ-visa-code:focus-visible {
   gap: var(--s1);
   margin: 0;
   padding: 0;
-}
-
-.company-card-flags .flag {
-  background: var(--chip);
-  color: var(--ink);
 }
 
 .company-card-flags .flag-sponsor {

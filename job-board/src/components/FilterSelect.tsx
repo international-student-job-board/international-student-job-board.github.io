@@ -1,4 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { InfoTooltip } from './InfoTooltip';
 
 export interface SelectOption {
   value: string;
@@ -15,6 +16,10 @@ interface Props {
   onChange: (next: string[]) => void;
   /** Multi-select by default. */
   multiple?: boolean;
+  /**
+   * What the filter means, on an "i" in the open panel's footer.
+   */
+  tooltip?: string;
 }
 
 /** Longer lists get a filter box; short ones are faster to just read. */
@@ -23,7 +28,14 @@ const SEARCH_THRESHOLD = 8;
 /** Roughly the panel width, used to decide which edge to anchor it to. */
 const PANEL_WIDTH = 300;
 
-export function FilterSelect({ label, options, selected, onChange, multiple = true }: Props) {
+export function FilterSelect({
+  label,
+  options,
+  selected,
+  onChange,
+  multiple = true,
+  tooltip,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [alignRight, setAlignRight] = useState(false);
@@ -170,8 +182,11 @@ export function FilterSelect({ label, options, selected, onChange, multiple = tr
           </div>
 
           <div className="fselect-foot">
-            <span className="fselect-status">
-              {selected.length > 0 ? `${selected.length} selected` : 'None selected'}
+            <span className="fselect-foot-info">
+              {tooltip && <InfoTooltip text={tooltip} label={`What "${label}" means`} />}
+              <span className="fselect-status">
+                {selected.length > 0 ? `${selected.length} selected` : 'None selected'}
+              </span>
             </span>
             <button
               type="button"

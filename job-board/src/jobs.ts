@@ -5,6 +5,7 @@ import { Job, Company } from './types';
 import { parseCsv, splitList, triState, anzscoCodes } from './csv';
 import { loadCompanies } from './companies';
 import { dateValue } from './format';
+import { setUnitGroupTitles } from './references';
 
 const JOBS_URL = `${process.env.PUBLIC_URL || ''}/jobs.csv`;
 
@@ -30,6 +31,10 @@ export const COLUMNS = [
   'ANZSCO occupation',
   'ANZSCO 2022',
   'ANZSCO 2013',
+  'ANZSCO unit group',
+  'ANZSCO unit group title',
+  'OSCA occupation',
+  'OSCA code',
   'Job city',
   'Job country',
   'Date posted',
@@ -90,6 +95,10 @@ function toJob(row: Record<string, string>, company: Company): Job {
     occupationNames: splitList(row['ANZSCO occupation']),
     anzsco2022: anzscoCodes(row['ANZSCO 2022']),
     anzsco2013: anzscoCodes(row['ANZSCO 2013']),
+    anzscoUnitGroup: (row['ANZSCO unit group'] ?? '').match(/\b\d{4}\b/)?.[0] ?? '',
+    anzscoUnitGroupTitle: (row['ANZSCO unit group title'] ?? '').trim(),
+    oscaCodes: anzscoCodes(row['OSCA code']),
+    oscaNames: splitList(row['OSCA occupation']),
     city: (row['Job city'] ?? '').trim(),
     country: (row['Job country'] ?? '').trim(),
     posted: (row['Date posted'] ?? '').trim(),
@@ -101,6 +110,17 @@ function toJob(row: Record<string, string>, company: Company): Job {
 /** Rows -> roles, newest first. */
 export function toJobs(rows: Record<string, string>[]): Job[] {
   const companies = foldCompanies(rows);
+
+  // The four-digit titles live only in this file, so they are registered for
+  // whatever needs to name a unit group later.
+  const titles: Record<string, string> = {};
+  for (const row of rows) {
+    const code = (row['ANZSCO unit group'] ?? '').match(/\b\d{4}\b/)?.[0];
+    const title = (row['ANZSCO unit group title'] ?? '').trim();
+    if (code && title && !titles[code]) titles[code] = title;
+  }
+  setUnitGroupTitles(titles);
+
   return rows
     .map((row) => {
       const name = (row['Company name'] ?? '').trim().toLowerCase();

@@ -1,4 +1,15 @@
-import { occupationName, VISA_NAMES } from '../references';
+import {
+  occupationName,
+  occupationListLabel,
+  oscaName,
+  unitGroupTitle,
+  ANZSCO_NOTE,
+  MANUAL_REVIEW_NOTE,
+  OCCUPATION_LIST_NOTE,
+  OSCA_NOTE,
+  UNIT_GROUP_NOTE,
+  VISA_NAMES,
+} from '../references';
 import { NOT_SPECIFIED } from '../format';
 import { prettyLabel } from '../labels';
 import { ActiveFilters, ActiveChip } from './ActiveFilters';
@@ -21,6 +32,9 @@ export interface FilterState {
   growthStages: string[];
   hqCities: string[];
   anzscos: string[];
+  unitGroups: string[];
+  oscas: string[];
+  occupationLists: string[];
   pathwayVisas: string[];
   /** Each 'yes' | 'no' | '' (not checked yet), any combination. */
   sponsor: string[];
@@ -39,17 +53,23 @@ export type FilterListKey =
   | 'growthStages'
   | 'hqCities'
   | 'anzscos'
+  | 'unitGroups'
+  | 'oscas'
+  | 'occupationLists'
   | 'pathwayVisas'
   | 'sponsor'
   | 'students';
 
 export type FilterOptions = Record<FilterListKey, string[]>;
 
-// "261313" -> "261313 Software Engineer" for the occupation options.
-const anzscoLabel = (code: string) => {
-  const name = occupationName(code);
-  return name ? `${code} ${name}` : code;
-};
+/** "261313" -> "261313 - Software Engineer"; the bare code if we can't name it. */
+const codeLabel = (code: string, name: string) => (name ? `${code} - ${name}` : code);
+
+const anzscoLabel = (code: string) => codeLabel(code, occupationName(code));
+
+const unitGroupLabel = (code: string) => codeLabel(code, unitGroupTitle(code));
+
+const oscaLabel = (code: string) => codeLabel(code, oscaName(code));
 
 // "189" -> "189 - Skilled Independent".
 const visaLabel = (code: string) => {
@@ -76,6 +96,8 @@ const FIELDS: {
   key: FilterListKey;
   label: string;
   format?: (value: string) => string;
+  /** Shown on an "i" in the open panel, beside the count. */
+  tooltip?: string;
   /** Given the accent, because it is what this audience came for. */
   accent?: boolean;
 }[] = [
@@ -89,14 +111,34 @@ const FIELDS: {
   // shows.
   { key: 'growthStages', label: 'Stage', format: prettyLabel },
   { key: 'hqCities', label: 'Head office', format: prettyLabel },
-  { key: 'anzscos', label: 'Occupation', format: anzscoLabel },
+  { key: 'anzscos', label: 'ANZSCO Occupations', format: anzscoLabel, tooltip: ANZSCO_NOTE },
+  {
+    key: 'unitGroups',
+    label: 'ANZSCO unit group',
+    format: unitGroupLabel,
+    tooltip: UNIT_GROUP_NOTE,
+  },
+  { key: 'oscas', label: 'OSCA occupation', format: oscaLabel, tooltip: OSCA_NOTE },
+  {
+    key: 'occupationLists',
+    label: 'Occupation list',
+    format: occupationListLabel,
+    tooltip: OCCUPATION_LIST_NOTE,
+  },
   { key: 'pathwayVisas', label: 'Leads to visa', format: visaLabel },
   // Two questions, so two controls.
-  { key: 'sponsor', label: 'Accredited sponsor', format: answerLabel, accent: true },
+  {
+    key: 'sponsor',
+    label: 'Accredited sponsor',
+    format: answerLabel,
+    tooltip: MANUAL_REVIEW_NOTE,
+    accent: true,
+  },
   {
     key: 'students',
-    label: 'Hires international students',
+    label: 'Hires international students and graduates',
     format: answerLabel,
+    tooltip: MANUAL_REVIEW_NOTE,
     accent: true,
   },
 ];
@@ -195,6 +237,7 @@ export function Filters({ filters, options, counts, onChange, onClear }: Props) 
             <FilterSelect
               key={field.key}
               label={field.label}
+              tooltip={field.tooltip}
               options={toOptions(field.key, options[field.key], field.format)}
               selected={filters[field.key]}
               onChange={(next) => set({ [field.key]: next } as Partial<FilterState>)}

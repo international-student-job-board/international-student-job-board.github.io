@@ -40,7 +40,7 @@ export function About() {
       <header className="about-hero">
         <h1>International students 🤝🏿 local startups</h1>
         <p className="about-lede">
-          We have created this website to connect international students and graduates studying with roles at
+          We have created this website to connect international students and graduates with roles at
           startups and scaleups founded in Victoria, Australia.
           </p>
           <br></br>

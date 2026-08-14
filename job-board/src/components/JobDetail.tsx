@@ -9,6 +9,13 @@ import {
   occupationListsFor,
   occupationListUrl,
   occupationListLabel,
+  OCCUPATION_LIST_NOTE,
+  resolveOsca,
+  unitGroupFor,
+  unitGroupUrl,
+  ANZSCO_NOTE,
+  OSCA_NOTE,
+  UNIT_GROUP_NOTE,
   VISA_DISCLAIMER,
 } from '../references';
 import { InfoTooltip } from './InfoTooltip';
@@ -118,6 +125,45 @@ function Occupations({ occupations }: { occupations: ReturnType<typeof resolveOc
   );
 }
 
+/** "Software Engineer (261313)", linked where we know the page. */
+function CodedOccupation({
+  name,
+  code,
+  href,
+  title,
+}: {
+  name: string;
+  code: string;
+  href?: string;
+  title: string;
+}) {
+  const link = href ? (
+    <a
+      className="reference-link"
+      href={href}
+      target="_blank"
+      rel="noopener"
+      referrerPolicy="strict-origin-when-cross-origin"
+      title={title}
+    >
+      {code}
+    </a>
+  ) : (
+    code
+  );
+
+  return (
+    <span className="occupation">
+      {name && <span className="occupation-name">{name}</span>}
+      <span className="occupation-codes">
+        {name ? ' (' : ''}
+        {link}
+        {name ? ')' : ''}
+      </span>
+    </span>
+  );
+}
+
 // A single free-text value that becomes a link out to its official source when we can
 // resolve one.
 function Reference({ text, href }: { text: string; href?: string }) {
@@ -187,6 +233,11 @@ export function JobDetail({ job }: { job: Job }) {
   const pathwayVisas = pathwayVisasFor(job);
   const assessors = assessorsFor(job);
   const lists = occupationListsFor(job);
+  const osca = resolveOsca(job);
+  // Shown only when there is no six-digit occupation to show instead: a role
+  // that has one is already inside its unit group, and saying so twice is a
+  // row that adds nothing.
+  const unitGroup = unitGroupFor(job);
   const companyHref = outboundHref(company.website, 'employer');
 
   return (
@@ -219,6 +270,9 @@ export function JobDetail({ job }: { job: Job }) {
           {company.accreditedSponsor && (
             <span className="flag flag-sponsor">Accredited sponsor</span>
           )}
+          {company.hiresInternationalStudents && (
+            <span className="flag">Hires international students and graduates</span>
+          )}
           <ShareJob url={jobShareUrl(job.id)} title={job.title} />
         </div>
       </header>
@@ -247,15 +301,73 @@ export function JobDetail({ job }: { job: Job }) {
         <section className="visa-box" aria-labelledby="visa-heading">
           <h2 id="visa-heading">
             Visa &amp; pathway{' '}
-            <InfoTooltip text={VISA_DISCLAIMER} label="Visa guidance disclaimer" />
+            <InfoTooltip
+              text={VISA_DISCLAIMER}
+              label="Visa guidance disclaimer"
+              placement="bottom"
+            />
           </h2>
           <dl className="visa-facts">
             <div className="fact">
               <dt className="fact-label">
-                Occupation{occupations.length > 1 ? 's' : ''}
+                ANZSCO Occupation{occupations.length > 1 ? 's' : ''}{' '}
+                <InfoTooltip
+                  text={ANZSCO_NOTE}
+                  label="What ANZSCO stands for"
+                  placement="bottom"
+                />
               </dt>
               <dd className="fact-value">
                 <Occupations occupations={occupations} />
+              </dd>
+            </div>
+            <div className="fact">
+              <dt className="fact-label">
+                ANZSCO unit group{' '}
+                <InfoTooltip
+                  text={UNIT_GROUP_NOTE}
+                  label="What a unit group is"
+                  placement="bottom"
+                />
+              </dt>
+              <dd className="fact-value">
+                {unitGroup ? (
+                  <CodedOccupation
+                    name={unitGroup.title}
+                    code={unitGroup.code}
+                    href={unitGroupUrl(unitGroup.code)}
+                    title={`ANZSCO unit group ${unitGroup.code} on the ABS classification`}
+                  />
+                ) : (
+                  NOT_SPECIFIED
+                )}
+              </dd>
+            </div>
+            <div className="fact">
+              <dt className="fact-label">
+                OSCA occupation{osca.length > 1 ? 's' : ''}{' '}
+                <InfoTooltip
+                  text={OSCA_NOTE}
+                  label="What OSCA stands for"
+                  placement="bottom"
+                />
+              </dt>
+              <dd className="fact-value">
+                {osca.length === 0 ? (
+                  NOT_SPECIFIED
+                ) : (
+                  <span className="fact-values">
+                    {osca.map((o) => (
+                      <CodedOccupation
+                        key={o.code}
+                        name={o.name}
+                        code={o.code}
+                        href={o.href}
+                        title={`${o.name || o.code} on the ABS OSCA classification`}
+                      />
+                    ))}
+                  </span>
+                )}
               </dd>
             </div>
             <div className="fact">
@@ -264,20 +376,19 @@ export function JobDetail({ job }: { job: Job }) {
                 <Pills items={pathwayVisas} />
               </dd>
             </div>
-            {lists.length > 0 && (
-              <div className="fact">
-                <dt className="fact-label">
-                  Occupation lists{' '}
-                  <InfoTooltip
-                    label="What the occupation lists mean"
-                    text={lists.map(occupationListLabel).join('\n')}
-                  />
-                </dt>
-                <dd className="fact-value">
-                  <OccupationLists lists={lists} />
-                </dd>
-              </div>
-            )}
+            <div className="fact">
+              <dt className="fact-label">
+                Occupation lists{' '}
+                <InfoTooltip
+                  placement="bottom"
+                  label="What the occupation lists mean"
+                  text={lists.length ? lists.map(occupationListLabel).join('\n') : OCCUPATION_LIST_NOTE}
+                />
+              </dt>
+              <dd className="fact-value">
+                <OccupationLists lists={lists} />
+              </dd>
+            </div>
             <div className="fact">
               <dt className="fact-label">
                 Skills assessment{assessors.length > 1 ? 's' : ''}
@@ -301,7 +412,7 @@ export function JobDetail({ job }: { job: Job }) {
               </dd>
             </div>
             <div className="fact">
-              <dt className="fact-label">Hires international students</dt>
+              <dt className="fact-label">Hires international students and graduates</dt>
               <dd className="fact-value">
                 <Answer value={company.hiresInternationalStudents} yes="Yes" no="No" />
               </dd>

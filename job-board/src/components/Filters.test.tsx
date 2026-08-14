@@ -12,6 +12,9 @@ const OPTIONS: FilterOptions = {
   growthStages: ['early stage', 'breakout stage', 'late stage'],
   hqCities: ['Melbourne', 'Geelong', ''],
   anzscos: ['261313'],
+  unitGroups: ['2613', '2241', ''],
+  oscas: ['223233'],
+  occupationLists: ['MLTSSL', 'CSOL', ''],
   pathwayVisas: ['186', '482'],
   sponsor: ['yes', ''],
   students: ['yes', ''],
@@ -27,6 +30,9 @@ const EMPTY: FilterState = {
   growthStages: [],
   hqCities: [],
   anzscos: [],
+  unitGroups: [],
+  oscas: [],
+  occupationLists: [],
   pathwayVisas: [],
   sponsor: [],
   students: [],
@@ -132,6 +138,34 @@ describe('the company’s own tags', () => {
     expect(
       screen.getByRole('button', { name: /Model & tech.*Not specified/ })
     ).toBeInTheDocument();
+  });
+});
+
+describe('the occupation list filter', () => {
+  test('each acronym is spelled out, since MLTSSL means nothing on its own', () => {
+    render(<Harness />);
+    openFilter(/occupation list/i);
+    expect(
+      screen.getByRole('checkbox', { name: /Medium and Long-term Strategic Skills List/ })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('checkbox', { name: /Core Skills Occupation List/ })
+    ).toBeInTheDocument();
+  });
+
+  test('a role on no list is reachable, not hidden', () => {
+    // Most roles carry no ANZSCO code at all, so most sit on no list.
+    render(<Harness />);
+    openFilter(/occupation list/i);
+    expect(screen.getByRole('checkbox', { name: /Not specified/ })).toBeInTheDocument();
+  });
+
+  test('picking one chips under its own field name', () => {
+    render(<Harness />);
+    openFilter(/occupation list/i);
+    fireEvent.click(screen.getByRole('checkbox', { name: /Core Skills Occupation List/ }));
+    closeFilter(/occupation list/i);
+    expect(screen.getByRole('button', { name: /Occupation list.*CSOL/ })).toBeInTheDocument();
   });
 });
 

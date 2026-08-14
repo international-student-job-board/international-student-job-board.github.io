@@ -9,6 +9,7 @@ import {
 import { FilterSelect } from './FilterSelect';
 import { NOT_SPECIFIED } from '../format';
 import { prettyLabel } from '../labels';
+import { MANUAL_REVIEW_NOTE } from '../references';
 import { ActiveFilters, ActiveChip } from './ActiveFilters';
 import { outboundHref } from '../outbound';
 // Leaflet and its stylesheet are a big chunk of the site's weight, and only this page's map
@@ -56,6 +57,8 @@ const FIELDS: {
   format?: (value: string) => string;
   /** Fixed options, where they aren't read off the data. */
   values?: string[];
+  /** Shown on an "i" in the open panel, beside the count. */
+  tooltip?: string;
   /** Given the accent, because they are what this audience came for. */
   accent?: boolean;
 }[] = [
@@ -77,13 +80,15 @@ const FIELDS: {
     label: 'Accredited sponsor',
     pick: (c) => [answerOf(c.accreditedSponsor)],
     format: answerLabel,
+    tooltip: MANUAL_REVIEW_NOTE,
     accent: true,
   },
   {
     key: 'students',
-    label: 'Hires international students',
+    label: 'Hires international students and graduates',
     pick: (c) => [answerOf(c.hiresInternationalStudents)],
     format: answerLabel,
+    tooltip: MANUAL_REVIEW_NOTE,
     accent: true,
   },
 ];
@@ -205,20 +210,11 @@ export function Companies() {
 
   return (
     <div className="about">
-      <header className="about-intro">
-        <h1>Startups and scaleups</h1>
-        <p>
-          Startups and scaleups founded in Victoria, Australia.
-        </p>
+      <header className="page-intro">
+        <h1 id="companies-heading">Startups and scaleups founded in Victoria, Australia</h1>
       </header>
 
       <section className="about-section" aria-labelledby="companies-heading">
-      <p className="panel-banner">
-         We're working through this list manually
-         to confirm which startups sponsor visas and
-         which hire international students. A company without those tags hasn't been checked
-         yet, so it's worth asking them 'bout this directly.
-        </p>
         <div className="filters-region companies-filters">
           <button
             type="button"
@@ -263,6 +259,7 @@ export function Companies() {
                 const select = (
                   <FilterSelect
                     label={field.label}
+                    tooltip={field.tooltip}
                     options={options[field.key].map((v) => ({
                       value: v,
                       // The field's own labeller gets first refusal on a blank, because
@@ -425,7 +422,7 @@ function CompanyCard({
             <li className="flag flag-sponsor">Visa sponsorship available</li>
           )}
           {company.hiresInternationalStudents && (
-            <li className="flag">Hires international students</li>
+            <li className="flag">Hires international students and graduates</li>
           )}
         </ul>
       )}

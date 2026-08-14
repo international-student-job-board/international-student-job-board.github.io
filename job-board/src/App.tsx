@@ -1,14 +1,20 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
-import { FEEDBACK_URL } from './links';
 import { Job, jobLocation } from './types';
 import { loadJobs, isRecent, MONTHS_LISTED } from './jobs';
 import { loadCompanies } from './companies';
 import { dateValue, todayISO } from './format';
-import { pathwayVisasFor, occupationCodesFor } from './references';
+import {
+  pathwayVisasFor,
+  occupationCodesFor,
+  occupationListsFor,
+  oscaCodesFor,
+  unitGroupCodesFor,
+} from './references';
 import { Header } from './components/Header';
 import { Route, parsePath, pathFor, pathFromLegacyHash } from './routes';
 import { applyMeta, applySchema, metaFor, jobPostingSchema, websiteSchema } from './seo';
+import { trackPageView } from './analytics';
 import {
   Filters,
   FilterState,
@@ -43,6 +49,9 @@ const EMPTY_FILTERS: FilterState = {
   growthStages: [],
   hqCities: [],
   anzscos: [],
+  unitGroups: [],
+  oscas: [],
+  occupationLists: [],
   pathwayVisas: [],
   sponsor: [],
   students: [],
@@ -84,6 +93,9 @@ function matches(job: Job, filters: FilterState, postedAfter: number): boolean {
   if (!overlaps(filters.anzscos, occupationCodesFor(job))) return false;
   // The occupations' own visas are what the detail page shows as pathways, so filtering
   // reads the same function — a role can always be found by the visas it is shown to offer.
+  if (!overlaps(filters.unitGroups, unitGroupCodesFor(job))) return false;
+  if (!overlaps(filters.oscas, oscaCodesFor(job))) return false;
+  if (!overlaps(filters.occupationLists, occupationListsFor(job))) return false;
   if (!overlaps(filters.pathwayVisas, pathwayVisasFor(job))) return false;
   if (!overlaps(filters.sponsor, answer(job.company.accreditedSponsor))) return false;
   if (!overlaps(filters.students, answer(job.company.hiresInternationalStudents))) return false;
@@ -254,6 +266,9 @@ function App() {
       growthStages: (j) => [j.company.growthStage],
       hqCities: (j) => [j.company.hqCity],
       anzscos: occupationCodesFor,
+      unitGroups: unitGroupCodesFor,
+      oscas: oscaCodesFor,
+      occupationLists: occupationListsFor,
       pathwayVisas: pathwayVisasFor,
       sponsor: (j) => answer(j.company.accreditedSponsor),
       students: (j) => answer(j.company.hiresInternationalStudents),
@@ -298,6 +313,9 @@ function App() {
       growthStages: from((j) => [j.company.growthStage]),
       hqCities: from((j) => [j.company.hqCity]),
       anzscos: from(occupationCodesFor),
+      unitGroups: from(unitGroupCodesFor),
+      oscas: from(oscaCodesFor),
+      occupationLists: from(occupationListsFor),
       pathwayVisas: from(pathwayVisasFor),
       // These two carry a value for every role — 'yes', 'no' or the blank sentinel — so
       // they never need the "any blank?" pass the others do.
@@ -339,6 +357,7 @@ function App() {
     const origin = window.location.origin;
     const meta = metaFor(route, reading, origin);
     applyMeta(meta);
+    trackPageView(meta);
     applySchema(
       reading
         ? jobPostingSchema(reading, meta.url, lapseDate(reading.posted, MONTHS_LISTED))
@@ -377,25 +396,9 @@ function App() {
     <div className={`app${showDetail ? ' detail-open' : ''}`} id="top">
       <Header route={route} />
 
-      <div className="board-intro">
-        <h1 className="panel-title">Jobs at budding Melbourne startups, with the migration pathways!</h1>
-        <p className="panel-lead">
-          Roles at startups and scaleups founded in Victoria, Australia : : Mapped with potential visa pathways and skills assessments it can lead to!
-        </p>
-        <p className="panel-banner">
-          We're working through this list manually to confirm which companies sponsor visas and
-          which hire international students. If you have any feedback or insights,{' '}
-          <a
-            href={FEEDBACK_URL}
-            target="_blank"
-            rel="noopener"
-            referrerPolicy="strict-origin-when-cross-origin"
-          >
-            please let us know
-          </a>
-          !
-        </p>
-      </div>
+      <header className="page-intro">
+        <h1>Jobs at Melbourne startups, with migration pathways and visa info!</h1>
+      </header>
 
       <div className="filters-region" hidden={status === 'ready' && openJobs.length === 0}>
         <button

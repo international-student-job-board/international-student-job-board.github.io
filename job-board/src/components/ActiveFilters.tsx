@@ -25,8 +25,10 @@ export function ActiveFilters({ chips, onClear }: { chips: ActiveChip[]; onClear
               onClick={chip.remove}
               title={`${chip.field}: ${chip.value}`}
             >
-              <span className="active-chip-field">{chip.field}</span>
-              <span className="active-chip-value">{chip.value}</span>
+              <span className="active-chip-text">
+                <span className="active-chip-field">{chip.field}</span>{' '}
+                <span className="active-chip-value">{chip.value}</span>
+              </span>
               <span className="active-chip-x" aria-hidden="true" />
               <span className="visually-hidden">Remove filter</span>
             </button>
