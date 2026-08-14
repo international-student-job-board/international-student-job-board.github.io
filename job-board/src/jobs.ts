@@ -6,8 +6,9 @@ import { parseCsv, splitList, splitNames, triState, anzscoCodes, unitGroupCodes 
 import { loadCompanies } from './companies';
 import { dateValue } from './format';
 import { setUnitGroupTitles } from './references';
+import { dataUrl } from './dataUrl';
 
-const JOBS_URL = `${process.env.PUBLIC_URL || ''}/jobs.csv`;
+const JOBS_URL = dataUrl('/jobs.csv');
 
 /** The CSV's column names, in file order. */
 export const COLUMNS = [

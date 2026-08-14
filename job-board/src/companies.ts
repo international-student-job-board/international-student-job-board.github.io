@@ -4,10 +4,11 @@
 
 import { Company } from './types';
 import { parseCsv, splitList, triState } from './csv';
+import { dataUrl } from './dataUrl';
 
 export type { Company } from './types';
 
-const CSV_URL = `${process.env.PUBLIC_URL || ''}/companies.csv`;
+const CSV_URL = dataUrl('/companies.csv');
 
 /** The first of these columns the row actually has. */
 const pick = (row: Record<string, string>, ...names: string[]) =>
