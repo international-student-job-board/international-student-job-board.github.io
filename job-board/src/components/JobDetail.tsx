@@ -11,7 +11,7 @@ import {
   occupationListLabel,
   OCCUPATION_LIST_NOTE,
   resolveOsca,
-  unitGroupFor,
+  unitGroupsFor,
   unitGroupUrl,
   ANZSCO_NOTE,
   OSCA_NOTE,
@@ -237,7 +237,7 @@ export function JobDetail({ job }: { job: Job }) {
   // Shown only when there is no six-digit occupation to show instead: a role
   // that has one is already inside its unit group, and saying so twice is a
   // row that adds nothing.
-  const unitGroup = unitGroupFor(job);
+  const unitGroups = unitGroupsFor(job);
   const companyHref = outboundHref(company.website, 'employer');
 
   return (
@@ -323,7 +323,7 @@ export function JobDetail({ job }: { job: Job }) {
             </div>
             <div className="fact">
               <dt className="fact-label">
-                ANZSCO unit group{' '}
+                ANZSCO unit group{unitGroups.length > 1 ? 's' : ''}{' '}
                 <InfoTooltip
                   text={UNIT_GROUP_NOTE}
                   label="What a unit group is"
@@ -331,15 +331,20 @@ export function JobDetail({ job }: { job: Job }) {
                 />
               </dt>
               <dd className="fact-value">
-                {unitGroup ? (
-                  <CodedOccupation
-                    name={unitGroup.title}
-                    code={unitGroup.code}
-                    href={unitGroupUrl(unitGroup.code)}
-                    title={`ANZSCO unit group ${unitGroup.code} on the ABS classification`}
-                  />
-                ) : (
+                {unitGroups.length === 0 ? (
                   NOT_SPECIFIED
+                ) : (
+                  <span className="fact-values">
+                    {unitGroups.map((group) => (
+                      <CodedOccupation
+                        key={group.code}
+                        name={group.title}
+                        code={group.code}
+                        href={unitGroupUrl(group.code)}
+                        title={`ANZSCO unit group ${group.code} on the ABS classification`}
+                      />
+                    ))}
+                  </span>
                 )}
               </dd>
             </div>

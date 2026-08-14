@@ -2,7 +2,7 @@
 // repeated on each of its roles.
 
 import { Job, Company } from './types';
-import { parseCsv, splitList, triState, anzscoCodes } from './csv';
+import { parseCsv, splitList, splitNames, triState, anzscoCodes, unitGroupCodes } from './csv';
 import { loadCompanies } from './companies';
 import { dateValue } from './format';
 import { setUnitGroupTitles } from './references';
@@ -92,13 +92,13 @@ function toJob(row: Record<string, string>, company: Company): Job {
     id: (row['Job ID'] ?? '').trim(),
     title: (row['Job title'] ?? '').trim(),
     type: (row['Job type'] ?? '').trim(),
-    occupationNames: splitList(row['ANZSCO occupation']),
+    occupationNames: splitNames(row['ANZSCO occupation']),
     anzsco2022: anzscoCodes(row['ANZSCO 2022']),
     anzsco2013: anzscoCodes(row['ANZSCO 2013']),
-    anzscoUnitGroup: (row['ANZSCO unit group'] ?? '').match(/\b\d{4}\b/)?.[0] ?? '',
-    anzscoUnitGroupTitle: (row['ANZSCO unit group title'] ?? '').trim(),
+    anzscoUnitGroups: unitGroupCodes(row['ANZSCO unit group']),
+    anzscoUnitGroupTitles: splitNames(row['ANZSCO unit group title']),
     oscaCodes: anzscoCodes(row['OSCA code']),
-    oscaNames: splitList(row['OSCA occupation']),
+    oscaNames: splitNames(row['OSCA occupation']),
     city: (row['Job city'] ?? '').trim(),
     country: (row['Job country'] ?? '').trim(),
     posted: (row['Date posted'] ?? '').trim(),
@@ -115,9 +115,11 @@ export function toJobs(rows: Record<string, string>[]): Job[] {
   // whatever needs to name a unit group later.
   const titles: Record<string, string> = {};
   for (const row of rows) {
-    const code = (row['ANZSCO unit group'] ?? '').match(/\b\d{4}\b/)?.[0];
-    const title = (row['ANZSCO unit group title'] ?? '').trim();
-    if (code && title && !titles[code]) titles[code] = title;
+    const codes = unitGroupCodes(row['ANZSCO unit group']);
+    const names = splitNames(row['ANZSCO unit group title']);
+    codes.forEach((code, i) => {
+      if (names[i] && !titles[code]) titles[code] = names[i];
+    });
   }
   setUnitGroupTitles(titles);
 

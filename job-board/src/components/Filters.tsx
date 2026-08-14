@@ -111,14 +111,14 @@ const FIELDS: {
   // shows.
   { key: 'growthStages', label: 'Stage', format: prettyLabel },
   { key: 'hqCities', label: 'Head office', format: prettyLabel },
-  { key: 'anzscos', label: 'ANZSCO Occupations', format: anzscoLabel, tooltip: ANZSCO_NOTE },
+  { key: 'anzscos', label: 'ANZSCO occupations', format: anzscoLabel, tooltip: ANZSCO_NOTE },
   {
     key: 'unitGroups',
     label: 'ANZSCO unit group',
     format: unitGroupLabel,
     tooltip: UNIT_GROUP_NOTE,
   },
-  { key: 'oscas', label: 'OSCA occupation', format: oscaLabel, tooltip: OSCA_NOTE },
+  { key: 'oscas', label: 'OSCA occupations', format: oscaLabel, tooltip: OSCA_NOTE },
   {
     key: 'occupationLists',
     label: 'Occupation list',

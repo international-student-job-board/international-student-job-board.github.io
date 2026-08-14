@@ -3,7 +3,7 @@ import {
   resolveOsca,
   oscaUrl,
   oscaCodesFor,
-  unitGroupFor,
+  unitGroupsFor,
   unitGroupCodesFor,
   unitGroupUrl,
   setUnitGroupTitles,
@@ -19,8 +19,8 @@ const job = (over: Partial<Job> = {}): Job =>
     occupationNames: [],
     anzsco2022: [],
     anzsco2013: [],
-    anzscoUnitGroup: '',
-    anzscoUnitGroupTitle: '',
+    anzscoUnitGroups: [],
+    anzscoUnitGroupTitles: [],
     oscaCodes: [],
     oscaNames: [],
     city: '',
@@ -67,20 +67,23 @@ describe('OSCA codes', () => {
 
 describe('the ANZSCO unit group', () => {
   test('it is read from the column when the file gives one', () => {
-    const group = unitGroupFor(
-      job({ anzscoUnitGroup: '2241', anzscoUnitGroupTitle: 'Mathematical Science Professionals' })
+    const groups = unitGroupsFor(
+      job({
+        anzscoUnitGroups: ['2241'],
+        anzscoUnitGroupTitles: ['Mathematical Science Professionals'],
+      })
     );
-    expect(group).toEqual({ code: '2241', title: 'Mathematical Science Professionals' });
+    expect(groups).toEqual([{ code: '2241', title: 'Mathematical Science Professionals' }]);
   });
 
   test('it is derived from a six-digit code when the column is blank', () => {
     // The first four digits of an ANZSCO code are its unit group, so a role
     // with a code always has one.
-    expect(unitGroupFor(job({ anzsco2022: ['261313'] }))?.code).toBe('2613');
+    expect(unitGroupsFor(job({ anzsco2022: ['261313'] }))[0].code).toBe('2613');
   });
 
   test('a role with neither cannot be placed', () => {
-    expect(unitGroupFor(job())).toBeUndefined();
+    expect(unitGroupsFor(job())).toEqual([]);
     expect(unitGroupCodesFor(job())).toEqual([]);
   });
 
@@ -96,5 +99,40 @@ describe('how a code reads in a filter', () => {
     setUnitGroupTitles({ '2613': 'Software and Applications Programmers' });
     expect(unitGroupTitle('2613')).toBe('Software and Applications Programmers');
     expect(unitGroupTitle('9999')).toBe('');
+  });
+});
+
+describe('a role in more than one unit group', () => {
+  test('codes and titles pair by position, not by joining into one string', () => {
+    // The CSV writes these as "1311;2251" and "Advertising, Public Relations and
+    // Sales Managers;Advertising and Marketing Professionals" — rendered as one
+    // value it read as a run-on with no space at the join.
+    const groups = unitGroupsFor(
+      job({
+        anzscoUnitGroups: ['1311', '2251'],
+        anzscoUnitGroupTitles: [
+          'Advertising, Public Relations and Sales Managers',
+          'Advertising and Marketing Professionals',
+        ],
+      })
+    );
+    expect(groups).toEqual([
+      { code: '1311', title: 'Advertising, Public Relations and Sales Managers' },
+      { code: '2251', title: 'Advertising and Marketing Professionals' },
+    ]);
+  });
+
+  test('a title containing a comma survives intact', () => {
+    const [group] = unitGroupsFor(
+      job({
+        anzscoUnitGroups: ['1311'],
+        anzscoUnitGroupTitles: ['Advertising, Public Relations and Sales Managers'],
+      })
+    );
+    expect(group.title).toBe('Advertising, Public Relations and Sales Managers');
+  });
+
+  test('every group a role sits in is filterable', () => {
+    expect(unitGroupCodesFor(job({ anzscoUnitGroups: ['1311', '2251'] }))).toEqual(['1311', '2251']);
   });
 });

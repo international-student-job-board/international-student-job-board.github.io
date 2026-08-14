@@ -370,21 +370,6 @@ export function oscaName(code: string): string {
 // ---- ANZSCO unit groups ---------------------------------------------------
 
 /**
- * The unit group a role sits in: the four-digit level above the occupation.
- *
- * Taken from the CSV where it is given, and derived from a six-digit code where
- * it isn't — the first four digits of an ANZSCO code are its unit group, so a
- * role with a code always has one even when the column is blank.
- */
-export function unitGroupFor(job: Job): { code: string; title: string } | undefined {
-  const code =
-    job.anzscoUnitGroup ||
-    (job.anzsco2022[0] || job.anzsco2013[0] || '').slice(0, 4);
-  if (!/^\d{4}$/.test(code)) return undefined;
-  return { code, title: job.anzscoUnitGroupTitle };
-}
-
-/**
  * Unit-group titles, keyed by code.
  *
  * Neither reference file has these — the four-digit titles come only from the
@@ -401,10 +386,35 @@ export function unitGroupTitle(code: string): string {
   return UNIT_GROUP_TITLES[code.trim()] ?? '';
 }
 
-/** The unit-group code a role sits in, for filtering. */
+/**
+ * The unit groups a role sits in: the four-digit level above the occupation.
+ *
+ * A role can sit in more than one — a marketing job maps to both the manager
+ * group and the professional group — so codes and titles are paired by
+ * position, the way the file writes them. Where the column is blank the group
+ * is derived from a six-digit code instead, since its first four digits are its
+ * unit group.
+ */
+export function unitGroupsFor(job: Job): { code: string; title: string }[] {
+  const codes = job.anzscoUnitGroups.length
+    ? job.anzscoUnitGroups
+    : Array.from(
+        new Set(
+          [...job.anzsco2022, ...job.anzsco2013]
+            .map((code) => code.slice(0, 4))
+            .filter((code) => /^\d{4}$/.test(code))
+        )
+      );
+
+  return codes.map((code, i) => ({
+    code,
+    title: job.anzscoUnitGroupTitles[i] || unitGroupTitle(code),
+  }));
+}
+
+/** Every unit-group code a role sits in, for filtering. */
 export function unitGroupCodesFor(job: Job): string[] {
-  const group = unitGroupFor(job);
-  return group ? [group.code] : [];
+  return unitGroupsFor(job).map((group) => group.code);
 }
 
 /** The ABS page for a four-digit ANZSCO unit group. */

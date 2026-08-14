@@ -92,5 +92,22 @@ export const splitList = (value: string) =>
     .filter(Boolean);
 
 /** The 6-digit codes in a cell, however they are separated. */
+/**
+ * A cell holding several names.
+ *
+ * Only ";" and "|" separate, never a comma: an occupation title routinely
+ * contains one — "Advertising, Public Relations and Sales Managers" — and
+ * splitting on it tears a single name into two.
+ */
+export const splitNames = (value: string) =>
+  (value ?? '')
+    .split(/[;|]/)
+    .map((v) => v.trim())
+    .filter(Boolean);
+
+/** The four-digit unit-group codes in a cell, in the order they appear. */
+export const unitGroupCodes = (value: string) =>
+  Array.from(new Set((value ?? '').match(/\b\d{4}\b/g) ?? []));
+
 export const anzscoCodes = (value: string) =>
   Array.from(new Set((value ?? '').match(/\b\d{6}\b/g) ?? []));

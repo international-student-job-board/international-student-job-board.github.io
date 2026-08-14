@@ -49,8 +49,8 @@ export interface Job {
    * placed. A job title that maps to no single six-digit occupation often still
    * belongs clearly to a group of them.
    */
-  anzscoUnitGroup: string;
-  anzscoUnitGroupTitle: string;
+  anzscoUnitGroups: string[];
+  anzscoUnitGroupTitles: string[];
   /** OSCA, the classification that replaced ANZSCO in December 2024. */
   oscaCodes: string[];
   oscaNames: string[];
