@@ -45,7 +45,7 @@ export function About() {
           </p>
           <br></br>
           <p className="about-lede">
-          This way international students and graduates get a chance to build their career here in Melbourne, and local budding businesses gain
+          This way international students and graduates get a chance to build their career here in Melbourne, and local businesses gain
           access to a diverse talent pool who are eager to learn, grow and contribute to their new community.
         </p>
       </header>

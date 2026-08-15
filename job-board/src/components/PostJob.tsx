@@ -6,7 +6,7 @@ export function PostJob() {
   return (
     <div className="about">
       <header className="about-intro">
-        <h1>Hire up-and-coming STEM talent</h1>
+        <h1>Hire up-and-coming talent</h1>
         <p>
           Every job on this board is seen by international students and graduates in Melbourne
           who are eager to learn, grow and build a career here.
