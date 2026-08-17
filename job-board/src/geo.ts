@@ -82,8 +82,153 @@ export const POSTCODE_PLACES: Record<string, Place> = {
 };
 
 /** The Victorian postcode in a free-text address, if there is one. */
+/**
+ * The postcode in an address, nationally.
+ *
+ * The *last* four-digit token, not the first: an address leads with a street
+ * number and ends with its postcode, so "1200 Nepean Highway, Melbourne VIC
+ * 3004" has to read 3004. Reading the first match was safe while every postcode
+ * began with a 3; across the country a street number is a valid postcode
+ * somewhere.
+ */
 export function postcodeOf(address: string): string | undefined {
-  return address.match(/\b(3\d{3})\b/)?.[1];
+  const codes = (address ?? '').match(/\b\d{4}\b/g);
+  if (!codes) return undefined;
+  const usable = codes.filter((code) => stateOfPostcode(code));
+  return usable.length ? usable[usable.length - 1] : undefined;
+}
+
+/**
+ * Australia Post's ranges, which are the only thing that maps a bare postcode
+ * to a state.
+ */
+const POSTCODE_STATES: [number, number, string][] = [
+  [1000, 2599, 'NSW'],
+  [2619, 2899, 'NSW'],
+  [2921, 2999, 'NSW'],
+  [200, 299, 'ACT'],
+  [2600, 2618, 'ACT'],
+  [2900, 2920, 'ACT'],
+  [3000, 3999, 'VIC'],
+  [8000, 8999, 'VIC'],
+  [4000, 4999, 'QLD'],
+  [9000, 9999, 'QLD'],
+  [5000, 5999, 'SA'],
+  [6000, 6999, 'WA'],
+  [7000, 7999, 'TAS'],
+  [800, 999, 'NT'],
+];
+
+export function stateOfPostcode(postcode: string): string | undefined {
+  const n = Number.parseInt(postcode, 10);
+  if (Number.isNaN(n)) return undefined;
+  return POSTCODE_STATES.find(([lo, hi]) => n >= lo && n <= hi)?.[2];
+}
+
+/** The state column as written, reduced to the abbreviation used above. */
+const STATE_NAMES: Record<string, string> = {
+  'new south wales': 'NSW',
+  victoria: 'VIC',
+  queensland: 'QLD',
+  'south australia': 'SA',
+  'western australia': 'WA',
+  tasmania: 'TAS',
+  'northern territory': 'NT',
+  'australian capital territory': 'ACT',
+  nsw: 'NSW',
+  vic: 'VIC',
+  qld: 'QLD',
+  sa: 'SA',
+  wa: 'WA',
+  tas: 'TAS',
+  nt: 'NT',
+  act: 'ACT',
+};
+
+export const abbreviateState = (state: string): string | undefined =>
+  STATE_NAMES[(state ?? '').trim().toLowerCase()];
+
+/**
+ * Where a state's employers sit when we can't place them any closer.
+ *
+ * Only Melbourne has suburb-level coordinates in this file, so everywhere else
+ * lands on its capital. That is a real loss of precision and the map says so
+ * rather than implying a company is in the CBD.
+ */
+export const CAPITALS: Record<string, Place> = {
+  NSW: { suburb: 'Sydney', lat: -33.8688, lng: 151.2093 },
+  VIC: { suburb: 'Melbourne', lat: -37.8136, lng: 144.9631 },
+  QLD: { suburb: 'Brisbane', lat: -27.4698, lng: 153.0251 },
+  SA: { suburb: 'Adelaide', lat: -34.9285, lng: 138.6007 },
+  WA: { suburb: 'Perth', lat: -31.9523, lng: 115.8613 },
+  TAS: { suburb: 'Hobart', lat: -42.8821, lng: 147.3272 },
+  ACT: { suburb: 'Canberra', lat: -35.2809, lng: 149.13 },
+  NT: { suburb: 'Darwin', lat: -12.4634, lng: 130.8456 },
+};
+
+/**
+ * The best place we can put something, and how precisely we know it.
+ *
+ * A postcode that disagrees with the row's own state column is discarded rather
+ * than trusted — that is what a street number misread as a postcode looks like,
+ * and the state column is the more reliable of the two.
+ */
+export function placeFor(
+  address: string,
+  state: string
+): { place: Place; exact: boolean } | undefined {
+  const named = abbreviateState(state);
+  const postcode = postcodeOf(address);
+  const fromPostcode = postcode ? stateOfPostcode(postcode) : undefined;
+  const agrees = !named || !fromPostcode || named === fromPostcode;
+
+  if (postcode && agrees) {
+    const exact = POSTCODE_PLACES[postcode];
+    if (exact) return { place: exact, exact: true };
+  }
+
+  const capital = CAPITALS[named ?? fromPostcode ?? ''];
+  return capital ? { place: capital, exact: false } : undefined;
+}
+
+export interface AddressCluster<T> extends Place {
+  postcode: string;
+  items: T[];
+}
+
+/**
+ * Anything with an address, grouped into the suburb its postcode points at.
+ *
+ * Biggest group first, so the busiest areas draw on top. Whatever has no
+ * readable postcode is returned separately rather than dropped — a map that
+ * quietly loses a third of the list is worse than one that says so.
+ */
+export function clusterByAddress<T>(
+  items: T[],
+  locate: (item: T) => { address: string; state: string }
+): { clusters: AddressCluster<T>[]; unplaced: T[] } {
+  const byPostcode = new Map<string, AddressCluster<T>>();
+  const unplaced: T[] = [];
+
+  for (const item of items) {
+    const { address, state } = locate(item);
+    const found = placeFor(address, state);
+    if (!found) {
+      unplaced.push(item);
+      continue;
+    }
+    // Anything placed only to its capital shares one pin per state, so the key
+    // is the suburb rather than a postcode we didn't really use.
+    const key = found.exact ? postcodeOf(address) ?? found.place.suburb : found.place.suburb;
+    const existing = byPostcode.get(key);
+    if (existing) existing.items.push(item);
+    else byPostcode.set(key, { ...found.place, postcode: key, items: [item] });
+  }
+
+  return {
+    clusters: Array.from(byPostcode.values()).sort((a, b) => b.items.length - a.items.length),
+    unplaced,
+  };
 }
 
 export interface MapCluster extends Place {
@@ -91,28 +236,14 @@ export interface MapCluster extends Place {
   companies: Company[];
 }
 
-/**
- * Companies grouped into the suburb each one's postcode points at, biggest group first so
- * the busiest areas draw on top.
- */
+/** The same, named for the companies page that reads it. */
 export function clusterCompanies(companies: Company[]) {
-  const byPostcode = new Map<string, MapCluster>();
-  const unplaced: Company[] = [];
-
-  for (const company of companies) {
-    const postcode = postcodeOf(company.hqAddress);
-    const place = postcode ? POSTCODE_PLACES[postcode] : undefined;
-    if (!postcode || !place) {
-      unplaced.push(company);
-      continue;
-    }
-    const existing = byPostcode.get(postcode);
-    if (existing) existing.companies.push(company);
-    else byPostcode.set(postcode, { ...place, postcode, companies: [company] });
-  }
-
-  const clusters = Array.from(byPostcode.values()).sort(
-    (a, b) => b.companies.length - a.companies.length
-  );
-  return { clusters, unplaced };
+  const { clusters, unplaced } = clusterByAddress(companies, (c) => ({
+    address: c.hqAddress,
+    state: c.state,
+  }));
+  return {
+    clusters: clusters.map(({ items, ...rest }) => ({ ...rest, companies: items })),
+    unplaced,
+  };
 }

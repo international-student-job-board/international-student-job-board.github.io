@@ -361,12 +361,24 @@ optgroup {
 
 /* The controls themselves; anything currently applied is summarised in the
    chip row underneath. */
+/**
+ * The filter row.
+ *
+ * The controls are ordered so related ones sit together — State beside
+ * Location, the occupation and visa filters in a run — but the spacing is even
+ * throughout, so the grouping is in the order rather than in the layout.
+ */
 .filter-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--s3);
 }
+
+.filter-group {
+  display: contents;
+}
+
 
 .filter-clear {
   display: inline-flex;
@@ -3581,4 +3593,88 @@ a.occ-visa-code:focus-visible {
   font-size: var(--fs-body);
   line-height: var(--lh-body);
   color: var(--muted-strong);
+}
+
+/* ---- Where the employer is -------------------------------------------------
+   A fact like the others around it, given two columns rather than one: an
+   address wraps where a one-word value doesn't, and the map it opens needs the
+   width.
+
+   It only takes two once the pane is wide enough to have two. Spanning two
+   columns in a one-column grid doesn't shrink the box — it invents a second
+   column and pushes the whole set off the side, which is what a phone would
+   get. The pane is the container query's subject for the same reason the
+   detail layout uses one: the window's width says nothing about how much room
+   this pane actually has. */
+.fact-location {
+  grid-column: span 1;
+}
+
+@container (min-width: 520px) {
+  .fact-location {
+    grid-column: span 2;
+  }
+}
+
+/* The map is collapsed, because it answers a question only some readers have:
+   the commute matters once a role is interesting, not while deciding whether
+   it is. */
+.employer-location {
+  margin-top: var(--s2);
+}
+
+/* The same chevron the filter bar uses, rotating the same way — a disclosure is
+   a disclosure wherever it appears. */
+.employer-location > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-strong);
+  color: var(--ink);
+  cursor: pointer;
+  list-style: none;
+}
+
+/* Safari draws its own marker unless both of these are turned off. */
+.employer-location > summary::-webkit-details-marker {
+  display: none;
+}
+
+.employer-location > summary::after {
+  content: '';
+  flex-shrink: 0;
+  width: 12px;
+  height: 8px;
+  background: var(--chevron) no-repeat center;
+  background-size: 12px 8px;
+  transition: transform 0.15s ease;
+}
+
+.employer-location[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+.employer-map-canvas {
+  margin-top: var(--s3);
+  /* Whatever width the cell gives it, and short enough that opening the map
+     doesn't push the rest of the section down the page. */
+  width: 100%;
+  height: 180px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.employer-map-note {
+  margin: var(--s2) 0 0;
+  font-size: var(--fs-xs);
+  line-height: var(--lh-body);
+  color: var(--muted);
+}
+
+/* The second apply, at the end of the visa facts. It sits inside the reading
+   column rather than the action column, so it reads as the end of that section
+   rather than as a second floating control. */
+.detail-actions-inline {
+  margin-top: var(--s5);
 }

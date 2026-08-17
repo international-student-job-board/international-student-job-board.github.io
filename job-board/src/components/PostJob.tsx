@@ -8,7 +8,7 @@ export function PostJob() {
       <header className="about-intro">
         <h1>Hire up-and-coming talent</h1>
         <p>
-          Every job on this board is seen by international students and graduates in Melbourne
+          Every job on this board is seen by international students and graduates across Australia
           who are eager to learn, grow and build a career here.
         </p>
       </header>

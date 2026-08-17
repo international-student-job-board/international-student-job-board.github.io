@@ -19,7 +19,7 @@ const NOW = [
   'Whether the role offers an employer-sponsored visa',
   'Roles being mapped with possible ANZSCO occupations',
   'The usual like the employer details, type and location',
-  'Browse Melbourne/Victorian startups that are hiring',
+  'Browse Australian startups that are hiring',
   'A bomb search filter to find matching roles and startups!',
 ];
 
@@ -41,11 +41,11 @@ export function About() {
         <h1>International students 🤝🏿 local startups</h1>
         <p className="about-lede">
           We have created this website to connect international students and graduates with roles at
-          startups and scaleups founded in Victoria, Australia.
+          startups and scaleups founded in Australia.
           </p>
           <br></br>
           <p className="about-lede">
-          This way international students and graduates get a chance to build their career here in Melbourne, and local businesses gain
+          This way international students and graduates get a chance to build their career here in Australia, and local businesses gain
           access to a diverse talent pool who are eager to learn, grow and contribute to their new community.
         </p>
       </header>
@@ -107,7 +107,7 @@ export function About() {
       <section className="about-section" aria-labelledby="scope-heading">
         <h2 id="scope-heading">Where we start</h2>
         <p>
-          We're starting with <strong>roles from startups and scaleups that were found in Victoria, Australia</strong> and then expand to more states and countries over time.
+          We are currently showing <strong>startups and scaleups across Australia</strong>, and will expand to more countries over time.
         </p>
         <p>
          We are not migration lawyers, please work with registered migration agents or lawyers for any visa advice. Always check the <a href="https://immi.homeaffairs.gov.au/" target="_blank" rel="noopener"

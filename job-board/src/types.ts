@@ -3,6 +3,8 @@
 
 export interface Company {
   name: string;
+  /** The state the employer is in — the board is national now. */
+  state: string;
   /** "startup" or "scaleup". */
   segment: string;
   /** What the company builds — big data, saas, machine learning… */
@@ -55,6 +57,14 @@ export interface Job {
   oscaCodes: string[];
   oscaNames: string[];
   city: string;
+  /**
+   * The state on this role's row.
+   *
+   * Not taken from the employer: the fold keeps one company per name and the
+   * first row's state with it, so a Sydney-based company hiring in Melbourne
+   * would have every one of its roles reading "Melbourne, New South Wales".
+   */
+  state: string;
   country: string;
   /** When the role was posted. Orders the board and drives the recency filter. */
   posted: string;
@@ -62,7 +72,18 @@ export interface Job {
   company: Company;
 }
 
-/** "Melbourne, Australia" — what the card and the detail page both show. */
+/**
+ * "Melbourne, Australia" — what the card, the detail page and the search
+ * snippet all show.
+ *
+ * The state is deliberately absent. The file records it per row but it tracks
+ * the employer rather than the role, so pairing it with the role's city
+ * produced "Melbourne, Queensland" on 577 of 4,340 rows. It is shown with the
+ * employer instead, where it is true.
+ */
 export function jobLocation(job: Job): string {
-  return [job.city, job.country].map((s) => s.trim()).filter(Boolean).join(', ');
+  return [job.city, job.country]
+    .map((part) => (part ?? '').trim())
+    .filter(Boolean)
+    .join(', ');
 }

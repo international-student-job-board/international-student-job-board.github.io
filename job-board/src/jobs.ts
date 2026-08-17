@@ -13,6 +13,7 @@ const JOBS_URL = dataUrl('/jobs.csv');
 /** The CSV's column names, in file order. */
 export const COLUMNS = [
   'Company name',
+  'State',
   'Segment',
   'Type',
   'Website',
@@ -46,6 +47,7 @@ export const COLUMNS = [
 function toCompany(row: Record<string, string>): Company {
   return {
     name: (row['Company name'] ?? '').trim(),
+    state: (row['State'] ?? '').trim(),
     segment: (row['Segment'] ?? '').trim(),
     types: splitList(row['Type']),
     industries: splitList(row['Industries']),
@@ -101,6 +103,7 @@ function toJob(row: Record<string, string>, company: Company): Job {
     oscaCodes: anzscoCodes(row['OSCA code']),
     oscaNames: splitNames(row['OSCA occupation']),
     city: (row['Job city'] ?? '').trim(),
+    state: (row['State'] ?? '').trim(),
     country: (row['Job country'] ?? '').trim(),
     posted: (row['Date posted'] ?? '').trim(),
     applyUrl: (row['Job URL'] ?? '').trim(),

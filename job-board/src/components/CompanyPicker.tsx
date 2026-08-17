@@ -10,7 +10,7 @@ interface Props {
   value: string;
   onChange: (value: string) => void;
   /**
-   * Called when the typed name matches a company on the Melbourne list, so the form can
+   * Called when the typed name matches a company on the national list, so the form can
    * fill in the blurb and the link.
    */
   onMatch: (company: Company | undefined) => void;
@@ -18,7 +18,7 @@ interface Props {
   hint?: React.ReactNode;
 }
 
-/** Company name field backed by the Melbourne startup list. */
+/** Company name field backed by the national startup list. */
 export function CompanyPicker({
   id,
   label,
@@ -136,7 +136,7 @@ export function CompanyPicker({
           )}
           {status === 'ready' && matches.length === 0 && (
             <p className="combo-note">
-              “{value}” isn't on our Melbourne list. That's fine, carry on and we'll add it.
+              “{value}” isn't on our list. That's fine, carry on and we'll add it.
             </p>
           )}
           {matches.length > 0 && (
@@ -166,7 +166,7 @@ export function CompanyPicker({
 
       {matched && (
         <span className="field-hint combo-matched">
-          Found on our Melbourne list. We've filled in the one-liner and link below.
+          Found on our list. We've filled in the one-liner and link below.
         </span>
       )}
       {hint && !matched && <span className="field-hint">{hint}</span>}

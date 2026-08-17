@@ -5,6 +5,7 @@ import { Filters, FilterOptions, FilterState } from './Filters';
 const OPTIONS: FilterOptions = {
   // The empty string is the "not specified" marker some roles land in.
   companies: ['Acme', 'Zeta'],
+  states: ['Victoria', 'New South Wales'],
   types: ['Full time', 'Internship', ''],
   cities: ['Melbourne', 'Sydney'],
   industries: ['fintech', 'health'],
@@ -23,6 +24,7 @@ const OPTIONS: FilterOptions = {
 const EMPTY: FilterState = {
   query: '',
   companies: [],
+  states: [],
   types: [],
   cities: [],
   industries: [],
@@ -324,5 +326,23 @@ describe('option counts', () => {
     withCounts();
     openFilter(/posted/i);
     expect(screen.getByRole('radio', { name: /Last 7 days.*6/ })).toBeInTheDocument();
+  });
+});
+
+describe('the state filter', () => {
+  test('states are offered as the source writes them', () => {
+    // The board is national now, so where a role is comes before what it is.
+    render(<Harness />);
+    openFilter(/^State/);
+    expect(screen.getByRole('checkbox', { name: /Victoria/ })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /New South Wales/ })).toBeInTheDocument();
+  });
+
+  test('picking one chips under its own field name', () => {
+    render(<Harness />);
+    openFilter(/^State/);
+    fireEvent.click(screen.getByRole('checkbox', { name: /Victoria/ }));
+    closeFilter(/^State/);
+    expect(screen.getByRole('button', { name: /State.*Victoria/ })).toBeInTheDocument();
   });
 });

@@ -24,7 +24,7 @@ const path = require('path');
 // The CSV's columns, in file order. The app has its own copy in src/jobs.ts —
 // these two must agree, and the header line in the file is what proves it.
 const JOB_COLUMNS = [
-  'Company name', 'Segment', 'Type', 'Website', 'Growth stage', 'Employees',
+  'Company name', 'State', 'Segment', 'Type', 'Website', 'Growth stage', 'Employees',
   'Industries', 'HQ city', 'HQ address', 'Tagline', 'LinkedIn', 'Profile',
   'Job openings', 'Accredited sponsor', 'Hires international students',
   'Job title', 'Job type', 'ANZSCO occupation', 'ANZSCO 2022', 'ANZSCO 2013',
@@ -40,7 +40,7 @@ const DATA_FILES = [
   // The board itself: one row per open role. `fallback` is the header line, so
   // a missing file is created as an empty-but-valid CSV rather than nothing.
   {
-    name: 'victoria_startup_scaleup_companies_jobs_anzsco.csv',
+    name: 'australia_startup_scaleup_companies_jobs_anzsco.csv',
     url: '/jobs.csv',
     publicPath: 'jobs.csv',
     csv: true,
@@ -50,7 +50,7 @@ const DATA_FILES = [
   // whether or not they have a role on the board, so it is not derivable from
   // jobs.csv and jobs.csv is not derivable from it.
   {
-    name: 'victoria_companies.csv',
+    name: 'australia_companies.csv',
     url: '/companies.csv',
     publicPath: 'companies.csv',
     csv: true,

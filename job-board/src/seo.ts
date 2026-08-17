@@ -15,15 +15,15 @@ export interface PageMeta {
 }
 
 const HOME_DESCRIPTION =
-  'Curated startup and scaleup jobs in Melbourne and Victoria for international ' +
-  'students and recent graduates, with the visa pathway and skills assessment for each role.';
+  'Curated startup and scaleup jobs across Australia for international students ' +
+  'and recent graduates, with the visa pathway and skills assessment for each role.';
 
 /** Title and description for an address. */
 export function metaFor(route: Route, job: Job | null, origin: string): PageMeta {
   const at = (path: string) => `${origin}${path}`;
 
   if (job) {
-    const where = jobLocation(job) || 'Melbourne, Australia';
+    const where = jobLocation(job) || 'Australia';
     const occupations = resolveOccupations(job)
       .map((o) => o.name)
       .filter(Boolean);
@@ -44,9 +44,9 @@ export function metaFor(route: Route, job: Job | null, origin: string): PageMeta
   switch (route) {
     case 'companies':
       return {
-        title: `Melbourne startups and scaleups hiring | ${SITE_NAME}`,
+        title: `Australian startups and scaleups hiring | ${SITE_NAME}`,
         description:
-          'Victorian startups and scaleups that are hiring, with their industry, ' +
+          'Australian startups and scaleups that are hiring, with their state, industry, ' +
           'size, stage and whether they are an accredited visa sponsor.',
         url: at('/companies'),
       };
@@ -54,7 +54,7 @@ export function metaFor(route: Route, job: Job | null, origin: string): PageMeta
       return {
         title: `Post a job | ${SITE_NAME}`,
         description:
-          'List a Melbourne startup role for international students and graduates. ' +
+          'List an Australian startup role for international students and graduates. ' +
           'Every role is checked by hand before it goes up.',
         url: at('/post'),
       };
@@ -68,7 +68,7 @@ export function metaFor(route: Route, job: Job | null, origin: string): PageMeta
       };
     default:
       return {
-        title: `${SITE_NAME} - Melbourne startup jobs for international students`,
+        title: `${SITE_NAME} - Australian startup jobs for international students`,
         description: HOME_DESCRIPTION,
         url: at('/'),
       };

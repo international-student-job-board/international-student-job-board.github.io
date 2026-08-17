@@ -24,6 +24,7 @@ const base = process.env.PUBLIC_URL || '';
 export interface FilterState {
   query: string;
   companies: string[];
+  states: string[];
   types: string[];
   cities: string[];
   industries: string[];
@@ -46,6 +47,7 @@ export interface FilterState {
 /** The list-valued keys, which are exactly the keys of FilterOptions. */
 export type FilterListKey =
   | 'companies'
+  | 'states'
   | 'types'
   | 'cities'
   | 'industries'
@@ -102,6 +104,7 @@ const FIELDS: {
   accent?: boolean;
 }[] = [
   { key: 'companies', label: 'Company' },
+  { key: 'states', label: 'State' },
   { key: 'types', label: 'Job type', format: prettyLabel },
   { key: 'cities', label: 'Location', format: prettyLabel },
   { key: 'industries', label: 'Industry', format: prettyLabel },
@@ -143,6 +146,26 @@ const FIELDS: {
   },
 ];
 
+/**
+ * The filters, in groups.
+ *
+ * Fifteen controls in one row is a wall: nothing says that State and Location
+ * answer the same question while Stage answers another, so the whole set has to
+ * be read before any of it can be used. The grouping is carried by spacing —
+ * more space around a group than within it — which is the rule Refactoring UI
+ * gives for grouping without a visible separator.
+ */
+const GROUPS: { title: string; keys: (FilterListKey | 'posted')[] }[] = [
+  { title: 'Where', keys: ['states', 'cities', 'hqCities'] },
+  { title: 'The role', keys: ['types', 'posted'] },
+  { title: 'The employer', keys: ['companies', 'industries', 'companyTypes', 'growthStages'] },
+  {
+    title: 'Occupation and visa',
+    keys: ['anzscos', 'unitGroups', 'oscas', 'occupationLists', 'pathwayVisas'],
+  },
+  { title: 'Hiring', keys: ['sponsor', 'students'] },
+];
+
 /** How many filters are narrowing the list right now. */
 export function countActiveFilters(filters: FilterState): number {
   return (
@@ -160,6 +183,8 @@ interface Props {
   onChange: (next: FilterState) => void;
   onClear: () => void;
 }
+
+const BY_KEY = new Map(FIELDS.map((f) => [f.key, f]));
 
 export function Filters({ filters, options, counts, onChange, onClear }: Props) {
   const set = (patch: Partial<FilterState>) => onChange({ ...filters, ...patch });
@@ -232,40 +257,52 @@ export function Filters({ filters, options, counts, onChange, onClear }: Props) 
           />
         </div>
 
-        {FIELDS.map((field) => {
-          const select = (
-            <FilterSelect
-              key={field.key}
-              label={field.label}
-              tooltip={field.tooltip}
-              options={toOptions(field.key, options[field.key], field.format)}
-              selected={filters[field.key]}
-              onChange={(next) => set({ [field.key]: next } as Partial<FilterState>)}
-            />
-          );
-          return field.accent ? (
-            <div
-              key={field.key}
-              className={`fselect-sponsor${filters[field.key].length ? ' is-set' : ''}`}
-            >
-              {select}
-            </div>
-          ) : (
-            select
-          );
-        })}
+        {GROUPS.map((group) => (
+          <div className="filter-group" key={group.title}>
+            {group.keys.map((key) => {
+              if (key === 'posted') {
+                return (
+                  <FilterSelect
+                    key="posted"
+                    label="Posted"
+                    multiple={false}
+                    options={POSTED_WINDOWS.map((w) => ({
+                      ...w,
+                      count: counts?.postedWithinDays?.get(w.value) ?? 0,
+                    }))}
+                    selected={
+                      filters.postedWithinDays > 0 ? [String(filters.postedWithinDays)] : []
+                    }
+                    onChange={(next) => set({ postedWithinDays: Number(next[0] ?? 0) })}
+                  />
+                );
+              }
 
-        <FilterSelect
-          label="Posted"
-          multiple={false}
-          options={POSTED_WINDOWS.map((w) => ({
-            ...w,
-            count: counts?.postedWithinDays?.get(w.value) ?? 0,
-          }))}
-          selected={filters.postedWithinDays > 0 ? [String(filters.postedWithinDays)] : []}
-          onChange={(next) => set({ postedWithinDays: Number(next[0] ?? 0) })}
-        />
-
+              const field = BY_KEY.get(key);
+              if (!field) return null;
+              const select = (
+                <FilterSelect
+                  key={field.key}
+                  label={field.label}
+                  tooltip={field.tooltip}
+                  options={toOptions(field.key, options[field.key], field.format)}
+                  selected={filters[field.key]}
+                  onChange={(next) => set({ [field.key]: next } as Partial<FilterState>)}
+                />
+              );
+              return field.accent ? (
+                <div
+                  key={field.key}
+                  className={`fselect-sponsor${filters[field.key].length ? ' is-set' : ''}`}
+                >
+                  {select}
+                </div>
+              ) : (
+                select
+              );
+            })}
+          </div>
+        ))}
       </div>
 
       <ActiveFilters chips={chips} onClear={onClear} />

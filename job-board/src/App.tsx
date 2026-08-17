@@ -37,11 +37,13 @@ const AdminAddJob = lazy(() =>
   import('./components/AdminAddJob').then((m) => ({ default: m.AdminAddJob }))
 );
 
+
 const PAGE_SIZE = 10;
 
 const EMPTY_FILTERS: FilterState = {
   query: '',
   companies: [],
+  states: [],
   types: [],
   cities: [],
   industries: [],
@@ -83,6 +85,7 @@ const answer = (value: boolean | undefined): string[] => [
  */
 function matches(job: Job, filters: FilterState, postedAfter: number): boolean {
   if (!allows(filters.companies, job.company.name)) return false;
+  if (!allows(filters.states, job.state)) return false;
   if (!allows(filters.types, job.type)) return false;
   if (!allows(filters.cities, job.city)) return false;
   if (!overlaps(filters.industries, job.company.industries)) return false;
@@ -149,7 +152,11 @@ function App() {
   const [showDetail, setShowDetail] = useState(false);
   const [route, setRoute] = useState<Route>(() => parsePath(window.location.pathname).route);
   const [page, setPage] = useState(1);
-  const [filtersOpen, setFiltersOpen] = useState(true);
+  // Closed to begin with: the results are what the page is for, and a wall of
+  // controls above them asks a first-time reader to make decisions before they
+  // have seen anything to decide about. The toggle carries a count, so an
+  // active filter is never hidden.
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const detailRef = useRef<HTMLElement>(null);
   const listRef = useRef<HTMLElement>(null);
 
@@ -259,6 +266,7 @@ function App() {
 
     const pickers: Record<FilterListKey, (job: Job) => string[]> = {
       companies: (j) => [j.company.name],
+      states: (j) => [j.state],
       types: (j) => [j.type],
       cities: (j) => [j.city],
       industries: (j) => j.company.industries,
@@ -306,6 +314,7 @@ function App() {
 
     return {
       companies: from((j) => [j.company.name]),
+      states: from((j) => [j.state]),
       types: from((j) => [j.type]),
       cities: from((j) => [j.city]),
       industries: from((j) => j.company.industries),
@@ -397,7 +406,7 @@ function App() {
       <Header route={route} />
 
       <header className="page-intro">
-        <h1>Jobs at Melbourne startups, with migration pathways and visa info!</h1>
+        <h1>Jobs at Australian startups, with migration pathways and visa requirements!</h1>
       </header>
 
       <div className="filters-region" hidden={status === 'ready' && openJobs.length === 0}>
@@ -457,12 +466,8 @@ function App() {
               <div className="panel-empty">
                 <p className="panel-empty-title">No roles listed yet</p>
                 <p className="panel-note">
-                  We're checking roles by hand before they go up: reading the ad, matching the
-                  occupation and working out the visa pathways. The first ones land here shortly.
-                </p>
-                <p className="panel-note">
-                  In the meantime, {companyCount ? `${companyCount} ` : ''}Melbourne startups are
-                  hiring right now, and you can go to them directly.
+                  In the meantime, checkout the {companyCount ? `${companyCount} ` : ''} Australian startups are
+                  hiring right now!
                 </p>
                 <div className="panel-empty-actions">
                   <a className="btn btn-primary btn-small" href={pathFor('companies')}>

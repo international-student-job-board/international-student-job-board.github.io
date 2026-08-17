@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, Suspense, lazy, useState } from 'react';
 import { Job, jobLocation } from '../types';
 import { formatDate, orNotSpecified, NOT_SPECIFIED } from '../format';
 import {
@@ -24,6 +24,11 @@ import { jobShareUrl } from '../App';
 import { OUTBOUND, outboundHref, emailApplyHref, safeHref } from '../outbound';
 import { SITE_NAME, SITE_URL } from '../links';
 import { prettyLabels } from '../labels';
+
+/** Leaflet is the largest thing the site can load, so it waits to be asked. */
+const EmployerMap = lazy(() =>
+  import('./EmployerMap').then((m) => ({ default: m.EmployerMap }))
+);
 
 // The skilled-migration lists an occupation sits on.
 function OccupationLists({ lists }: { lists: string[] }) {
@@ -228,6 +233,7 @@ function ApplyButton({ url, jobTitle }: { url: string; jobTitle: string }) {
 
 export function JobDetail({ job }: { job: Job }) {
   const { company } = job;
+  const [mapOpen, setMapOpen] = useState(false);
   const occupations = resolveOccupations(job);
   const applyByEmail = job.applyUrl.trim().toLowerCase().startsWith('mailto:');
   const pathwayVisas = pathwayVisasFor(job);
@@ -423,6 +429,10 @@ export function JobDetail({ job }: { job: Job }) {
               </dd>
             </div>
           </dl>
+
+          <div className="detail-actions detail-actions-inline">
+            <ApplyButton url={job.applyUrl} jobTitle={job.title} />
+          </div>
         </section>
 
         <section className="detail-section">
@@ -455,10 +465,31 @@ export function JobDetail({ job }: { job: Job }) {
                 <dd className="fact-value">{company.employees}</dd>
               </div>
             )}
-            {company.hqCity && (
+            {company.state && (
               <div className="fact">
-                <dt className="fact-label">Head office</dt>
-                <dd className="fact-value">{company.hqCity}</dd>
+                <dt className="fact-label">State</dt>
+                <dd className="fact-value">{company.state}</dd>
+              </div>
+            )}
+            {(company.hqAddress || company.hqCity) && (
+              <div className="fact fact-location">
+                <dt className="fact-label">Location</dt>
+                <dd className="fact-value">
+                  {company.hqAddress || company.hqCity}
+                  {company.hqAddress && (
+                    <details
+                      className="employer-location"
+                      onToggle={(e) => setMapOpen((e.target as HTMLDetailsElement).open)}
+                    >
+                      <summary>Map</summary>
+                      {mapOpen && (
+                        <Suspense fallback={<p className="panel-note">Loading the map . . .</p>}>
+                          <EmployerMap address={company.hqAddress} state={company.state} />
+                        </Suspense>
+                      )}
+                    </details>
+                  )}
+                </dd>
               </div>
             )}
           </dl>

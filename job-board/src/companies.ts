@@ -17,6 +17,7 @@ const pick = (row: Record<string, string>, ...names: string[]) =>
 function toCompany(row: Record<string, string>): Company {
   return {
     name: pick(row, 'Company name').trim(),
+    state: pick(row, 'State').trim(),
     segment: pick(row, 'Segment').trim(),
     types: splitList(pick(row, 'Type')),
     industries: splitList(pick(row, 'Industries')),

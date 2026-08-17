@@ -57,6 +57,7 @@ export const FIELDS: Field[] = [
 
   // ---- The employer ------------------------------------------------------
   { key: 'Company name', label: 'Company name', type: 'text', required: true, placeholder: 'Acme' },
+  { key: 'State', label: 'State', type: 'text', placeholder: 'Victoria' },
   { key: 'Tagline', label: 'Tagline', type: 'textarea', maxLength: 300, placeholder: 'The company’s own one-liner.' },
   { key: 'Website', label: 'Website', type: 'url', placeholder: 'https://www.acme.com' },
   { key: 'LinkedIn', label: 'LinkedIn', type: 'url', placeholder: 'https://www.linkedin.com/company/acme' },
@@ -93,6 +94,7 @@ export const FIELD_GROUPS: { title: string; keys: string[] }[] = [
     title: 'The employer',
     keys: [
       'Company name',
+      'State',
       'Tagline',
       'Website',
       'LinkedIn',

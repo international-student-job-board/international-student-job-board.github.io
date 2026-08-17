@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Company,
   CompanySort,
@@ -41,6 +41,7 @@ const answerLabel = (value: string) =>
   value === 'yes' ? 'Yes' : value === 'no' ? 'No' : 'Not checked yet';
 
 type CompanyFilterKey =
+  | 'states'
   | 'industries'
   | 'companyTypes'
   | 'growthStages'
@@ -62,6 +63,7 @@ const FIELDS: {
   /** Given the accent, because they are what this audience came for. */
   accent?: boolean;
 }[] = [
+  { key: 'states', label: 'State', pick: (c) => [c.state] },
   { key: 'industries', label: 'Industry', pick: (c) => c.industries, format: prettyLabel },
   { key: 'companyTypes', label: 'Model & tech', pick: (c) => c.types, format: prettyLabel },
   { key: 'growthStages', label: 'Stage', pick: (c) => [c.growthStage], format: prettyLabel },
@@ -93,9 +95,19 @@ const FIELDS: {
   },
 ];
 
+/** The same grouping the job board uses, so the two pages read alike. */
+const GROUPS: { title: string; keys: CompanyFilterKey[] }[] = [
+  { title: 'Where', keys: ['states', 'hqCities'] },
+  { title: 'The company', keys: ['industries', 'companyTypes', 'growthStages', 'openRoles'] },
+  { title: 'Hiring', keys: ['sponsor', 'students'] },
+];
+
+const BY_KEY = new Map(FIELDS.map((f) => [f.key, f]));
+
 type CompanyFilters = Record<CompanyFilterKey, string[]>;
 
 const NO_FILTERS: CompanyFilters = {
+  states: [],
   industries: [],
   companyTypes: [],
   growthStages: [],
@@ -107,15 +119,31 @@ const NO_FILTERS: CompanyFilters = {
 
 const base = process.env.PUBLIC_URL || '';
 
+/**
+ * Cards per page.
+ *
+ * The list is 15,000 companies; rendering all of them is a browser laid out
+ * flat before it can paint anything. The map is exempt — it draws one pin per
+ * suburb, not one per company, and a map showing 25 of 15,000 would say
+ * something false about where the companies are.
+ */
+const PAGE_SIZE = 25;
+
 const uniqueSorted = (values: string[]) => Array.from(new Set(values)).sort();
 
-/** Every company on the Melbourne list. */
+/** Every company on the national list. */
 export function Companies() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<CompanyFilters>(NO_FILTERS);
-  const [filtersOpen, setFiltersOpen] = useState(true);
+  // Closed to begin with: the results are what the page is for, and a wall of
+  // controls above them asks a first-time reader to make decisions before they
+  // have seen anything to decide about. The toggle carries a count, so an
+  // active filter is never hidden.
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const topRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<View>('cards');
   const [sort, setSort] = useState<CompanySort>('openings');
   // Which card the pointer is on, so the map can open that suburb alongside it.
@@ -189,6 +217,32 @@ export function Companies() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companies, query, filters]);
 
+  // Back to the first page whenever the list underneath changes, so you are
+  // never left on page 40 of a set that now has three.
+  useEffect(() => {
+    setPage(1);
+  }, [query, filters, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageCompanies = shown.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  /**
+   * Turning a page puts you at the top of the new one.
+   *
+   * scrollIntoView rather than window.scrollTo, because on this page the window
+   * isn't what scrolls: the content sits in .about-panel, which has its own
+   * overflow. Asking the top of the list to come into view works whichever
+   * ancestor is doing the scrolling — the panel on a wide screen, the window
+   * once the panes stack. The window call stays for the stacked case, where
+   * there is a page scroll to reset as well.
+   */
+  const goToPage = (next: number) => {
+    setPage(next);
+    topRef.current?.scrollIntoView?.({ block: 'start' });
+    window.scrollTo?.({ top: 0 });
+  };
+
   const openings = shown.reduce((total, c) => total + c.openings, 0);
   const label = (value: string, format?: (v: string) => string) =>
     (format ? format(value) : value) || NOT_SPECIFIED;
@@ -209,9 +263,9 @@ export function Companies() {
   );
 
   return (
-    <div className="about">
+    <div className="about" ref={topRef}>
       <header className="page-intro">
-        <h1 id="companies-heading">Startups and scaleups founded in Victoria, Australia</h1>
+        <h1 id="companies-heading">Startups and scaleups founded in Australia</h1>
       </header>
 
       <section className="about-section" aria-labelledby="companies-heading">
@@ -255,37 +309,40 @@ export function Companies() {
                 />
               </div>
 
-              {FIELDS.map((field) => {
-                const select = (
-                  <FilterSelect
-                    label={field.label}
-                    tooltip={field.tooltip}
-                    options={options[field.key].map((v) => ({
-                      value: v,
-                      // The field's own labeller gets first refusal on a blank, because
-                      // "not specified" is not always the truest word for a gap — on the
-                      // hand-checked columns it means nobody has looked yet, which is a
-                      // different claim.
-                      label: label(v, field.format),
-                      count: counts[field.key].get(v) ?? 0,
-                    }))}
-                    selected={filters[field.key]}
-                    onChange={(next) => setFilters((prev) => ({ ...prev, [field.key]: next }))}
-                  />
-                );
-                return field.accent ? (
-                  <div
-                    key={field.key}
-                    className={`fselect-sponsor${filters[field.key].length ? ' is-set' : ''}`}
-                  >
-                    {select}
-                  </div>
-                ) : (
-                  <span key={field.key} className="fselect-wrap">
-                    {select}
-                  </span>
-                );
-              })}
+              {GROUPS.map((group) => (
+                <div className="filter-group" key={group.title}>
+                  {group.keys.map((key) => {
+                    const field = BY_KEY.get(key);
+                    if (!field) return null;
+                    const select = (
+                      <FilterSelect
+                        key={field.key}
+                        label={field.label}
+                        tooltip={field.tooltip}
+                        options={options[field.key].map((v) => ({
+                          value: v,
+                          label: label(v, field.format),
+                          count: counts[field.key].get(v) ?? 0,
+                        }))}
+                        selected={filters[field.key]}
+                        onChange={(next) =>
+                          setFilters((prev) => ({ ...prev, [field.key]: next }))
+                        }
+                      />
+                    );
+                    return field.accent ? (
+                      <div
+                        key={field.key}
+                        className={`fselect-sponsor${filters[field.key].length ? ' is-set' : ''}`}
+                      >
+                        {select}
+                      </div>
+                    ) : (
+                      select
+                    );
+                  })}
+                </div>
+              ))}
 
               <FilterSelect
                 label="Sort"
@@ -346,7 +403,7 @@ export function Companies() {
                 )}
                 {view !== 'map' && (
                   <ul className="company-grid">
-                    {shown.map((company) => (
+                    {pageCompanies.map((company) => (
                       <CompanyCard
                         key={company.name}
                         company={company}
@@ -356,6 +413,30 @@ export function Companies() {
                   </ul>
                 )}
               </div>
+            )}
+
+            {view !== 'map' && totalPages > 1 && (
+              <nav className="pagination" aria-label="Company pages">
+                <button
+                  type="button"
+                  className="page-btn"
+                  disabled={currentPage === 1}
+                  onClick={() => goToPage(currentPage - 1)}
+                >
+                  Prev
+                </button>
+                <span className="page-status" aria-live="polite">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  className="page-btn"
+                  disabled={currentPage === totalPages}
+                  onClick={() => goToPage(currentPage + 1)}
+                >
+                  Next
+                </button>
+              </nav>
             )}
           </>
         )}
