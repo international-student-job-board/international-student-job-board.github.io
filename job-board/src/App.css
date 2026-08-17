@@ -1847,6 +1847,35 @@ optgroup {
 }
 
 /**
+ * Hanging from whichever edge has room.
+ *
+ * Centred is the default and the best-looking; these two take over only when
+ * centring would put half the bubble past the window. The arrow moves with the
+ * bubble so it keeps pointing at the button it belongs to.
+ */
+.info-tip-bubble[data-align='left'] {
+  left: 0;
+  transform: none;
+}
+
+.info-tip-bubble[data-align='right'] {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+.info-tip-bubble[data-align='left']::after {
+  left: 8px;
+  transform: none;
+}
+
+.info-tip-bubble[data-align='right']::after {
+  left: auto;
+  right: 8px;
+  transform: none;
+}
+
+/**
  * Opening downward, for tooltips with no room above them.
  */
 .info-tip-bottom .info-tip-bubble {
