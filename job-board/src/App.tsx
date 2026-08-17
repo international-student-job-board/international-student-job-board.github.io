@@ -406,7 +406,7 @@ function App() {
       <Header route={route} />
 
       <header className="page-intro">
-        <h1>Jobs at Australian startups, with migration pathways and visa requirements!</h1>
+        <h1>Jobs at Australian startups, mapped with migration pathways and visa requirements!</h1>
       </header>
 
       <div className="filters-region" hidden={status === 'ready' && openJobs.length === 0}>
