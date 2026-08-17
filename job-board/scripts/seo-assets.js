@@ -50,6 +50,63 @@ function splitCsvLine(line) {
   return cells;
 }
 
+const esc = (value) =>
+  String(value ?? '').replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
+  );
+
+/**
+ * A real page for one address.
+ *
+ * GitHub Pages has no rewrites, so anything without a file of its own falls
+ * through to 404.html — which is the app, so a person sees the site, but the
+ * response carries a 404 and Google will not index a page that says "not
+ * found". Every route therefore gets a file, and every file gets the title,
+ * description, canonical and structured data for what is actually on it.
+ *
+ * The body is filled in too. The app replaces it the moment React mounts, but
+ * until then it is what a crawler reads without running any JavaScript at all.
+ */
+function writePage(template, { path: urlPath, title, description, schema, body }) {
+  const url = siteUrl + urlPath;
+  const head = template
+    .replace(/<title>[\s\S]*?<\/title>/, `<title>${esc(title)}</title>`)
+    .replace(
+      /(<meta name="description" content=")[^"]*(")/,
+      `$1${esc(description)}$2`
+    )
+    .replace(/(<link rel="canonical" href=")[^"]*(")/, `$1${esc(url)}$2`)
+    .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${esc(title)}$2`)
+    .replace(
+      /(<meta property="og:description" content=")[^"]*(")/,
+      `$1${esc(description)}$2`
+    )
+    .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${esc(url)}$2`);
+
+  const withSchema = schema
+    ? head.replace(
+        '</head>',
+        `<script type="application/ld+json">${JSON.stringify(schema)}</script></head>`
+      )
+    : head;
+
+  const html = body
+    ? withSchema.replace('<div id="root"></div>', `<div id="root">${body}</div>`)
+    : withSchema;
+
+  const dir = path.join(outDir, urlPath.replace(/^\//, ''));
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'index.html'), html);
+}
+
+/** The listing window, matched to MONTHS_LISTED in src/jobs.ts. */
+function lapses(posted) {
+  const date = new Date(`${posted}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return '';
+  date.setUTCMonth(date.getUTCMonth() + MONTHS_LISTED);
+  return date.toISOString().slice(0, 10);
+}
+
 function readJobs() {
   const file = DATA_FILES.find((f) => f.url === '/jobs.csv');
   const source = contentPath(file.name);
@@ -66,8 +123,20 @@ function readJobs() {
   return lines
     .slice(1)
     .map(splitCsvLine)
-    .map((cells) => ({ id: at(cells, 'Job ID').trim(), posted: at(cells, 'Date posted').trim() }))
-    .filter((job) => job.id && (!job.posted || job.posted >= oldest));
+    .map((cells) => ({
+      id: at(cells, 'Job ID').trim(),
+      title: at(cells, 'Job title').trim(),
+      company: at(cells, 'Company name').trim(),
+      tagline: at(cells, 'Tagline').trim(),
+      type: at(cells, 'Job type').trim(),
+      occupation: at(cells, 'ANZSCO occupation').trim(),
+      city: at(cells, 'Job city').trim(),
+      state: at(cells, 'State').trim(),
+      country: at(cells, 'Job country').trim(),
+      posted: at(cells, 'Date posted').trim(),
+      url: at(cells, 'Job URL').trim(),
+    }))
+    .filter((job) => job.id && job.title && (!job.posted || job.posted >= oldest));
 }
 
 const escape = (value) =>
@@ -79,8 +148,9 @@ function main() {
     process.exit(1);
   }
 
-  // 1. The single-page fallback.
+  // 1. The single-page fallback, for anything we haven't written a file for.
   const indexHtml = path.join(outDir, 'index.html');
+  const template = fs.readFileSync(indexHtml, 'utf8');
   fs.copyFileSync(indexHtml, path.join(outDir, '404.html'));
 
   // 2. The sitemap. Pages first, then roles; the board changes daily and a
@@ -99,6 +169,80 @@ function main() {
       changefreq: 'weekly',
     })),
   ];
+
+  // 2a. A real file per address, so each answers 200 with its own title,
+  //     description and structured data instead of falling through to 404.
+  const SITE = 'International Student Job Board';
+  [
+    {
+      path: '/companies',
+      title: `Australian startups and scaleups hiring | ${SITE}`,
+      description:
+        'Australian startups and scaleups that are hiring, with their state, industry, size, stage and whether they are an accredited visa sponsor.',
+    },
+    {
+      path: '/about',
+      title: `About and visa resources | ${SITE}`,
+      description:
+        'How this board works, and the official Home Affairs and ABS sources behind its visa, occupation and skills-assessment information.',
+    },
+    {
+      path: '/post',
+      title: `Post a job | ${SITE}`,
+      description:
+        'List an Australian startup role for international students and graduates. Every role is checked by hand before it goes up.',
+    },
+  ].forEach((page) => writePage(template, page));
+
+  jobs.forEach((job) => {
+    const where = [job.city, job.country].filter(Boolean).join(', ');
+    const description = [
+      `${job.title} at ${job.company}${where ? ` in ${where}` : ''}.`,
+      job.type ? `${job.type}.` : '',
+      job.occupation ? `ANZSCO occupation: ${job.occupation}.` : '',
+      'Visa pathways and skills assessment for international students and graduates.',
+    ]
+      .filter(Boolean)
+      .join(' ');
+
+    const validThrough = job.posted ? lapses(job.posted) : '';
+    writePage(template, {
+      path: `/jobs/${job.id}`,
+      title: `${job.title} at ${job.company}${where ? ` - ${where}` : ''} | ${SITE}`,
+      description,
+      schema: {
+        '@context': 'https://schema.org',
+        '@type': 'JobPosting',
+        title: job.title,
+        description,
+        identifier: { '@type': 'PropertyValue', name: SITE, value: job.id },
+        ...(job.posted ? { datePosted: job.posted } : {}),
+        ...(validThrough ? { validThrough } : {}),
+        ...(job.type ? { employmentType: job.type } : {}),
+        hiringOrganization: { '@type': 'Organization', name: job.company },
+        jobLocation: {
+          '@type': 'Place',
+          address: {
+            '@type': 'PostalAddress',
+            ...(job.city ? { addressLocality: job.city } : {}),
+            ...(job.state ? { addressRegion: job.state } : {}),
+            addressCountry: 'AU',
+          },
+        },
+        directApply: false,
+        url: `${siteUrl}/jobs/${job.id}`,
+      },
+      body: [
+        '<article>',
+        `<h1>${esc(job.title)}</h1>`,
+        `<p>${esc(job.company)}${job.tagline ? ` — ${esc(job.tagline)}` : ''}</p>`,
+        `<p>${esc([where, job.type].filter(Boolean).join(' · '))}</p>`,
+        job.occupation ? `<p>ANZSCO occupation: ${esc(job.occupation)}</p>` : '',
+        job.posted ? `<p>Posted ${esc(job.posted)}</p>` : '',
+        '</article>',
+      ].join(''),
+    });
+  });
 
   const sitemap = [
     '<?xml version="1.0" encoding="UTF-8"?>',
@@ -124,7 +268,10 @@ function main() {
     ['# https://www.robotstxt.org/robotstxt.html', 'User-agent: *', 'Allow: /', '', `Sitemap: ${siteUrl}/sitemap.xml`, ''].join('\n')
   );
 
-  console.log(`seo-assets: 404.html, robots.txt and sitemap.xml (${urls.length} URLs) -> ${target}`);
+  console.log(
+    `seo-assets: ${urls.length} pages written (${jobs.length} roles), plus 404.html, ` +
+      `robots.txt and sitemap.xml -> ${target}`
+  );
 }
 
 main();

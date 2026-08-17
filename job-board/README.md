@@ -1,4 +1,7 @@
-# International Student Job Board — app
+# The app
+
+How the data, build and deploy work. For what the project *is*, start at the
+[root README](../README.md).
 
 Create React App + TypeScript. Builds into `../docs/`, which GitHub Pages serves.
 
@@ -20,8 +23,6 @@ requests to it. Starting CRA alone gives you a board with no jobs on it — see
 
 The interface follows *Refactoring UI*; the reasoning behind specific choices is
 in comments in `src/App.css` next to the rules they explain.
-[DESIGN-AUDIT.md](DESIGN-AUDIT.md) measures the current screens against it and
-lists what is worth changing next, in order.
 
 ---
 
@@ -29,8 +30,8 @@ lists what is worth changing next, in order.
 
 | File | What it is | Written by |
 |---|---|---|
-| `content/victoria_startup_scaleup_companies_jobs_anzsco.csv` | **The board.** One row per open role, with the employer's columns repeated on each of its roles | exported; Add a job (`#/admin`) appends |
-| `content/victoria_companies.csv` | Every Victorian startup/scaleup, whether or not it has a role listed | exported |
+| `content/australia_startup_scaleup_companies_jobs_anzsco.csv` | **The board.** One row per open role, with the employer's columns repeated on each of its roles | exported; Add a job (`/admin`) appends |
+| `content/australia_companies.csv` | Every Australian startup/scaleup, whether or not it has a role listed | exported |
 | `content/occupation-index.json` | ANZSCO code → occupation, lists, visas, assessing authority | `npm run fetch-occupations` |
 | `content/skilled-occupations.json` | The full Home Affairs list the index is built from | `npm run fetch-occupations` |
 | `content/constants.json` | The job-type pick-list | Add a job |

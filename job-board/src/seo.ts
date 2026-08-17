@@ -16,7 +16,7 @@ export interface PageMeta {
 
 const HOME_DESCRIPTION =
   'Curated startup and scaleup jobs across Australia for international students ' +
-  'and recent graduates, with the visa pathway and skills assessment for each role.';
+  'and recent graduates, mapped with the migration pathways and visa requirements.';
 
 /** Title and description for an address. */
 export function metaFor(route: Route, job: Job | null, origin: string): PageMeta {
