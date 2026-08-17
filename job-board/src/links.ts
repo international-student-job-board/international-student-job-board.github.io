@@ -7,6 +7,9 @@ export const SITE_URL =
     ? `${window.location.origin}${window.location.pathname}`
     : 'https://international-student-job-board.github.io/';
 
+/** Where to say thank you, if anyone would like to. */
+export const KOFI_URL = 'https://ko-fi.com/milindi';
+
 export const REPO_URL =
   'https://github.com/international-student-job-board/international-student-job-board.github.io';
 
