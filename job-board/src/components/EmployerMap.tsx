@@ -43,7 +43,7 @@ export function EmployerMap({ address, state }: { address: string; state: string
       observer.disconnect();
       map.remove();
     };
-  }, [place, found?.exact]);
+  }, [place]);
 
   if (!place) {
     return (
@@ -56,10 +56,7 @@ export function EmployerMap({ address, state }: { address: string; state: string
   return (
     <div className="employer-map">
       <div className="employer-map-canvas" ref={containerRef} />
-      <p className="employer-map-note">
-        {place.suburb}
-        {found?.exact ? '' : ' — placed to the city, not the street'}
-      </p>
+      <p className="employer-map-note">{place.suburb}</p>
     </div>
   );
 }
