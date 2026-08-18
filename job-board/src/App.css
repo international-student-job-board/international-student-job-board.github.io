@@ -1829,9 +1829,14 @@ optgroup {
   text-transform: none;
   white-space: pre-line;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-  visibility: hidden;
+  /* Laid out only while open. Hidden with visibility it still had a box, and an
+     absolutely positioned 320px box hanging off a tip near the right edge of a
+     scrolling pane counts towards that pane's scrollable width — so every job
+     detail with a tip in its right-hand column grew a horizontal scrollbar
+     nobody had asked for and nothing was under. */
+  display: none;
   opacity: 0;
-  transition: opacity 0.12s ease;
+  transition: opacity 0.12s ease, display 0.12s allow-discrete;
   pointer-events: none;
 }
 
@@ -1892,8 +1897,18 @@ optgroup {
 
 .info-tip-btn:hover + .info-tip-bubble,
 .info-tip-btn:focus-visible + .info-tip-bubble {
-  visibility: visible;
+  display: block;
   opacity: 1;
+}
+
+/* The fade needs a value to start from, because the bubble is coming back from
+   display:none rather than from an existing box. Without this it appears at
+   full opacity, which is what a browser too old for the rule does anyway. */
+@starting-style {
+  .info-tip-btn:hover + .info-tip-bubble,
+  .info-tip-btn:focus-visible + .info-tip-bubble {
+    opacity: 0;
+  }
 }
 
 /* Occupation → eligible visas (collapsible). */
