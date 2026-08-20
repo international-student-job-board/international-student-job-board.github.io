@@ -1,6 +1,6 @@
 {
   "source": "https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list",
-  "retrieved": "2026-08-13",
+  "retrieved": "2026-08-20",
   "count": 714,
   "occupations": [
     {
@@ -101,9 +101,7 @@
       "codes": {
         "anzsco2013": "211111"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+2111+Actors%2c+Dancers+and+Other+Entertainers"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -905,7 +903,9 @@
       "codes": {
         "anzsco2013": "142112"
       },
-      "urls": {},
+      "urls": {
+        "anzsco2013": "/work-in-australia/Lists/Occupations/AllItems.aspx"
+      },
       "lists": [
         "ROL"
       ],
@@ -954,9 +954,7 @@
       "codes": {
         "anzsco2013": "393211"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+3932+Clothing+Trades+Workers"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -1658,9 +1656,7 @@
       "codes": {
         "anzsco2013": "234514"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/02C0CDFB20E514E6CA257B9D0009CEC2?opendocument"
-      },
+      "urls": {},
       "lists": [
         "MLTSSL"
       ],
@@ -2133,9 +2129,7 @@
       "codes": {
         "anzsco2013": "141111"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/59BD0BD70108A77ACA257B9500131015?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -2200,9 +2194,7 @@
       "codes": {
         "anzsco2013": "399512"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/A5C138A915692B1BCA257BA4000898FC?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -2246,9 +2238,7 @@
       "codes": {
         "anzsco2013": "141211"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/49544DD3D756A74DCA257B95001310A7?opendocument"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -2368,9 +2358,7 @@
       "codes": {
         "anzsco2013": "272111"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/85268B28FA678A7CCA257B9500131112?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -2707,9 +2695,7 @@
       "codes": {
         "anzsco2013": "134111"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/C377A70D2D925C47CA257B95007BD760?opendocument"
-      },
+      "urls": {},
       "lists": [
         "MLTSSL"
       ],
@@ -2779,9 +2765,7 @@
       "codes": {
         "anzsco2013": "252111"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/674956EDB10D8004CA257B950013115F?opendocument"
-      },
+      "urls": {},
       "lists": [
         "MLTSSL"
       ],
@@ -3150,9 +3134,7 @@
       "codes": {
         "anzsco2013": "222111"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/386F810B653AD9FDCA257B9500131044?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -3196,9 +3178,7 @@
       "codes": {
         "anzsco2013": "272611"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/BDCC90A9B15D4D87CA257B9500131081?opendocument"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -3365,9 +3345,7 @@
       "codes": {
         "anzsco2013": "149311"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/D54F03EF7BD26BEBCA257B95001310FB?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -3390,9 +3368,7 @@
       "codes": {
         "anzsco2013": "234311"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/0884EE2980A1F11FCA257B9D0009CEC5?opendocument"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -3619,9 +3595,7 @@
       "codes": {
         "anzsco2013": "212411"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/7CFEB85F20813D58CA257B950013112F?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -3730,9 +3704,7 @@
       "codes": {
         "anzsco2013": "121211"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/1E4E0F387B7C7B03CA257B950013112E?opendocument"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -3754,9 +3726,7 @@
       "codes": {
         "anzsco2013": "272199"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/85268B28FA678A7CCA257B9500131112?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -3821,9 +3791,7 @@
       "codes": {
         "anzsco2013": "121299"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/1E4E0F387B7C7B03CA257B950013112E?opendocument"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -4031,9 +3999,7 @@
       "codes": {
         "anzsco2013": "249212"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/12C53E3D1019EA90CA257B9500131134?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -4127,11 +4093,10 @@
     {
       "occupation": "Database Administrator",
       "codes": {
-        "anzsco2022": "262111",
-        "anzsco2013": "262111"
+        "anzsco2013": "262111",
+        "anzsco2022": "262111"
       },
       "urls": {
-        "anzsco2022": "https://www.abs.gov.au/statistics/classifications/anzsco-australian-and-new-zealand-standard-classification-occupations/2022/browse-classification/2/26/262/2621",
         "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/980B817E74A5280ACA257B95001310E9?opendocument"
       },
       "lists": [
@@ -4631,9 +4596,7 @@
       "codes": {
         "anzsco2013": "411712"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/E5C547161098DCD9CA257B950013113D?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -4827,9 +4790,7 @@
       "codes": {
         "anzsco2013": "249213"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+2492+Private+Tutors+and+Teachers"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -5020,9 +4981,7 @@
       "codes": {
         "anzsco2013": "249111"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/CCA2D898795B884ECA257B95001311B6?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -5598,9 +5557,7 @@
       "codes": {
         "anzsco2013": "441211"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/57EF59F7D7127DBBCA257B9500131087?opendocument"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -5950,9 +5907,7 @@
       "codes": {
         "anzsco2013": "251311"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/3866C79BF64795C1CA257B950013110A?opendocument"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -6008,9 +5963,7 @@
       "codes": {
         "anzsco2013": "234313"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/0884EE2980A1F11FCA257B9D0009CEC5?opendocument"
-      },
+      "urls": {},
       "lists": [
         "MLTSSL"
       ],
@@ -6097,9 +6050,7 @@
       "codes": {
         "anzsco2013": "234915"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/8C58B16568EC308BCA257B9D0009CEC6?opendocument"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -6325,9 +6276,7 @@
       "codes": {
         "anzsco2013": "333211"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/02E60D5E36570E4ECA257B95007BE900?opendocument"
-      },
+      "urls": {},
       "lists": [
         "MLTSSL"
       ],
@@ -6354,9 +6303,7 @@
       "codes": {
         "anzsco2013": "212314"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/9603EC35410E7493CA257B9500131100?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -6468,9 +6415,7 @@
       "codes": {
         "anzsco2013": "222199"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/386F810B653AD9FDCA257B9500131044?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -6493,9 +6438,7 @@
       "codes": {
         "anzsco2013": "222299"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/8BB3355F320E1504CA257B9500131123?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -6577,9 +6520,7 @@
       "codes": {
         "anzsco2013": "222312"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/E201250E17457CFFCA257B950013115E?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -6602,9 +6543,7 @@
       "codes": {
         "anzsco2013": "222211"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/8BB3355F320E1504CA257B9500131123?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -6689,9 +6628,7 @@
       "codes": {
         "anzsco2013": "451815"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/E9DF1C6D400AEF0DCA257B950013109C?opendocument"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -6734,9 +6671,7 @@
       "codes": {
         "anzsco2013": "149112"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/5D2A58DAA57B2B89CA257B95001310B5?opendocument"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -6971,8 +6906,7 @@
         "anzsco2013": "121212"
       },
       "urls": {
-        "anzsco2022": "https://www.abs.gov.au/statistics/classifications/anzsco-australian-and-new-zealand-standard-classification-occupations/2022/browse-classification/1/12/121/1216",
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/1E4E0F387B7C7B03CA257B950013112E?opendocument"
+        "anzsco2022": "https://www.abs.gov.au/statistics/classifications/anzsco-australian-and-new-zealand-standard-classification-occupations/2022/browse-classification/1/12/121/1216"
       },
       "lists": [
         "STSOL",
@@ -7091,9 +7025,7 @@
       "codes": {
         "anzsco2013": "234113"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/E51374C073A2CFDACA257B9D0009CEC4?opendocument"
-      },
+      "urls": {},
       "lists": [
         "MLTSSL"
       ],
@@ -7308,9 +7240,7 @@
       "codes": {
         "anzsco2013": "362211"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/94FCC2AC901189BCCA257B9500131032?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -7792,9 +7722,7 @@
       "codes": {
         "anzsco2013": "452312"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/840511A2F131EA94CA257B9500131190?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -7953,9 +7881,7 @@
       "codes": {
         "anzsco2013": "224213"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/8B479E6E0D993210CA257B950013113F?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -7978,9 +7904,7 @@
       "codes": {
         "anzsco2013": "512211"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+5122+Practice+Managers"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -8074,9 +7998,7 @@
       "codes": {
         "anzsco2013": "252212"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+2522+Complementary+Health+Therapists"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -8119,9 +8041,7 @@
       "codes": {
         "anzsco2013": "452313"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/840511A2F131EA94CA257B9500131190?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -8383,9 +8303,7 @@
       "codes": {
         "anzsco2013": "311415"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+3114+Science+Technicians"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -8648,9 +8566,7 @@
       "codes": {
         "anzsco2013": "262112"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/980B817E74A5280ACA257B95001310E9?opendocument"
-      },
+      "urls": {},
       "lists": [
         "MLTSSL"
       ],
@@ -8707,9 +8623,7 @@
       "codes": {
         "anzsco2013": "263212"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/910AD59EA0503603CA257B9500131096?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -8847,9 +8761,7 @@
       "codes": {
         "anzsco2013": "133311"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+1333+Importers%2c+Exporters+and+Wholesalers"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -9230,9 +9142,7 @@
       "codes": {
         "anzsco2013": "399912"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+3999+Other+Miscellaneous+Technicians+and+Trades+Workers"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -9315,9 +9225,7 @@
       "codes": {
         "anzsco2013": "272412"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/303BA551EBB90FB6CA257B950013110C?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -9384,9 +9292,7 @@
       "codes": {
         "anzsco2013": "399411"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/41B1F65B428FB313CA257BA4000898FE?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -9851,9 +9757,7 @@
       "codes": {
         "anzsco2013": "111399"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+1113+Legislators"
-      },
+      "urls": {},
       "lists": [
         "RSMS ROL"
       ],
@@ -9865,9 +9769,7 @@
       "codes": {
         "anzsco2013": "224912"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/325E7356D61A6AD8CA257B9500131038?opendocument"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -9889,9 +9791,7 @@
       "codes": {
         "anzsco2013": "224611"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/AB600B014A01C4FDCA257B9500131186?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -9961,9 +9861,7 @@
       "codes": {
         "anzsco2013": "311413"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/BC03F6954F0942BBCA257B9500131185?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -10075,9 +9973,7 @@
       "codes": {
         "anzsco2013": "341113"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/7C7E426E5F31ACA2CA257B9500131119?opendocument"
-      },
+      "urls": {},
       "lists": [
         "MLTSSL"
       ],
@@ -10245,9 +10141,7 @@
       "codes": {
         "anzsco2013": "399514"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/A5C138A915692B1BCA257BA4000898FC?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -10369,11 +10263,10 @@
     {
       "occupation": "Marine Biologist",
       "codes": {
-        "anzsco2022": "234516",
-        "anzsco2013": "234516"
+        "anzsco2013": "234516",
+        "anzsco2022": "234516"
       },
       "urls": {
-        "anzsco2022": "https://www.abs.gov.au/statistics/classifications/anzsco-australian-and-new-zealand-standard-classification-occupations/2022/browse-classification/2/23/234/2345",
         "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/02C0CDFB20E514E6CA257B9D0009CEC2?opendocument"
       },
       "lists": [
@@ -10405,9 +10298,7 @@
       "codes": {
         "anzsco2013": "231215"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+2312+Marine+Transport+Professionals"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -10426,9 +10317,7 @@
       "codes": {
         "anzsco2013": "231299"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+2312+Marine+Transport+Professionals"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -10447,9 +10336,7 @@
       "codes": {
         "anzsco2013": "225112"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/AE1439BCCD8FEA27CA257B950013113E?opendocument"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -10531,9 +10418,7 @@
       "codes": {
         "anzsco2013": "231211"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+2312+Marine+Transport+Professionals"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -10739,9 +10624,7 @@
       "codes": {
         "anzsco2013": "212112"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+2121+Artistic+Directors%2c+and+Media+Producers+and+Presenters"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -10852,9 +10735,7 @@
       "codes": {
         "anzsco2013": "311213"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/8C58683C1AF95C0CCA257B95001310A4?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -11265,9 +11146,7 @@
       "codes": {
         "anzsco2013": "234517"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/02C0CDFB20E514E6CA257B9D0009CEC2?opendocument"
-      },
+      "urls": {},
       "lists": [
         "MLTSSL"
       ],
@@ -11358,9 +11237,7 @@
       "codes": {
         "anzsco2013": "224913"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+2249+Other+Information+and+Organisation+Professionals"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -11793,9 +11670,7 @@
       "codes": {
         "anzsco2013": "211213"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/2818B62A8B94048FCA257B950013119B?opendocument"
-      },
+      "urls": {},
       "lists": [
         "MLTSSL"
       ],
@@ -11855,9 +11730,7 @@
       "codes": {
         "anzsco2013": "252213"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/F71E871C0C21BA3BCA257B9500131138?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -12042,9 +11915,7 @@
       "codes": {
         "anzsco2013": "212412"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/7CFEB85F20813D58CA257B950013112F?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -12283,9 +12154,7 @@
       "codes": {
         "anzsco2013": "251112"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/E2AF4F7C66071C46CA257B95001310F5?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -12432,9 +12301,7 @@
       "codes": {
         "anzsco2022": "311214"
       },
-      "urls": {
-        "anzsco2022": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/8C58683C1AF95C0CCA257B95001310A4?opendocument"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -12738,9 +12605,7 @@
       "codes": {
         "anzsco2022": "252112"
       },
-      "urls": {
-        "anzsco2022": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/674956EDB10D8004CA257B950013115F?opendocument"
-      },
+      "urls": {},
       "lists": [
         "MLTSSL"
       ],
@@ -13020,9 +12885,7 @@
       "codes": {
         "anzsco2013": "211411"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+2114+Visual+Arts+and+Crafts+Professionals"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -13104,9 +12967,7 @@
       "codes": {
         "anzsco2013": "234314"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+2343+Environmental+Scientists"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -13330,9 +13191,7 @@
       "codes": {
         "anzsco2013": "361113"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+3611+Animal+Attendants+and+Trainers"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -13672,8 +13531,7 @@
         "anzsco2013": "334111"
       },
       "urls": {
-        "anzsco2022": "https://www.abs.gov.au/statistics/classifications/anzsco-australian-and-new-zealand-standard-classification-occupations/2022/browse-classification/3/33/334/3341",
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/A21F0EF1A6760B1ACA257B95007BE8FB?opendocument"
+        "anzsco2022": "https://www.abs.gov.au/statistics/classifications/anzsco-australian-and-new-zealand-standard-classification-occupations/2022/browse-classification/3/33/334/3341"
       },
       "lists": [
         "MLTSSL",
@@ -13850,9 +13708,7 @@
       "codes": {
         "anzsco2013": "211412"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+2114+Visual+Arts+and+Crafts+Professionals"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -14086,9 +13942,7 @@
       "codes": {
         "anzsco2013": "311399"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/C1F8D64AF2341FD2CA257B95001310E2?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -14758,9 +14612,7 @@
       "codes": {
         "anzsco2013": "311313"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+3113+Primary+Products+Inspectors"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -14889,9 +14741,7 @@
       "codes": {
         "anzsco2013": "149412"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+1494+Transport+Services+Managers"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -14952,9 +14802,7 @@
       "codes": {
         "anzsco2013": "612115"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/BDEC266AF15299AFCA257B9500131140?opendocument"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -14976,9 +14824,7 @@
       "codes": {
         "anzsco2013": "224214"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/8B479E6E0D993210CA257B950013113F?opendocument"
-      },
+      "urls": {},
       "lists": [
         "STSOL"
       ],
@@ -15974,9 +15820,7 @@
       "codes": {
         "anzsco2013": "312611"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/CA2D7D60F2114842CA257B950013115D?opendocument"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -16361,9 +16205,7 @@
       "codes": {
         "anzsco2013": "121322"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/CC64A0BF11237EE3CA257B95001311A2?opendocument"
-      },
+      "urls": {},
       "lists": [
         "ROL",
         "CSOL"
@@ -16386,9 +16228,7 @@
       "codes": {
         "anzsco2013": "322211"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/F32DAFB1D961F22CCA257B95001310C6?opendocument"
-      },
+      "urls": {},
       "lists": [
         "MLTSSL",
         "CSOL"
@@ -16464,9 +16304,7 @@
       "codes": {
         "anzsco2013": "231213"
       },
-      "urls": {
-        "anzsco2013": "http://www.abs.gov.au/ausstats/abs%40.nsf/Product+Lookup/5DB7ACE6A79803F3CA257B950020B5F5?opendocument"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -18358,9 +18196,7 @@
       "codes": {
         "anzsco2013": "212114"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+2121+Artistic+Directors%2c+and+Media+Producers+and+Presenters"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
@@ -19684,9 +19520,7 @@
       "codes": {
         "anzsco2013": "399917"
       },
-      "urls": {
-        "anzsco2013": "http://www.ausstats.abs.gov.au/AUSSTATS/ABS%40.NSF/Product+Lookup/1220.0~2013%2c+Version+1.2~Chapter~UNIT+GROUP+3999+Other+Miscellaneous+Technicians+and+Trades+Workers"
-      },
+      "urls": {},
       "lists": [
         "ROL"
       ],
