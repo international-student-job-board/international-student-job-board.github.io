@@ -18,9 +18,11 @@
   --grey-50: hsl(192, 20%, 97%);
   --white: #ffffff;
 
-  /* The one accent, reserved ONLY for visa-sponsorship UI (the filter toggle
-     and the "sponsorship available" badge). Colour never carries that meaning
-     alone — the badge always says so in words too. Rotated 30° off pure green
+  /* The one accent, reserved for the handful of signals this audience is
+     actually filtering for: sponsorship, hiring international students, and
+     being in the latest SkillSelect round — the filter toggles and badges for
+     all three, and nothing else. Colour never carries that meaning alone —
+     the badge always says so in words too. Rotated 30° off pure green
      towards teal: the greys on this site are saturated at ~195°, and a hue in
      that direction sits with them instead of against them. Hue is doing the
      work here, not lightness — white text on it still lands at 5.05:1, and the

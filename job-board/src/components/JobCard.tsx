@@ -33,10 +33,10 @@ export function JobCard({ job, selected, onSelect }: Props) {
               <span className="flag flag-sponsor">Accredited sponsor</span>
             )}
             {job.company.hiresInternationalStudents && (
-              <span className="flag">Hires international students and graduates</span>
+              <span className="flag flag-sponsor">Hires international students and graduates</span>
             )}
             {job.invitedScore !== undefined && (
-              <span className="flag">Invited in the last round</span>
+              <span className="flag flag-sponsor">In the latest invitation round</span>
             )}
           </span>
         )}

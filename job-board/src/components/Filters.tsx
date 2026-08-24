@@ -9,7 +9,6 @@ import {
   MANUAL_REVIEW_NOTE,
   OCCUPATION_LIST_NOTE,
   OSCA_NOTE,
-  SKILLSELECT_INVITATION_ROUNDS_URL,
   UNIT_GROUP_NOTE,
   VISA_NAMES,
 } from '../references';
@@ -79,7 +78,7 @@ const anzscoLabel = (code: string) => codeLabel(code, occupationName(code));
 const invitedOccupationLabel = (code: string) => {
   const score = invitedScoreFor(code);
   const label = anzscoLabel(code);
-  return score === undefined ? label : `${label} (min. score: ${score})`;
+  return score === undefined ? label : `${label} - Min score is ${score}`;
 };
 
 const unitGroupLabel = (code: string) => codeLabel(code, unitGroupTitle(code));
@@ -132,10 +131,10 @@ const FIELDS: {
   { key: 'anzscos', label: 'ANZSCO occupations', format: anzscoLabel, tooltip: ANZSCO_NOTE },
   {
     key: 'invitedOccupations',
-    label: 'Invited in the last round',
+    label: 'In the latest invitation round',
     format: invitedOccupationLabel,
     tooltip: INVITED_ROUND_NOTE,
-    footerLink: { label: 'SkillSelect invitation rounds', href: SKILLSELECT_INVITATION_ROUNDS_URL },
+    accent: true,
   },
   {
     key: 'unitGroups',

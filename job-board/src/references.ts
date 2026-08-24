@@ -468,7 +468,7 @@ export const OSCA_NOTE =
 
 /** What the invited-round filter and tag mean, wherever a score is shown. */
 export const INVITED_ROUND_NOTE =
-  "The latest occupations and the minimum points score to receive an invitation to apply for the Skilled Independent visa (subclass 189), by the Department of Home Affairs.\n\n";
+  "The occupations and the minimum points score to receive an invitation to apply for the Skilled Independent visa (subclass 189), by the Department of Home Affairs in the latest invitation round in June, 2026.";
 
 /** How the two hand-checked columns are filled in, on both pages. */
 export const MANUAL_REVIEW_NOTE =

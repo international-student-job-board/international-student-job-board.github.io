@@ -503,7 +503,7 @@ function CompanyCard({
             <li className="flag flag-sponsor">Visa sponsorship available</li>
           )}
           {company.hiresInternationalStudents && (
-            <li className="flag">Hires international students and graduates</li>
+            <li className="flag flag-sponsor">Hires international students and graduates</li>
           )}
         </ul>
       )}

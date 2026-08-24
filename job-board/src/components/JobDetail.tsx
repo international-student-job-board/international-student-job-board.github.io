@@ -279,7 +279,10 @@ export function JobDetail({ job }: { job: Job }) {
             <span className="flag flag-sponsor">Accredited sponsor</span>
           )}
           {company.hiresInternationalStudents && (
-            <span className="flag">Hires international students and graduates</span>
+            <span className="flag flag-sponsor">Hires international students and graduates</span>
+          )}
+          {job.invitedScore !== undefined && (
+            <span className="flag flag-sponsor">In the latest invitation round</span>
           )}
           <ShareJob url={jobShareUrl(job.id)} title={job.title} />
         </div>
@@ -318,7 +321,7 @@ export function JobDetail({ job }: { job: Job }) {
           <dl className="visa-facts">
             <div className="fact">
               <dt className="fact-label">
-                Invited in the last round{' '}
+                In the latest invitation round{' '}
                 <InfoTooltip
                   text={INVITED_ROUND_NOTE}
                   label="What this means"
@@ -335,13 +338,13 @@ export function JobDetail({ job }: { job: Job }) {
                     referrerPolicy="strict-origin-when-cross-origin"
                     title="SkillSelect invitation rounds - official Home Affairs page"
                   >
-                    Minimum score {job.invitedScore}
+                    Yes, min score: {job.invitedScore}
                   </a>
                 ) : occupations.length > 0 ? (
                   // An occupation was matched but carries no score, which is the round
                   // saying so rather than us not having checked — unlike the sponsor and
                   // student columns, this isn't a "nobody's looked yet" gap.
-                  'Not invited in the last round'
+                  'Not invited in the latest round'
                 ) : (
                   NOT_SPECIFIED
                 )}
