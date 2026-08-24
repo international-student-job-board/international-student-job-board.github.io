@@ -672,6 +672,19 @@ optgroup {
   min-width: 0;
 }
 
+/* A source link travelling the same footer as the tooltip — same underline
+   treatment as the Clear button beside it, so both read as "acts on the
+   filter" rather than one looking like a stray hyperlink. */
+.fselect-foot-link {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: var(--fs-xs);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .fselect-foot {
   display: flex;
   align-items: center;

@@ -14,7 +14,9 @@ import {
   unitGroupsFor,
   unitGroupUrl,
   ANZSCO_NOTE,
+  INVITED_ROUND_NOTE,
   OSCA_NOTE,
+  SKILLSELECT_INVITATION_ROUNDS_URL,
   UNIT_GROUP_NOTE,
   VISA_DISCLAIMER,
 } from '../references';
@@ -314,6 +316,37 @@ export function JobDetail({ job }: { job: Job }) {
             />
           </h2>
           <dl className="visa-facts">
+            <div className="fact">
+              <dt className="fact-label">
+                Invited in the last round{' '}
+                <InfoTooltip
+                  text={INVITED_ROUND_NOTE}
+                  label="What this means"
+                  placement="bottom"
+                />
+              </dt>
+              <dd className="fact-value">
+                {job.invitedScore !== undefined ? (
+                  <a
+                    className="value-chip value-chip-link"
+                    href={SKILLSELECT_INVITATION_ROUNDS_URL}
+                    target="_blank"
+                    rel="noopener"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    title="SkillSelect invitation rounds - official Home Affairs page"
+                  >
+                    Minimum score {job.invitedScore}
+                  </a>
+                ) : occupations.length > 0 ? (
+                  // An occupation was matched but carries no score, which is the round
+                  // saying so rather than us not having checked — unlike the sponsor and
+                  // student columns, this isn't a "nobody's looked yet" gap.
+                  'Not invited in the last round'
+                ) : (
+                  NOT_SPECIFIED
+                )}
+              </dd>
+            </div>
             <div className="fact">
               <dt className="fact-label">
                 ANZSCO Occupation{occupations.length > 1 ? 's' : ''}{' '}

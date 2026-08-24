@@ -29,7 +29,7 @@ const JOB_COLUMNS = [
   'Job openings', 'Accredited sponsor', 'Hires international students',
   'Job title', 'Job type', 'ANZSCO occupation', 'ANZSCO 2022', 'ANZSCO 2013',
   'ANZSCO unit group', 'ANZSCO unit group title', 'OSCA occupation', 'OSCA code',
-  'Job city', 'Job country', 'Date posted', 'Job URL', 'Job ID',
+  'Job city', 'Job country', 'Date posted', 'Job URL', 'Job ID', 'Invited Score',
 ];
 
 const CONTENT_DIR = path.join(__dirname, '..', 'content');

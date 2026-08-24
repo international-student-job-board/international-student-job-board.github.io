@@ -56,6 +56,12 @@ export interface Job {
   /** OSCA, the classification that replaced ANZSCO in December 2024. */
   oscaCodes: string[];
   oscaNames: string[];
+  /**
+   * The minimum score SkillSelect invited at, in the round most recently fetched, for this
+   * role's matched occupation. Undefined when that occupation wasn't in it — not the same
+   * as a score of zero, so left unset rather than defaulted.
+   */
+  invitedScore?: number;
   city: string;
   /**
    * The state on this role's row.

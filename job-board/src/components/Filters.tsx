@@ -3,10 +3,13 @@ import {
   occupationListLabel,
   oscaName,
   unitGroupTitle,
+  invitedScoreFor,
   ANZSCO_NOTE,
+  INVITED_ROUND_NOTE,
   MANUAL_REVIEW_NOTE,
   OCCUPATION_LIST_NOTE,
   OSCA_NOTE,
+  SKILLSELECT_INVITATION_ROUNDS_URL,
   UNIT_GROUP_NOTE,
   VISA_NAMES,
 } from '../references';
@@ -33,6 +36,7 @@ export interface FilterState {
   growthStages: string[];
   hqCities: string[];
   anzscos: string[];
+  invitedOccupations: string[];
   unitGroups: string[];
   oscas: string[];
   occupationLists: string[];
@@ -55,6 +59,7 @@ export type FilterListKey =
   | 'growthStages'
   | 'hqCities'
   | 'anzscos'
+  | 'invitedOccupations'
   | 'unitGroups'
   | 'oscas'
   | 'occupationLists'
@@ -68,6 +73,14 @@ export type FilterOptions = Record<FilterListKey, string[]>;
 const codeLabel = (code: string, name: string) => (name ? `${code} - ${name}` : code);
 
 const anzscoLabel = (code: string) => codeLabel(code, occupationName(code));
+
+// "261313 - Software Engineer (min. 65)" — the score is the same for every job carrying
+// this code, so it reads as a fact about the occupation rather than about any one role.
+const invitedOccupationLabel = (code: string) => {
+  const score = invitedScoreFor(code);
+  const label = anzscoLabel(code);
+  return score === undefined ? label : `${label} (min. score: ${score})`;
+};
 
 const unitGroupLabel = (code: string) => codeLabel(code, unitGroupTitle(code));
 
@@ -100,6 +113,8 @@ const FIELDS: {
   format?: (value: string) => string;
   /** Shown on an "i" in the open panel, beside the count. */
   tooltip?: string;
+  /** A source link in the same footer, beside the tooltip. */
+  footerLink?: { label: string; href: string };
   /** Given the accent, because it is what this audience came for. */
   accent?: boolean;
 }[] = [
@@ -115,6 +130,13 @@ const FIELDS: {
   { key: 'growthStages', label: 'Stage', format: prettyLabel },
   { key: 'hqCities', label: 'Head office', format: prettyLabel },
   { key: 'anzscos', label: 'ANZSCO occupations', format: anzscoLabel, tooltip: ANZSCO_NOTE },
+  {
+    key: 'invitedOccupations',
+    label: 'Invited in the last round',
+    format: invitedOccupationLabel,
+    tooltip: INVITED_ROUND_NOTE,
+    footerLink: { label: 'SkillSelect invitation rounds', href: SKILLSELECT_INVITATION_ROUNDS_URL },
+  },
   {
     key: 'unitGroups',
     label: 'ANZSCO unit group',
@@ -161,7 +183,7 @@ const GROUPS: { title: string; keys: (FilterListKey | 'posted')[] }[] = [
   { title: 'The employer', keys: ['companies', 'industries', 'companyTypes', 'growthStages'] },
   {
     title: 'Occupation and visa',
-    keys: ['anzscos', 'unitGroups', 'oscas', 'occupationLists', 'pathwayVisas'],
+    keys: ['invitedOccupations', 'anzscos', 'unitGroups', 'oscas', 'occupationLists', 'pathwayVisas'],
   },
   { title: 'Hiring', keys: ['sponsor', 'students'] },
 ];
@@ -285,6 +307,7 @@ export function Filters({ filters, options, counts, onChange, onClear }: Props) 
                   key={field.key}
                   label={field.label}
                   tooltip={field.tooltip}
+                  footerLink={field.footerLink}
                   options={toOptions(field.key, options[field.key], field.format)}
                   selected={filters[field.key]}
                   onChange={(next) => set({ [field.key]: next } as Partial<FilterState>)}

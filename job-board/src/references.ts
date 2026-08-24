@@ -425,6 +425,39 @@ export function unitGroupUrl(code: string): string | undefined {
   return `${ANZSCO_BROWSE}/${path}`;
 }
 
+// ---- SkillSelect invitation rounds -----------------------------------------
+
+// Home Affairs' own page for the round that "Invited Score" is read off, in the data
+// pipeline that produces jobs.csv.
+export const SKILLSELECT_INVITATION_ROUNDS_URL =
+  'https://immi.homeaffairs.gov.au/visas/working-in-australia/skillselect/invitation-rounds';
+
+/**
+ * Minimum score by ANZSCO code, for whichever occupations the latest SkillSelect round
+ * invited. Neither reference file has this either — like the unit-group titles, it comes
+ * only from the jobs CSV's own "Invited Score" column, so the loader registers what it saw
+ * and the filter reads it back.
+ */
+let INVITED_SCORES: Record<string, number> = {};
+
+export function setInvitedScores(scores: Record<string, number>): void {
+  INVITED_SCORES = scores;
+}
+
+/** The minimum score SkillSelect invited that occupation at, or undefined if it wasn't. */
+export function invitedScoreFor(code: string): number | undefined {
+  return INVITED_SCORES[code.trim()];
+}
+
+/**
+ * A role's occupation codes, but only when the role was in the latest SkillSelect
+ * invitation round — the empty list otherwise, so it drops out of a filter built from this
+ * rather than showing up unselectable.
+ */
+export function invitedOccupationCodesFor(job: Job): string[] {
+  return job.invitedScore === undefined ? [] : occupationCodesFor(job);
+}
+
 /** What OSCA is, wherever one of its codes is shown. */
 export const OSCA_NOTE =
   'OSCA - Occupation Standard Classification for Australia.\n\n' +
@@ -432,6 +465,10 @@ export const OSCA_NOTE =
   'not yet used in visa processing. Visa eligibility still depends on the ' +
   'ANZSCO occupation, so treat OSCA as context rather than as what a visa is ' +
   'assessed against.';
+
+/** What the invited-round filter and tag mean, wherever a score is shown. */
+export const INVITED_ROUND_NOTE =
+  "The latest occupations and the minimum points score to receive an invitation to apply for the Skilled Independent visa (subclass 189), by the Department of Home Affairs.\n\n";
 
 /** How the two hand-checked columns are filled in, on both pages. */
 export const MANUAL_REVIEW_NOTE =

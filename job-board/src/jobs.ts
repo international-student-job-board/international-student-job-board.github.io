@@ -5,10 +5,19 @@ import { Job, Company } from './types';
 import { parseCsv, splitList, splitNames, triState, anzscoCodes, unitGroupCodes } from './csv';
 import { loadCompanies } from './companies';
 import { dateValue } from './format';
-import { setUnitGroupTitles } from './references';
+import { setUnitGroupTitles, setInvitedScores } from './references';
 import { dataUrl } from './dataUrl';
 
 const JOBS_URL = dataUrl('/jobs.csv');
+
+/** "80" -> 80, "" -> undefined. A blank cell means the occupation wasn't invited, which is
+ * not the same thing as a score of zero. */
+function invitedScore(value: string | undefined): number | undefined {
+  const trimmed = (value ?? '').trim();
+  if (!trimmed) return undefined;
+  const parsed = Number.parseInt(trimmed, 10);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
 
 /** The CSV's column names, in file order. */
 export const COLUMNS = [
@@ -42,6 +51,7 @@ export const COLUMNS = [
   'Date posted',
   'Job URL',
   'Job ID',
+  'Invited Score',
 ] as const;
 
 function toCompany(row: Record<string, string>): Company {
@@ -102,6 +112,7 @@ function toJob(row: Record<string, string>, company: Company): Job {
     anzscoUnitGroupTitles: splitNames(row['ANZSCO unit group title']),
     oscaCodes: anzscoCodes(row['OSCA code']),
     oscaNames: splitNames(row['OSCA occupation']),
+    invitedScore: invitedScore(row['Invited Score']),
     city: (row['Job city'] ?? '').trim(),
     state: (row['State'] ?? '').trim(),
     country: (row['Job country'] ?? '').trim(),
@@ -126,6 +137,19 @@ export function toJobs(rows: Record<string, string>[]): Job[] {
     });
   }
   setUnitGroupTitles(titles);
+
+  // Likewise the invited scores: SkillSelect scores an occupation, not a row, so every code
+  // a row carries gets the same score. The first row to name a code wins, same as titles
+  // above — every row for one occupation carries the same figure anyway.
+  const scores: Record<string, number> = {};
+  for (const row of rows) {
+    const score = invitedScore(row['Invited Score']);
+    if (score === undefined) continue;
+    for (const code of [...anzscoCodes(row['ANZSCO 2022']), ...anzscoCodes(row['ANZSCO 2013'])]) {
+      if (!(code in scores)) scores[code] = score;
+    }
+  }
+  setInvitedScores(scores);
 
   return rows
     .map((row) => {

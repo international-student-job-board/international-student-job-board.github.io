@@ -9,6 +9,9 @@ interface Props {
 
 export function JobCard({ job, selected, onSelect }: Props) {
   const meta = [job.type, jobLocation(job)].filter(Boolean).join(' · ');
+  const hasFlags =
+    job.company.accreditedSponsor || job.company.hiresInternationalStudents ||
+    job.invitedScore !== undefined;
   return (
     <li>
       <button
@@ -24,9 +27,17 @@ export function JobCard({ job, selected, onSelect }: Props) {
         <span className="job-card-meta job-card-posted">
           {job.posted ? `Posted ${formatDate(job.posted)}` : 'Not specified'}
         </span>
-        {job.company.accreditedSponsor && (
+        {hasFlags && (
           <span className="job-card-flags">
-            <span className="flag flag-sponsor">Accredited sponsor</span>
+            {job.company.accreditedSponsor && (
+              <span className="flag flag-sponsor">Accredited sponsor</span>
+            )}
+            {job.company.hiresInternationalStudents && (
+              <span className="flag">Hires international students and graduates</span>
+            )}
+            {job.invitedScore !== undefined && (
+              <span className="flag">Invited in the last round</span>
+            )}
           </span>
         )}
       </button>

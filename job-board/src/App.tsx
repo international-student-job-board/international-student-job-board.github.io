@@ -10,6 +10,7 @@ import {
   occupationListsFor,
   oscaCodesFor,
   unitGroupCodesFor,
+  invitedOccupationCodesFor,
 } from './references';
 import { Header } from './components/Header';
 import { Route, parsePath, pathFor, pathFromLegacyHash } from './routes';
@@ -51,6 +52,7 @@ const EMPTY_FILTERS: FilterState = {
   growthStages: [],
   hqCities: [],
   anzscos: [],
+  invitedOccupations: [],
   unitGroups: [],
   oscas: [],
   occupationLists: [],
@@ -92,6 +94,9 @@ function matches(job: Job, filters: FilterState, postedAfter: number): boolean {
   if (!overlaps(filters.companyTypes, job.company.types)) return false;
   if (!allows(filters.growthStages, job.company.growthStage)) return false;
   if (!allows(filters.hqCities, job.company.hqCity)) return false;
+  // Empty unless the role was in the latest SkillSelect round, so an unselected filter
+  // still narrows nothing while a selected one only ever matches invited roles.
+  if (!overlaps(filters.invitedOccupations, invitedOccupationCodesFor(job))) return false;
   // A role can map to several occupations, so it matches if any of them do.
   if (!overlaps(filters.anzscos, occupationCodesFor(job))) return false;
   // The occupations' own visas are what the detail page shows as pathways, so filtering
@@ -274,6 +279,7 @@ function App() {
       growthStages: (j) => [j.company.growthStage],
       hqCities: (j) => [j.company.hqCity],
       anzscos: occupationCodesFor,
+      invitedOccupations: invitedOccupationCodesFor,
       unitGroups: unitGroupCodesFor,
       oscas: oscaCodesFor,
       occupationLists: occupationListsFor,
@@ -321,6 +327,7 @@ function App() {
       companyTypes: from((j) => j.company.types),
       growthStages: from((j) => [j.company.growthStage]),
       hqCities: from((j) => [j.company.hqCity]),
+      invitedOccupations: uniqueSorted(openJobs.flatMap(invitedOccupationCodesFor)),
       anzscos: from(occupationCodesFor),
       unitGroups: from(unitGroupCodesFor),
       oscas: from(oscaCodesFor),

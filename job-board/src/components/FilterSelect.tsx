@@ -20,6 +20,8 @@ interface Props {
    * What the filter means, on an "i" in the open panel's footer.
    */
   tooltip?: string;
+  /** A source link, in that same footer beside the tooltip. */
+  footerLink?: { label: string; href: string };
 }
 
 /** Longer lists get a filter box; short ones are faster to just read. */
@@ -35,6 +37,7 @@ export function FilterSelect({
   onChange,
   multiple = true,
   tooltip,
+  footerLink,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -184,6 +187,17 @@ export function FilterSelect({
           <div className="fselect-foot">
             <span className="fselect-foot-info">
               {tooltip && <InfoTooltip text={tooltip} label={`What "${label}" means`} />}
+              {footerLink && (
+                <a
+                  className="fselect-foot-link"
+                  href={footerLink.href}
+                  target="_blank"
+                  rel="noopener"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                >
+                  {footerLink.label}
+                </a>
+              )}
               <span className="fselect-status">
                 {selected.length > 0 ? `${selected.length} selected` : 'None selected'}
               </span>
