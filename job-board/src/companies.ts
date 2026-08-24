@@ -28,7 +28,6 @@ function toCompany(row: Record<string, string>): Company {
     hqAddress: pick(row, 'HQ address').trim(),
     tagline: pick(row, 'Tagline').trim(),
     linkedin: pick(row, 'LinkedIn').trim(),
-    profile: pick(row, 'Profile').trim(),
     openings: Number.parseInt(pick(row, 'Job openings'), 10) || 0,
     accreditedSponsor: triState(pick(row, 'Accredited sponsor', 'Sponsor visa available')),
     hiresInternationalStudents: triState(pick(row, 'Hires international students')),

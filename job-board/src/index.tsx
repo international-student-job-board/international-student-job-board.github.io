@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import { loadOccupations, loadOscaOccupations } from './references';
+import { loadOccupations, loadOscaOccupations, loadInvitationRound } from './references';
 import { loadConstants } from './constants';
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
@@ -14,7 +14,12 @@ const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
  * inside render, and threading a promise through all of that to save two small files at
  * boot would not be a trade worth making.
  */
-Promise.allSettled([loadOccupations(), loadOscaOccupations(), loadConstants()]).then((results) => {
+Promise.allSettled([
+  loadOccupations(),
+  loadOscaOccupations(),
+  loadConstants(),
+  loadInvitationRound(),
+]).then((results) => {
   results
     .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
     .forEach((r) => console.warn('Reference data unavailable:', r.reason));

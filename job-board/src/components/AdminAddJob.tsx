@@ -66,7 +66,6 @@ export function AdminAddJob() {
       Tagline: company.tagline || prev.Tagline,
       Website: company.website || prev.Website,
       LinkedIn: company.linkedin || prev.LinkedIn,
-      Profile: company.profile || prev.Profile,
       Segment: company.segment || prev.Segment,
       Type: company.types.join('; ') || prev.Type,
       Industries: company.industries.join('; ') || prev.Industries,

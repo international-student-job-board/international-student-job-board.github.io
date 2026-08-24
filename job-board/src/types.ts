@@ -20,8 +20,6 @@ export interface Company {
   /** The company's own one-liner. */
   tagline: string;
   linkedin: string;
-  /** Its page on whichever startup directory the row was compiled from. */
-  profile: string;
   openings: number;
   /**
    * The two migration answers, and both are three-valued on purpose: yes, no, or nobody has

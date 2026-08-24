@@ -15,6 +15,7 @@ import {
   unitGroupUrl,
   ANZSCO_NOTE,
   INVITED_ROUND_NOTE,
+  invitationRoundLabel,
   OSCA_NOTE,
   SKILLSELECT_INVITATION_ROUNDS_URL,
   UNIT_GROUP_NOTE,
@@ -237,6 +238,7 @@ export function JobDetail({ job }: { job: Job }) {
   const { company } = job;
   const [mapOpen, setMapOpen] = useState(false);
   const occupations = resolveOccupations(job);
+  const invitedRound = invitationRoundLabel();
   const applyByEmail = job.applyUrl.trim().toLowerCase().startsWith('mailto:');
   const pathwayVisas = pathwayVisasFor(job);
   const assessors = assessorsFor(job);
@@ -339,12 +341,13 @@ export function JobDetail({ job }: { job: Job }) {
                     title="SkillSelect invitation rounds - official Home Affairs page"
                   >
                     Yes, min score: {job.invitedScore}
+                    {invitedRound && ` (${invitedRound} round)`}
                   </a>
                 ) : occupations.length > 0 ? (
                   // An occupation was matched but carries no score, which is the round
                   // saying so rather than us not having checked — unlike the sponsor and
                   // student columns, this isn't a "nobody's looked yet" gap.
-                  'Not invited in the latest round'
+                  `Not invited in the latest round${invitedRound ? ` (${invitedRound})` : ''}`
                 ) : (
                   NOT_SPECIFIED
                 )}

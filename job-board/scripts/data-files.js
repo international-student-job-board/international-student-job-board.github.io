@@ -25,7 +25,7 @@ const path = require('path');
 // these two must agree, and the header line in the file is what proves it.
 const JOB_COLUMNS = [
   'Company name', 'State', 'Segment', 'Type', 'Website', 'Growth stage', 'Employees',
-  'Industries', 'HQ city', 'HQ address', 'Tagline', 'LinkedIn', 'Profile',
+  'Industries', 'HQ city', 'HQ address', 'Tagline', 'LinkedIn',
   'Job openings', 'Accredited sponsor', 'Hires international students',
   'Job title', 'Job type', 'ANZSCO occupation', 'ANZSCO 2022', 'ANZSCO 2013',
   'ANZSCO unit group', 'ANZSCO unit group title', 'OSCA occupation', 'OSCA code',
@@ -82,6 +82,14 @@ const DATA_FILES = [
       assessment: [],
       skills: [],
     },
+  },
+  // Which SkillSelect round the jobs CSV's "Invited Score" column was read
+  // off, written by find-startups/build.py alongside it.
+  {
+    name: 'invitation_round.json',
+    url: '/data/invitation-round.json',
+    publicPath: 'data/invitation-round.json',
+    fallback: { retrieved: '', roundDate: '' },
   },
 ];
 

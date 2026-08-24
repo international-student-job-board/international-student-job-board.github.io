@@ -458,6 +458,30 @@ export function invitedOccupationCodesFor(job: Job): string[] {
   return job.invitedScore === undefined ? [] : occupationCodesFor(job);
 }
 
+// Which round "Invited Score" was read off — content/invitation_round.json, written by
+// find-startups/build.py alongside the CSVs, since that date belongs to the round, not to
+// any one job's row.
+let INVITATION_ROUND_DATE = '';
+
+export async function loadInvitationRound(): Promise<void> {
+  const res = await fetch(`${process.env.PUBLIC_URL || ''}/data/invitation-round.json`);
+  if (!res.ok) throw new Error(`Could not load the invitation round (${res.status})`);
+  const payload = (await res.json()) as { roundDate?: string };
+  INVITATION_ROUND_DATE = payload.roundDate ?? '';
+}
+
+/** Replaces the whole reference. Used by tests to stand in a fixture. */
+export function setInvitationRoundDate(iso: string): void {
+  INVITATION_ROUND_DATE = iso;
+}
+
+/** "2026-06-04" -> "June 2026", or '' if the round date isn't known. */
+export function invitationRoundLabel(): string {
+  const date = new Date(`${INVITATION_ROUND_DATE}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('en-AU', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+}
+
 /** What OSCA is, wherever one of its codes is shown. */
 export const OSCA_NOTE =
   'OSCA - Occupation Standard Classification for Australia.\n\n' +

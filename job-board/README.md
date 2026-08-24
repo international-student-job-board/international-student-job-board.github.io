@@ -51,10 +51,11 @@ came, and a companies file that fails to load costs the merge, not the board.
 
 ```
 Company name, Segment, Type, Website, Growth stage, Employees, Industries,
-HQ city, HQ address, Tagline, LinkedIn, Profile, Job openings,
+HQ city, HQ address, Tagline, LinkedIn, Job openings,
 Accredited sponsor, Hires international students,          ← the employer
 Job title, Job type, ANZSCO occupation, ANZSCO 2022, ANZSCO 2013,
-Job city, Job country, Date posted, Job URL, Job ID        ← the role
+Job city, Job country, Date posted, Job URL, Job ID,
+Invited Score                                               ← the role
 ```
 
 `src/jobs.ts` holds this column list and `scripts/data-files.js` holds a copy
