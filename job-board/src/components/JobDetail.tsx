@@ -340,8 +340,8 @@ export function JobDetail({ job }: { job: Job }) {
                     referrerPolicy="strict-origin-when-cross-origin"
                     title="SkillSelect invitation rounds - official Home Affairs page"
                   >
-                    Yes, min score: {job.invitedScore}
-                    {invitedRound && ` (${invitedRound} round)`}
+                    Yes, min score {job.invitedScore}
+                    {invitedRound && ` (${invitedRound})`}
                   </a>
                 ) : occupations.length > 0 ? (
                   // An occupation was matched but carries no score, which is the round
