@@ -107,7 +107,7 @@ export function About() {
       <section className="about-section" aria-labelledby="scope-heading">
         <h2 id="scope-heading">Where we start</h2>
         <p>
-          We are currently showing <strong>startups and scaleups across Australia</strong>, and will expand to more countries over time.
+          We are currently showing <strong>startups and scaleups across Australia</strong> sourced from each state's open-access database of jobs and businesses, and will expand to more countries over time.
         </p>
         <p>
          We are not migration lawyers, please work with registered migration agents or lawyers for any visa advice. Always check the <a href="https://immi.homeaffairs.gov.au/" target="_blank" rel="noopener"
