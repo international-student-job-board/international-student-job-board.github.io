@@ -16,6 +16,11 @@ const job = (over: Partial<Job> = {}): Job =>
     country: 'Australia',
     posted: '2026-07-01',
     applyUrl: 'https://acme.test/apply',
+    employmentType: '',
+    jobLevel: '',
+    workArrangement: '',
+    educationLevels: [],
+    salary: { isEstimate: false, levelsUrl: '' },
     company: {
       name: 'Acme',
       segment: '',
@@ -113,6 +118,44 @@ describe('JobPosting structured data', () => {
     expect(bare.datePosted).toBeUndefined();
     expect(bare.employmentType).toBeUndefined();
     expect(bare.validThrough).toBeUndefined();
+  });
+
+  test('a mapped employment type and a published salary reach the structured data', () => {
+    const s = jobPostingSchema(
+      job({
+        employmentType: 'Full-time',
+        workArrangement: 'Remote',
+        salary: {
+          base: { minAud: 95000, maxAud: 110000, currency: 'AUD' },
+          isEstimate: false,
+          levelsUrl: '',
+        },
+      }),
+      `${ORIGIN}/jobs/7`,
+      ''
+    ) as Record<string, any>;
+    expect(s.employmentType).toBe('FULL_TIME');
+    expect(s.jobLocationType).toBe('TELECOMMUTE');
+    expect(s.baseSalary).toMatchObject({
+      '@type': 'MonetaryAmount',
+      currency: 'AUD',
+      value: { minValue: 95000, maxValue: 110000 },
+    });
+  });
+
+  test('a levels.fyi estimate is kept out of the structured data', () => {
+    const s = jobPostingSchema(
+      job({
+        salary: {
+          base: { minAud: 95000, maxAud: 110000, currency: 'USD' },
+          isEstimate: true,
+          levelsUrl: 'https://www.levels.fyi/jobs?jobId=1',
+        },
+      }),
+      `${ORIGIN}/jobs/7`,
+      ''
+    ) as Record<string, any>;
+    expect(s.baseSalary).toBeUndefined();
   });
 
   test('the pages that are not a role describe the site instead', () => {

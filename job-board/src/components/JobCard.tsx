@@ -1,5 +1,5 @@
-import { Job, jobLocation } from '../types';
-import { formatDate } from '../format';
+import { Job, hasSalary, salaryRangeAud, jobLocation } from '../types';
+import { formatDate, formatSalary } from '../format';
 
 interface Props {
   job: Job;
@@ -8,7 +8,15 @@ interface Props {
 }
 
 export function JobCard({ job, selected, onSelect }: Props) {
-  const meta = [job.type, jobLocation(job)].filter(Boolean).join(' · ');
+  const pay = hasSalary(job.salary) ? salaryRangeAud(job.salary) : null;
+  const meta = [
+    job.type,
+    job.workArrangement,
+    jobLocation(job),
+    pay ? `${formatSalary(pay[0], pay[1], 'AUD')}${job.salary.isEstimate ? ' est.' : ''}` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
   const hasFlags =
     job.company.accreditedSponsor || job.company.hiresInternationalStudents ||
     job.invitedScore !== undefined;

@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
-import { Job, jobLocation } from './types';
+import { Job, hasSalary, salaryRangeAud, jobLocation } from './types';
 import { loadJobs, isRecent, MONTHS_LISTED } from './jobs';
 import { loadCompanies } from './companies';
 import { dateValue, todayISO } from './format';
@@ -46,6 +46,10 @@ const EMPTY_FILTERS: FilterState = {
   companies: [],
   states: [],
   types: [],
+  employmentTypes: [],
+  jobLevels: [],
+  workArrangements: [],
+  educationLevels: [],
   cities: [],
   industries: [],
   companyTypes: [],
@@ -60,6 +64,8 @@ const EMPTY_FILTERS: FilterState = {
   sponsor: [],
   students: [],
   postedWithinDays: 0,
+  salaryMin: 0,
+  salaryMax: 0,
 };
 
 /** The value a filter uses to mean "roles that don't say". */
@@ -89,6 +95,10 @@ function matches(job: Job, filters: FilterState, postedAfter: number): boolean {
   if (!allows(filters.companies, job.company.name)) return false;
   if (!allows(filters.states, job.state)) return false;
   if (!allows(filters.types, job.type)) return false;
+  if (!allows(filters.employmentTypes, job.employmentType)) return false;
+  if (!allows(filters.jobLevels, job.jobLevel)) return false;
+  if (!allows(filters.workArrangements, job.workArrangement)) return false;
+  if (!overlaps(filters.educationLevels, job.educationLevels)) return false;
   if (!allows(filters.cities, job.city)) return false;
   if (!overlaps(filters.industries, job.company.industries)) return false;
   if (!overlaps(filters.companyTypes, job.company.types)) return false;
@@ -113,6 +123,16 @@ function matches(job: Job, filters: FilterState, postedAfter: number): boolean {
   if (postedAfter > 0) {
     const posted = dateValue(job.posted);
     if (!Number.isFinite(posted) || posted < postedAfter) return false;
+  }
+
+  // Salary: a role passes when its AUD span overlaps the asked range. A role with
+  // no pay data can't be shown to overlap, so it drops out once the filter is on.
+  if (filters.salaryMin > 0 || filters.salaryMax > 0) {
+    const span = hasSalary(job.salary) ? salaryRangeAud(job.salary) : null;
+    if (!span) return false;
+    const lo = filters.salaryMin || 0;
+    const hi = filters.salaryMax || Number.POSITIVE_INFINITY;
+    if (span[1] < lo || span[0] > hi) return false;
   }
 
   const q = filters.query.trim().toLowerCase();
@@ -273,6 +293,10 @@ function App() {
       companies: (j) => [j.company.name],
       states: (j) => [j.state],
       types: (j) => [j.type],
+      employmentTypes: (j) => [j.employmentType],
+      jobLevels: (j) => [j.jobLevel],
+      workArrangements: (j) => [j.workArrangement],
+      educationLevels: (j) => j.educationLevels,
       cities: (j) => [j.city],
       industries: (j) => j.company.industries,
       companyTypes: (j) => j.company.types,
@@ -322,6 +346,10 @@ function App() {
       companies: from((j) => [j.company.name]),
       states: from((j) => [j.state]),
       types: from((j) => [j.type]),
+      employmentTypes: from((j) => [j.employmentType]),
+      jobLevels: from((j) => [j.jobLevel]),
+      workArrangements: from((j) => [j.workArrangement]),
+      educationLevels: from((j) => j.educationLevels),
       cities: from((j) => [j.city]),
       industries: from((j) => j.company.industries),
       companyTypes: from((j) => j.company.types),

@@ -84,6 +84,14 @@ export function triState(value: string): boolean | undefined {
   return undefined;
 }
 
+/** A whole-number cell — "105300" -> 105300, blank or unparseable -> undefined. */
+export function int(value: string | undefined): number | undefined {
+  const trimmed = (value ?? '').trim().replace(/[, ]/g, '');
+  if (!trimmed) return undefined;
+  const parsed = Number.parseInt(trimmed, 10);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 /** A cell holding several values. */
 export const splitList = (value: string) =>
   (value ?? '')

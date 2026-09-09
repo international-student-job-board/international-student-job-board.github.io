@@ -22,6 +22,23 @@ export function formatDate(iso: string): string {
   });
 }
 
+/** "142788" -> "A$143k"; "9500" -> "A$9,500". Rounds to the nearest thousand
+ * once past ten, since salary figures that precise are false precision. */
+export function formatMoney(value: number, currency = 'AUD'): string {
+  const symbol = currency === 'AUD' ? 'A$' : currency === 'USD' ? 'US$' : `${currency} `;
+  if (value >= 10_000) return `${symbol}${Math.round(value / 1000)}k`;
+  return `${symbol}${value.toLocaleString('en-AU')}`;
+}
+
+/** A pay figure or range: "A$143k–161k", "A$105k", or '' when there's nothing. */
+export function formatSalary(min?: number, max?: number, currency = 'AUD'): string {
+  const lo = min && min > 0 ? min : undefined;
+  const hi = max && max > 0 ? max : undefined;
+  if (lo && hi && lo !== hi) return `${formatMoney(lo, currency)}–${formatMoney(hi, currency)}`;
+  const one = lo ?? hi;
+  return one ? formatMoney(one, currency) : '';
+}
+
 /** What a field reads as when a role doesn't carry it. */
 export const NOT_SPECIFIED = 'Not specified';
 

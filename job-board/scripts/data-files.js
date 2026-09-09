@@ -30,6 +30,11 @@ const JOB_COLUMNS = [
   'Job title', 'Job type', 'ANZSCO occupation', 'ANZSCO 2022', 'ANZSCO 2013',
   'ANZSCO unit group', 'ANZSCO unit group title', 'OSCA occupation', 'OSCA code',
   'Job city', 'Job country', 'Date posted', 'Job URL', 'Job ID', 'Invited Score',
+  // Enriched from levels.fyi by find-startups/enrich.py.
+  'Employment type', 'Job level', 'Work arrangement', 'Education level',
+  'Base salary min', 'Base salary max', 'Base salary currency',
+  'Base salary min AUD', 'Base salary max AUD', 'Company salary estimate AUD',
+  'Salary is estimate', 'levels.fyi URL',
 ];
 
 const CONTENT_DIR = path.join(__dirname, '..', 'content');

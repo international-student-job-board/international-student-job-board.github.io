@@ -516,6 +516,9 @@ export const OCCUPATION_LIST_NOTE = [
   ...Object.entries(OCCUPATION_LIST_NAMES).map(([code, name]) => `${code} - ${name}`),
 ].join('\n');
 
+/** Beside a pay figure that came from levels.fyi rather than the employer. */
+export const LEVELS_FYI_SALARY_NOTE = 'Source: Levels.fyi';
+
 export const VISA_DISCLAIMER =
   'This is a general guide, not legal or immigration advice.\n\nThe visa, pathway and ' +
   'occupation details are compiled from the Department of Home Affairs skill occupation ' +

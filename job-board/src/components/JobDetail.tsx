@@ -1,6 +1,12 @@
 import { Fragment, Suspense, lazy, useState } from 'react';
-import { Job, jobLocation } from '../types';
-import { formatDate, orNotSpecified, NOT_SPECIFIED } from '../format';
+import { Job, Salary, hasSalary, jobLocation } from '../types';
+import {
+  formatDate,
+  formatMoney,
+  formatSalary,
+  orNotSpecified,
+  NOT_SPECIFIED,
+} from '../format';
 import {
   visaUrl,
   resolveOccupations,
@@ -9,6 +15,7 @@ import {
   occupationListsFor,
   occupationListUrl,
   occupationListLabel,
+  LEVELS_FYI_SALARY_NOTE,
   OCCUPATION_LIST_NOTE,
   resolveOsca,
   unitGroupsFor,
@@ -198,6 +205,19 @@ function Answer({ value, yes, no }: { value: boolean | undefined; yes: string; n
   return <>Not checked yet</>;
 }
 
+/**
+ * A role's pay, as a single AUD figure or range — the advertised base range if
+ * we have one, otherwise levels.fyi's estimate. The estimate's provenance is
+ * carried by the "i" beside the label, not spelled out here.
+ */
+function SalaryFact({ salary }: { salary: Salary }) {
+  const aud =
+    formatSalary(salary.base?.minAud, salary.base?.maxAud, 'AUD') ||
+    (salary.estimateAud ? formatMoney(salary.estimateAud, 'AUD') : '');
+
+  return <dd className="fact-value">{aud || NOT_SPECIFIED}</dd>;
+}
+
 // Apply action.
 function ApplyButton({ url, jobTitle }: { url: string; jobTitle: string }) {
   const isEmail = url.trim().toLowerCase().startsWith('mailto:');
@@ -297,6 +317,51 @@ export function JobDetail({ job }: { job: Job }) {
             <div className="fact">
               <dt className="fact-label">Job type</dt>
               <dd className="fact-value">{orNotSpecified(job.type)}</dd>
+            </div>
+            <div className="fact">
+              <dt className="fact-label">Employment type</dt>
+              <dd className="fact-value">{orNotSpecified(job.employmentType)}</dd>
+            </div>
+            <div className="fact">
+              <dt className="fact-label">Job level</dt>
+              <dd className="fact-value">{orNotSpecified(job.jobLevel)}</dd>
+            </div>
+            <div className="fact">
+              <dt className="fact-label">Work arrangement</dt>
+              <dd className="fact-value">{orNotSpecified(job.workArrangement)}</dd>
+            </div>
+            <div className="fact">
+              <dt className="fact-label">
+                Salary{' '}
+                {hasSalary(job.salary) && job.salary.isEstimate && (
+                  <InfoTooltip
+                    text={LEVELS_FYI_SALARY_NOTE}
+                    label="Salary source"
+                    placement="bottom"
+                  />
+                )}
+              </dt>
+              {hasSalary(job.salary) ? (
+                <SalaryFact salary={job.salary} />
+              ) : (
+                <dd className="fact-value">{NOT_SPECIFIED}</dd>
+              )}
+            </div>
+            <div className="fact">
+              <dt className="fact-label">Education</dt>
+              <dd className="fact-value">
+                {job.educationLevels.length === 0 ? (
+                  NOT_SPECIFIED
+                ) : (
+                  <span className="value-list">
+                    {job.educationLevels.map((level) => (
+                      <span key={level} className="value-chip">
+                        {level}
+                      </span>
+                    ))}
+                  </span>
+                )}
+              </dd>
             </div>
             <div className="fact">
               <dt className="fact-label">Location</dt>

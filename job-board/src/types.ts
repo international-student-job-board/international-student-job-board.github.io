@@ -74,6 +74,54 @@ export interface Job {
   posted: string;
   applyUrl: string;
   company: Company;
+  /**
+   * Working conditions, enriched from levels.fyi (and the advert where it is
+   * scrapeable) by the data pipeline. Each is one of the pick-lists in
+   * content/constants.json, or '' when nothing reliable was found.
+   */
+  employmentType: string;
+  jobLevel: string;
+  workArrangement: string;
+  /** Degrees the advert mentions — a role can name more than one. */
+  educationLevels: string[];
+  salary: Salary;
+}
+
+/**
+ * A role's pay, as far as it is known.
+ *
+ * Two figures, because they answer different questions and neither is
+ * authoritative on its own:
+ *  - `base` is the advertised base-salary range, kept in the currency levels.fyi
+ *    reported it in plus a copy converted to AUD.
+ *  - `estimateAud` is levels.fyi's total-comp estimate for the level it matched
+ *    the role to — a single AUD figure.
+ *
+ * `isEstimate` is true whenever the numbers came from levels.fyi rather than a
+ * figure the employer published; it drives the "estimated" note on the detail
+ * page. `levelsUrl` is the levels.fyi listing the figures came from.
+ */
+export interface Salary {
+  base?: { min?: number; max?: number; currency: string; minAud?: number; maxAud?: number };
+  estimateAud?: number;
+  isEstimate: boolean;
+  levelsUrl: string;
+}
+
+/** True when a role carries any pay figure at all. */
+export function hasSalary(salary: Salary): boolean {
+  return Boolean(salary.base?.minAud || salary.base?.maxAud || salary.estimateAud);
+}
+
+/** The lowest and highest AUD figure a role's pay spans, for the range filter. */
+export function salaryRangeAud(salary: Salary): [number, number] | null {
+  const points = [
+    salary.base?.minAud,
+    salary.base?.maxAud,
+    salary.estimateAud,
+  ].filter((n): n is number => typeof n === 'number' && n > 0);
+  if (!points.length) return null;
+  return [Math.min(...points), Math.max(...points)];
 }
 
 /**

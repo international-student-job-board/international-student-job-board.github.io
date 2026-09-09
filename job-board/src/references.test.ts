@@ -10,6 +10,7 @@ import {
   listOccupations,
   visaUrl,
   occupationListLabel,
+  LEVELS_FYI_SALARY_NOTE,
 } from './references';
 import { Job } from './types';
 
@@ -184,5 +185,9 @@ describe('government links', () => {
     expect(occupationListLabel('MLTSSL')).toBe(
       'MLTSSL - Medium and Long-term Strategic Skills List'
     );
+  });
+
+  test('the salary note names levels.fyi as the source', () => {
+    expect(LEVELS_FYI_SALARY_NOTE).toMatch(/levels\.fyi/i);
   });
 });

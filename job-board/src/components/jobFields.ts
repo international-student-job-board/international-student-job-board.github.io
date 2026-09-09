@@ -22,6 +22,45 @@ export const FIELDS: Field[] = [
   // ---- The role ----------------------------------------------------------
   { key: 'Job title', label: 'Job title', type: 'text', required: true, placeholder: 'Graduate Software Engineer' },
   { key: 'Job type', label: 'Job type', type: 'select', options: getConstant('type') },
+  {
+    key: 'Employment type',
+    label: 'Employment type',
+    type: 'select',
+    options: ['', ...getConstant('type')],
+  },
+  { key: 'Job level', label: 'Job level', type: 'select', options: ['', ...getConstant('jobLevel')] },
+  {
+    key: 'Work arrangement',
+    label: 'Work arrangement',
+    type: 'select',
+    options: ['', ...getConstant('arrangement')],
+  },
+  {
+    key: 'Education level',
+    label: 'Education level',
+    type: 'text',
+    placeholder: 'Bachelor; Master',
+    hint: 'Degrees the ad asks for. Separate with semicolons.',
+  },
+  { key: 'Base salary min', label: 'Base salary min', type: 'text', placeholder: '90000' },
+  { key: 'Base salary max', label: 'Base salary max', type: 'text', placeholder: '110000' },
+  { key: 'Base salary currency', label: 'Base salary currency', type: 'text', placeholder: 'AUD' },
+  { key: 'Base salary min AUD', label: 'Base salary min (AUD)', type: 'text', placeholder: '90000' },
+  { key: 'Base salary max AUD', label: 'Base salary max (AUD)', type: 'text', placeholder: '110000' },
+  {
+    key: 'Company salary estimate AUD',
+    label: 'Company salary estimate (AUD)',
+    type: 'text',
+    placeholder: '105000',
+  },
+  {
+    key: 'Salary is estimate',
+    label: 'Salary is an estimate?',
+    type: 'select',
+    options: ['', 'True'],
+    hint: 'Set when the figure is from levels.fyi rather than the ad.',
+  },
+  { key: 'levels.fyi URL', label: 'levels.fyi URL', type: 'url', placeholder: 'https://www.levels.fyi/jobs?jobId=…' },
   { key: 'Job city', label: 'City', type: 'text', placeholder: 'Melbourne' },
   { key: 'Job country', label: 'Country', type: 'text', placeholder: 'Australia' },
   {
@@ -83,7 +122,18 @@ export const FIELDS: Field[] = [
 export const FIELD_GROUPS: { title: string; keys: string[] }[] = [
   {
     title: 'The role',
-    keys: ['Job title', 'Job type', 'Job city', 'Job country', 'Job URL', 'Date posted'],
+    keys: [
+      'Job title', 'Job type', 'Employment type', 'Job level', 'Work arrangement',
+      'Education level', 'Job city', 'Job country', 'Job URL', 'Date posted',
+    ],
+  },
+  {
+    title: 'Salary',
+    keys: [
+      'Base salary min', 'Base salary max', 'Base salary currency',
+      'Base salary min AUD', 'Base salary max AUD', 'Company salary estimate AUD',
+      'Salary is estimate', 'levels.fyi URL',
+    ],
   },
   {
     title: 'Occupation codes',

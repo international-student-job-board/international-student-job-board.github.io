@@ -12,10 +12,11 @@ import {
   UNIT_GROUP_NOTE,
   VISA_NAMES,
 } from '../references';
-import { NOT_SPECIFIED } from '../format';
+import { NOT_SPECIFIED, formatMoney } from '../format';
 import { prettyLabel } from '../labels';
 import { ActiveFilters, ActiveChip } from './ActiveFilters';
 import { FilterSelect, SelectOption } from './FilterSelect';
+import { RangeFilter } from './RangeFilter';
 
 const base = process.env.PUBLIC_URL || '';
 
@@ -28,6 +29,12 @@ export interface FilterState {
   companies: string[];
   states: string[];
   types: string[];
+  /** Full-time / Part-time / … — a different question from `types`, which is the
+   * Dealroom role category ("Backend development"). */
+  employmentTypes: string[];
+  jobLevels: string[];
+  workArrangements: string[];
+  educationLevels: string[];
   cities: string[];
   industries: string[];
   /** The company's own tags — what it makes and how it makes money. */
@@ -45,6 +52,9 @@ export interface FilterState {
   students: string[];
   /** Only roles posted within this many days; 0 means any age. */
   postedWithinDays: number;
+  /** AUD bounds on pay; 0 at either end means unbounded there. */
+  salaryMin: number;
+  salaryMax: number;
 }
 
 /** The list-valued keys, which are exactly the keys of FilterOptions. */
@@ -52,6 +62,10 @@ export type FilterListKey =
   | 'companies'
   | 'states'
   | 'types'
+  | 'employmentTypes'
+  | 'jobLevels'
+  | 'workArrangements'
+  | 'educationLevels'
   | 'cities'
   | 'industries'
   | 'companyTypes'
@@ -102,6 +116,15 @@ const POSTED_WINDOWS = [
   { value: '60', label: 'Last 2 months' },
 ];
 
+/** The rungs the salary range offers, in AUD. */
+export const SALARY_STEPS = [
+  40_000, 60_000, 80_000, 100_000, 120_000, 150_000, 200_000, 250_000,
+];
+
+export const SALARY_NOTE =
+  'If the salary is not provided in the job advert, an estimate is provided ' +
+  'from Levels.fyi. Some jobs could have neither, unfortunately.';
+
 /** The three answers the two hand-checked columns can hold. */
 const answerLabel = (value: string) =>
   value === 'yes' ? 'Yes' : value === 'no' ? 'No' : 'Not checked yet';
@@ -120,6 +143,10 @@ const FIELDS: {
   { key: 'companies', label: 'Company' },
   { key: 'states', label: 'State' },
   { key: 'types', label: 'Job type', format: prettyLabel },
+  { key: 'employmentTypes', label: 'Employment type' },
+  { key: 'jobLevels', label: 'Job level' },
+  { key: 'workArrangements', label: 'Work arrangement' },
+  { key: 'educationLevels', label: 'Education' },
   { key: 'cities', label: 'Location', format: prettyLabel },
   { key: 'industries', label: 'Industry', format: prettyLabel },
   // Named the same as the fact on the job detail page.
@@ -176,9 +203,20 @@ const FIELDS: {
  * more space around a group than within it — which is the rule Refactoring UI
  * gives for grouping without a visible separator.
  */
-const GROUPS: { title: string; keys: (FilterListKey | 'posted')[] }[] = [
+const GROUPS: { title: string; keys: (FilterListKey | 'posted' | 'salary')[] }[] = [
   { title: 'Where', keys: ['states', 'cities', 'hqCities'] },
-  { title: 'The role', keys: ['types', 'posted'] },
+  {
+    title: 'The role',
+    keys: [
+      'types',
+      'employmentTypes',
+      'jobLevels',
+      'workArrangements',
+      'educationLevels',
+      'salary',
+      'posted',
+    ],
+  },
   { title: 'The employer', keys: ['companies', 'industries', 'companyTypes', 'growthStages'] },
   {
     title: 'Occupation and visa',
@@ -192,6 +230,7 @@ export function countActiveFilters(filters: FilterState): number {
   return (
     FIELDS.reduce((total, field) => total + filters[field.key].length, 0) +
     (filters.postedWithinDays > 0 ? 1 : 0) +
+    (filters.salaryMin > 0 || filters.salaryMax > 0 ? 1 : 0) +
     (filters.query.trim() ? 1 : 0)
   );
 }
@@ -254,6 +293,17 @@ export function Filters({ filters, options, counts, onChange, onClear }: Props) 
     });
   }
 
+  if (filters.salaryMin > 0 || filters.salaryMax > 0) {
+    chips.push({
+      id: 'salary',
+      field: 'Salary',
+      value: `${filters.salaryMin > 0 ? formatMoney(filters.salaryMin) : 'Any'} – ${
+        filters.salaryMax > 0 ? formatMoney(filters.salaryMax) : 'Any'
+      }`,
+      remove: () => set({ salaryMin: 0, salaryMax: 0 }),
+    });
+  }
+
   return (
     <div className="filterbar" role="search">
       <div className="filter-row">
@@ -295,6 +345,20 @@ export function Filters({ filters, options, counts, onChange, onClear }: Props) 
                       filters.postedWithinDays > 0 ? [String(filters.postedWithinDays)] : []
                     }
                     onChange={(next) => set({ postedWithinDays: Number(next[0] ?? 0) })}
+                  />
+                );
+              }
+
+              if (key === 'salary') {
+                return (
+                  <RangeFilter
+                    key="salary"
+                    label="Salary"
+                    value={{ min: filters.salaryMin, max: filters.salaryMax }}
+                    onChange={(next) => set({ salaryMin: next.min, salaryMax: next.max })}
+                    steps={SALARY_STEPS}
+                    format={(aud) => formatMoney(aud)}
+                    tooltip={SALARY_NOTE}
                   />
                 );
               }

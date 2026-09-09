@@ -1,8 +1,16 @@
 // content/jobs.csv is the board: one row per open role, with the employer's columns
 // repeated on each of its roles.
 
-import { Job, Company } from './types';
-import { parseCsv, splitList, splitNames, triState, anzscoCodes, unitGroupCodes } from './csv';
+import { Job, Company, Salary } from './types';
+import {
+  parseCsv,
+  splitList,
+  splitNames,
+  triState,
+  int,
+  anzscoCodes,
+  unitGroupCodes,
+} from './csv';
 import { loadCompanies } from './companies';
 import { dateValue } from './format';
 import { setUnitGroupTitles, setInvitedScores } from './references';
@@ -51,6 +59,19 @@ export const COLUMNS = [
   'Job URL',
   'Job ID',
   'Invited Score',
+  // Enriched from levels.fyi by the data pipeline — see find-startups/enrich.py.
+  'Employment type',
+  'Job level',
+  'Work arrangement',
+  'Education level',
+  'Base salary min',
+  'Base salary max',
+  'Base salary currency',
+  'Base salary min AUD',
+  'Base salary max AUD',
+  'Company salary estimate AUD',
+  'Salary is estimate',
+  'levels.fyi URL',
 ] as const;
 
 function toCompany(row: Record<string, string>): Company {
@@ -98,6 +119,25 @@ function foldCompanies(rows: Record<string, string>[]): Map<string, Company> {
   return byName;
 }
 
+/** The pay block, folded out of the CSV's salary columns. */
+function toSalary(row: Record<string, string>): Salary {
+  const min = int(row['Base salary min']);
+  const max = int(row['Base salary max']);
+  const minAud = int(row['Base salary min AUD']);
+  const maxAud = int(row['Base salary max AUD']);
+  const currency = (row['Base salary currency'] ?? '').trim().toUpperCase();
+  const base =
+    min || max || minAud || maxAud
+      ? { min, max, currency: currency || 'AUD', minAud, maxAud }
+      : undefined;
+  return {
+    base,
+    estimateAud: int(row['Company salary estimate AUD']),
+    isEstimate: triState(row['Salary is estimate']) === true,
+    levelsUrl: (row['levels.fyi URL'] ?? '').trim(),
+  };
+}
+
 function toJob(row: Record<string, string>, company: Company): Job {
   return {
     id: (row['Job ID'] ?? '').trim(),
@@ -117,6 +157,11 @@ function toJob(row: Record<string, string>, company: Company): Job {
     posted: (row['Date posted'] ?? '').trim(),
     applyUrl: (row['Job URL'] ?? '').trim(),
     company,
+    employmentType: (row['Employment type'] ?? '').trim(),
+    jobLevel: (row['Job level'] ?? '').trim(),
+    workArrangement: (row['Work arrangement'] ?? '').trim(),
+    educationLevels: splitNames(row['Education level']),
+    salary: toSalary(row),
   };
 }
 

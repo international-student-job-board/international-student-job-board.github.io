@@ -24,6 +24,51 @@ describe('reading the CSV', () => {
     expect(job.company.tagline).toBe('We build things');
   });
 
+  test('the enriched columns fold into a role', () => {
+    const [job] = toJobs(
+      parseCsv(
+        csv(
+          row({
+            'Employment type': 'Full-time',
+            'Job level': 'Senior',
+            'Work arrangement': 'On-site',
+            'Education level': 'Bachelor; Master',
+            'Base salary min': '101268',
+            'Base salary max': '113991',
+            'Base salary currency': 'USD',
+            'Base salary min AUD': '142788',
+            'Base salary max AUD': '160727',
+            'Company salary estimate AUD': '106331',
+            'Salary is estimate': 'True',
+            'levels.fyi URL': 'https://www.levels.fyi/jobs?jobId=1',
+          })
+        )
+      )
+    );
+    expect(job.employmentType).toBe('Full-time');
+    expect(job.jobLevel).toBe('Senior');
+    expect(job.workArrangement).toBe('On-site');
+    expect(job.educationLevels).toEqual(['Bachelor', 'Master']);
+    expect(job.salary.base).toEqual({
+      min: 101268,
+      max: 113991,
+      currency: 'USD',
+      minAud: 142788,
+      maxAud: 160727,
+    });
+    expect(job.salary.estimateAud).toBe(106331);
+    expect(job.salary.isEstimate).toBe(true);
+    expect(job.salary.levelsUrl).toContain('levels.fyi');
+  });
+
+  test('a role with no salary data carries an empty pay block', () => {
+    const [job] = toJobs(parseCsv(csv(row())));
+    expect(job.salary.base).toBeUndefined();
+    expect(job.salary.estimateAud).toBeUndefined();
+    expect(job.salary.isEstimate).toBe(false);
+    expect(job.educationLevels).toEqual([]);
+  });
+
   test('a comma inside a cell survives the round trip', () => {
     const [job] = toJobs(parseCsv(csv(row({ 'Company name': 'Acme, Inc', Tagline: 'Fast, cheap' }))));
     expect(job.company.name).toBe('Acme, Inc');

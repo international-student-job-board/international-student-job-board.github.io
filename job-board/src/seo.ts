@@ -117,10 +117,43 @@ export function applyMeta({ title, description, url }: PageMeta): void {
 }
 
 /** schema.org JobPosting for the role being read. */
+/** "Full-time" -> "FULL_TIME", the schema.org employmentType enum. */
+const SCHEMA_EMPLOYMENT: Record<string, string> = {
+  'Full-time': 'FULL_TIME',
+  'Part-time': 'PART_TIME',
+  Contract: 'CONTRACTOR',
+  Casual: 'TEMPORARY',
+  Freelance: 'CONTRACTOR',
+};
+
+/** "On-site" -> nothing; "Remote"/"Hybrid" -> the jobLocationType Google expects. */
+const SCHEMA_ARRANGEMENT: Record<string, string> = {
+  Remote: 'TELECOMMUTE',
+  Hybrid: 'TELECOMMUTE',
+};
+
 export function jobPostingSchema(job: Job, url: string, validThrough: string): object {
   const occupations = resolveOccupations(job)
     .map((o) => o.name)
     .filter(Boolean);
+
+  const employmentType = SCHEMA_EMPLOYMENT[job.employmentType];
+  const { base } = job.salary;
+  // Only a figure the employer actually published belongs in structured data —
+  // a levels.fyi estimate would misrepresent it as the advertised salary.
+  const baseSalary =
+    !job.salary.isEstimate && base && (base.minAud || base.maxAud)
+      ? {
+          '@type': 'MonetaryAmount',
+          currency: 'AUD',
+          value: {
+            '@type': 'QuantitativeValue',
+            ...(base.minAud ? { minValue: base.minAud } : {}),
+            ...(base.maxAud ? { maxValue: base.maxAud } : {}),
+            unitText: 'YEAR',
+          },
+        }
+      : undefined;
 
   return {
     '@context': 'https://schema.org',
@@ -141,7 +174,11 @@ export function jobPostingSchema(job: Job, url: string, validThrough: string): o
     },
     ...(job.posted ? { datePosted: job.posted } : {}),
     ...(validThrough ? { validThrough } : {}),
-    ...(job.type ? { employmentType: job.type } : {}),
+    ...(employmentType ? { employmentType } : {}),
+    ...(SCHEMA_ARRANGEMENT[job.workArrangement]
+      ? { jobLocationType: SCHEMA_ARRANGEMENT[job.workArrangement] }
+      : {}),
+    ...(baseSalary ? { baseSalary } : {}),
     hiringOrganization: {
       '@type': 'Organization',
       name: job.company.name,

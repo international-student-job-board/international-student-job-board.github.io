@@ -7,6 +7,10 @@ const OPTIONS: FilterOptions = {
   companies: ['Acme', 'Zeta'],
   states: ['Victoria', 'New South Wales'],
   types: ['Full time', 'Internship', ''],
+  employmentTypes: ['Full-time', 'Contract', ''],
+  jobLevels: ['Graduate', 'Senior', ''],
+  workArrangements: ['On-site', 'Remote', ''],
+  educationLevels: ['Bachelor', 'Master', ''],
   cities: ['Melbourne', 'Sydney'],
   industries: ['fintech', 'health'],
   companyTypes: ['saas', 'commission', ''],
@@ -27,6 +31,10 @@ const EMPTY: FilterState = {
   companies: [],
   states: [],
   types: [],
+  employmentTypes: [],
+  jobLevels: [],
+  workArrangements: [],
+  educationLevels: [],
   cities: [],
   industries: [],
   companyTypes: [],
@@ -41,6 +49,8 @@ const EMPTY: FilterState = {
   sponsor: [],
   students: [],
   postedWithinDays: 0,
+  salaryMin: 0,
+  salaryMax: 0,
 };
 
 /** Holds the state the real page holds, so selections survive a re-render. */
@@ -328,6 +338,55 @@ describe('option counts', () => {
     withCounts();
     openFilter(/posted/i);
     expect(screen.getByRole('radio', { name: /Last 7 days.*6/ })).toBeInTheDocument();
+  });
+});
+
+describe('the working-conditions filters', () => {
+  test('employment type is a distinct control from the Dealroom "Job type"', () => {
+    render(<Harness />);
+    openFilter(/^Employment type/);
+    expect(screen.getByRole('checkbox', { name: /Full-time/ })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /Contract/ })).toBeInTheDocument();
+  });
+
+  test('job level and work arrangement each chip under their own name', () => {
+    render(<Harness />);
+    openFilter(/^Job level/);
+    fireEvent.click(screen.getByRole('checkbox', { name: /Senior/ }));
+    closeFilter(/^Job level/);
+    expect(screen.getByRole('button', { name: /Job level.*Senior/ })).toBeInTheDocument();
+
+    openFilter(/^Work arrangement/);
+    fireEvent.click(screen.getByRole('checkbox', { name: /Remote/ }));
+    closeFilter(/^Work arrangement/);
+    expect(screen.getByRole('button', { name: /Work arrangement.*Remote/ })).toBeInTheDocument();
+  });
+});
+
+describe('the salary range', () => {
+  test('picking a minimum chips as a range and counts as one active filter', () => {
+    render(<Harness />);
+    openFilter(/^Salary/);
+    fireEvent.change(screen.getByRole('combobox', { name: /min/i }), {
+      target: { value: '100000' },
+    });
+    closeFilter(/^Salary/);
+    // The chip carries the "Remove filter" label; the reopened-trigger summary does not.
+    expect(
+      screen.getByRole('button', { name: /Salary.*A\$100k.*Any.*Remove filter/ })
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Clear all/ })).toHaveTextContent('1');
+  });
+
+  test('the max cannot be set below the chosen min', () => {
+    render(<Harness />);
+    openFilter(/^Salary/);
+    fireEvent.change(screen.getByRole('combobox', { name: /min/i }), {
+      target: { value: '120000' },
+    });
+    const max = screen.getByRole('combobox', { name: /max/i }) as HTMLSelectElement;
+    const values = Array.from(max.options).map((o) => o.value).filter(Boolean);
+    expect(values.every((v) => Number(v) > 120000)).toBe(true);
   });
 });
 
