@@ -516,8 +516,38 @@ export const OCCUPATION_LIST_NOTE = [
   ...Object.entries(OCCUPATION_LIST_NAMES).map(([code, name]) => `${code} - ${name}`),
 ].join('\n');
 
-/** Beside a pay figure that came from levels.fyi rather than the employer. */
-export const LEVELS_FYI_SALARY_NOTE = 'Source: Levels.fyi';
+/** How a salary source reads, for the link label and the "i" note beside a
+ * figure that isn't the employer's own. */
+const SALARY_SOURCE_LABEL: Record<string, string> = {
+  glassdoor: 'Glassdoor',
+  'levels.fyi': 'Levels.fyi',
+};
+
+export const salarySourceLabel = (source: string): string =>
+  SALARY_SOURCE_LABEL[source] ?? '';
+
+export const salarySourceNote = (source: string): string => {
+  const label = salarySourceLabel(source);
+  return label ? `Source: ${label}` : '';
+};
+
+/** A Glassdoor / levels.fyi salary-source URL, passed through only when it is
+ * one of those hosts. */
+export function salarySourceUrl(url: string): string | undefined {
+  const trimmed = (url ?? '').trim();
+  return /^https:\/\/(www\.)?(glassdoor\.[a-z.]+|levels\.fyi)\//.test(trimmed)
+    ? trimmed
+    : undefined;
+}
+
+/** Beside the employer-rating filter and fact. */
+export const RATING_NOTE = 'Employer ratings are from Glassdoor, out of 5.';
+
+/** A Glassdoor company Overview URL, for the rating link. */
+export function glassdoorUrl(url: string | undefined): string | undefined {
+  const trimmed = (url ?? '').trim();
+  return /^https:\/\/(www\.)?glassdoor\.[a-z.]+\//.test(trimmed) ? trimmed : undefined;
+}
 
 export const VISA_DISCLAIMER =
   'This is a general guide, not legal or immigration advice.\n\nThe visa, pathway and ' +

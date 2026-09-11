@@ -50,6 +50,16 @@ function splitCsvLine(line) {
   return cells;
 }
 
+/** Our label -> the schema.org JobPosting employmentType token. */
+const EMPLOYMENT_SCHEMA = {
+  'Full-time': 'FULL_TIME',
+  'Part-time': 'PART_TIME',
+  Contract: 'CONTRACTOR',
+  Casual: 'PART_TIME',
+  Freelance: 'CONTRACTOR',
+  Internship: 'INTERN',
+};
+
 const esc = (value) =>
   String(value ?? '').replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
@@ -107,6 +117,19 @@ function lapses(posted) {
   return date.toISOString().slice(0, 10);
 }
 
+/** "120000" / "158000" -> "A$120k–A$158k"; a single figure, or blank. */
+function moneyAud(min, max, estimate) {
+  const k = (n) => {
+    const v = Math.round(Number(n));
+    if (!Number.isFinite(v) || v <= 0) return '';
+    return v >= 10000 ? `A$${Math.round(v / 1000)}k` : `A$${v.toLocaleString('en-AU')}`;
+  };
+  const lo = k(min);
+  const hi = k(max);
+  if (lo && hi) return lo === hi ? lo : `${lo}–${hi}`;
+  return lo || hi || k(estimate);
+}
+
 function readJobs() {
   const file = DATA_FILES.find((f) => f.url === '/jobs.csv');
   const source = contentPath(file.name);
@@ -123,20 +146,58 @@ function readJobs() {
   return lines
     .slice(1)
     .map(splitCsvLine)
+    .map((cells) => {
+      const advertPosted = at(cells, 'Advert posted').trim();
+      const datePosted = at(cells, 'Date posted').trim();
+      return {
+        id: at(cells, 'Job ID').trim(),
+        title: at(cells, 'Job title').trim(),
+        company: at(cells, 'Company name').trim(),
+        tagline: at(cells, 'Tagline').trim(),
+        type: at(cells, 'Job type').trim(),
+        occupation: at(cells, 'ANZSCO occupation').trim(),
+        city: at(cells, 'Job city').trim(),
+        state: at(cells, 'State').trim(),
+        country: at(cells, 'Job country').trim(),
+        posted: advertPosted || datePosted,
+        employmentType: at(cells, 'Employment type').trim(),
+        level: at(cells, 'Job level').trim(),
+        arrangement: at(cells, 'Work arrangement').trim(),
+        education: at(cells, 'Education level').trim(),
+        salaryMinAud: Math.round(Number(at(cells, 'Base salary min AUD'))) || 0,
+        salaryMaxAud: Math.round(Number(at(cells, 'Base salary max AUD'))) || 0,
+        salary: moneyAud(
+          at(cells, 'Base salary min AUD'),
+          at(cells, 'Base salary max AUD'),
+          at(cells, 'Company salary estimate AUD')
+        ),
+        url: at(cells, 'Job URL').trim(),
+      };
+    })
+    .filter((job) => job.id && job.title && (!job.posted || job.posted >= oldest))
+    .sort((a, b) => (b.posted || '').localeCompare(a.posted || ''));
+}
+
+function readCompanies() {
+  const file = DATA_FILES.find((f) => f.url === '/companies.csv');
+  const source = contentPath(file.name);
+  if (!fs.existsSync(source)) return [];
+
+  const lines = fs.readFileSync(source, 'utf8').split(/\r?\n/).filter(Boolean);
+  const header = splitCsvLine(lines[0]).map((c) => c.trim());
+  const at = (cells, name) => cells[header.indexOf(name)] || '';
+
+  return lines
+    .slice(1)
+    .map(splitCsvLine)
     .map((cells) => ({
-      id: at(cells, 'Job ID').trim(),
-      title: at(cells, 'Job title').trim(),
-      company: at(cells, 'Company name').trim(),
+      name: at(cells, 'Company name').trim(),
       tagline: at(cells, 'Tagline').trim(),
-      type: at(cells, 'Job type').trim(),
-      occupation: at(cells, 'ANZSCO occupation').trim(),
-      city: at(cells, 'Job city').trim(),
       state: at(cells, 'State').trim(),
-      country: at(cells, 'Job country').trim(),
-      posted: at(cells, 'Date posted').trim(),
-      url: at(cells, 'Job URL').trim(),
+      industries: at(cells, 'Industries').trim(),
+      openings: Number(at(cells, 'Job openings')) || 0,
     }))
-    .filter((job) => job.id && job.title && (!job.posted || job.posted >= oldest));
+    .filter((c) => c.name);
 }
 
 const escape = (value) =>
@@ -149,9 +210,14 @@ function main() {
   }
 
   // 1. The single-page fallback, for anything we haven't written a file for.
+  //    The template is the app shell with an empty #root — normalised here so a
+  //    re-run (which rewrites index.html with the landing content) still starts
+  //    from a blank body rather than baking one page's content into the rest.
   const indexHtml = path.join(outDir, 'index.html');
-  const template = fs.readFileSync(indexHtml, 'utf8');
-  fs.copyFileSync(indexHtml, path.join(outDir, '404.html'));
+  const template = fs
+    .readFileSync(indexHtml, 'utf8')
+    .replace(/(<div id="root">)[\s\S]*?(<\/div>\s*<\/body>)/, '$1$2');
+  fs.writeFileSync(path.join(outDir, '404.html'), template);
 
   // 2. The sitemap. Pages first, then roles; the board changes daily and a
   //    role only when it is re-listed, which is what changefreq says here.
@@ -171,39 +237,114 @@ function main() {
   ];
 
   // 2a. A real file per address, so each answers 200 with its own title,
-  //     description and structured data instead of falling through to 404.
+  //     description and structured data instead of falling through to 404 — and
+  //     with real, linked content in the body, because a crawler (and some never
+  //     run the app) has to be able to read the page and walk from it to every
+  //     role without JavaScript. The app replaces all of this on mount.
   const SITE = 'International Student Job Board';
+  const companies = readCompanies();
+
+  const nav =
+    '<nav aria-label="Site"><a href="/">All roles</a> · ' +
+    '<a href="/companies">Companies</a> · ' +
+    '<a href="/about">About &amp; visa resources</a> · ' +
+    '<a href="/post">Post a job</a></nav>';
+
+  /** One role as a list item — the same shape everywhere it is linked. */
+  const jobLink = (job) => {
+    const bits = [job.company, job.city, job.type, job.salary].filter(Boolean).join(' · ');
+    return `<li><a href="/jobs/${esc(job.id)}">${esc(job.title)}</a>${
+      bits ? ` — ${esc(bits)}` : ''
+    }</li>`;
+  };
+
+  writePage(template, {
+    path: '/companies',
+    title: `Australian startups and scaleups hiring | ${SITE}`,
+    description:
+      'Australian startups and scaleups that are hiring, with their state, industry, size, stage and whether they are an accredited visa sponsor.',
+    body: [
+      '<main>',
+      '<h1>Australian startups and scaleups hiring</h1>',
+      `<p>${esc(
+        `${companies.length.toLocaleString('en-AU')} companies founded in Australia, ` +
+          'with their state, industry, stage and whether they sponsor visas. ' +
+          'Use the board for the full list with filters and a map.'
+      )}</p>`,
+      nav,
+      '<h2>Companies with roles open now</h2>',
+      '<ul>',
+      ...companies
+        .filter((c) => c.openings > 0)
+        .sort((a, b) => b.openings - a.openings)
+        .slice(0, 400)
+        .map(
+          (c) =>
+            `<li>${esc(c.name)}${
+              c.state ? ` — ${esc(c.state)}` : ''
+            }${c.industries ? ` · ${esc(c.industries.split(';')[0].trim())}` : ''} · ${
+              c.openings
+            } open ${c.openings === 1 ? 'role' : 'roles'}</li>`
+        ),
+      '</ul>',
+      '</main>',
+    ].join(''),
+  });
+
   [
-    {
-      path: '/companies',
-      title: `Australian startups and scaleups hiring | ${SITE}`,
-      description:
-        'Australian startups and scaleups that are hiring, with their state, industry, size, stage and whether they are an accredited visa sponsor.',
-    },
     {
       path: '/about',
       title: `About and visa resources | ${SITE}`,
       description:
         'How this board works, and the official Home Affairs and ABS sources behind its visa, occupation and skills-assessment information.',
+      body: `<main><h1>About this board</h1><p>${esc(
+        'A curated board of startup and scaleup roles across Australia for international ' +
+          'students and graduates. Every role is checked by hand, and shows the visa ' +
+          'pathways, ANZSCO occupation and skills assessment that apply, drawn from ' +
+          'official Home Affairs and ABS sources.'
+      )}</p>${nav}</main>`,
     },
     {
       path: '/post',
       title: `Post a job | ${SITE}`,
       description:
         'List an Australian startup role for international students and graduates. Every role is checked by hand before it goes up.',
+      body: `<main><h1>Post a job</h1><p>${esc(
+        'List an Australian startup or scaleup role for international students and ' +
+          'graduates. Every role is checked by hand before it goes up.'
+      )}</p>${nav}</main>`,
     },
   ].forEach((page) => writePage(template, page));
 
-  jobs.forEach((job) => {
+  jobs.forEach((job, i) => {
     const where = [job.city, job.country].filter(Boolean).join(', ');
     const description = [
       `${job.title} at ${job.company}${where ? ` in ${where}` : ''}.`,
       job.type ? `${job.type}.` : '',
+      job.salary ? `Pay around ${job.salary} (AUD).` : '',
       job.occupation ? `ANZSCO occupation: ${job.occupation}.` : '',
       'Visa pathways and skills assessment for international students and graduates.',
     ]
       .filter(Boolean)
       .join(' ');
+
+    // A dozen other current roles, so a crawler reaching any one role can walk
+    // to the rest; wrapping the list keeps every role linked from ~12 others.
+    const related = [];
+    for (let k = 1; related.length < 12 && k < jobs.length; k += 1) {
+      related.push(jobs[(i + k) % jobs.length]);
+    }
+
+    const facts = [
+      ['Employment type', job.employmentType],
+      ['Job level', job.level],
+      ['Work arrangement', job.arrangement],
+      ['Salary', job.salary && `${job.salary} (AUD, estimated where the ad doesn't state one)`],
+      ['Education', job.education && job.education.replace(/;\s*/g, ', ')],
+      ['ANZSCO occupation', job.occupation],
+      ['Location', [job.city, job.state, job.country].filter(Boolean).join(', ')],
+      ['Posted', job.posted],
+    ].filter(([, v]) => v);
 
     const validThrough = job.posted ? lapses(job.posted) : '';
     writePage(template, {
@@ -218,7 +359,23 @@ function main() {
         identifier: { '@type': 'PropertyValue', name: SITE, value: job.id },
         ...(job.posted ? { datePosted: job.posted } : {}),
         ...(validThrough ? { validThrough } : {}),
-        ...(job.type ? { employmentType: job.type } : {}),
+        ...(EMPLOYMENT_SCHEMA[job.employmentType]
+          ? { employmentType: EMPLOYMENT_SCHEMA[job.employmentType] }
+          : {}),
+        ...(job.salaryMinAud || job.salaryMaxAud
+          ? {
+              baseSalary: {
+                '@type': 'MonetaryAmount',
+                currency: 'AUD',
+                value: {
+                  '@type': 'QuantitativeValue',
+                  ...(job.salaryMinAud ? { minValue: job.salaryMinAud } : {}),
+                  ...(job.salaryMaxAud ? { maxValue: job.salaryMaxAud } : {}),
+                  unitText: 'YEAR',
+                },
+              },
+            }
+          : {}),
         hiringOrganization: { '@type': 'Organization', name: job.company },
         jobLocation: {
           '@type': 'Place',
@@ -236,12 +393,48 @@ function main() {
         '<article>',
         `<h1>${esc(job.title)}</h1>`,
         `<p>${esc(job.company)}${job.tagline ? ` — ${esc(job.tagline)}` : ''}</p>`,
-        `<p>${esc([where, job.type].filter(Boolean).join(' · '))}</p>`,
-        job.occupation ? `<p>ANZSCO occupation: ${esc(job.occupation)}</p>` : '',
-        job.posted ? `<p>Posted ${esc(job.posted)}</p>` : '',
+        '<dl>',
+        ...facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`),
+        '</dl>',
+        `<p>${esc(
+          `This role is on the board with the visa pathways, ANZSCO unit group and ` +
+            `skills-assessment body that apply to ${job.occupation || 'the occupation'}, ` +
+            `plus whether ${job.company} is an accredited sponsor.`
+        )}</p>`,
         '</article>',
+        '<section aria-label="More roles"><h2>More roles at Australian startups</h2><ul>',
+        ...related.map(jobLink),
+        '</ul></section>',
+        nav,
       ].join(''),
     });
+  });
+
+  // 2b. The landing page itself — the most linked page on the site and, until
+  //     now, an empty <div>. Give it the headline, a description and a walkable
+  //     list of the most recent roles.
+  const recent = jobs.slice(0, 200);
+  writePage(template, {
+    path: '/',
+    title:
+      'International Student Job Board - Curated startup and scaleup jobs in Australia for international students and graduates, with migration pathways and visa info!',
+    description:
+      'Curated startup and scaleup jobs in Australia for international students and graduates, with migration pathways and visa info!',
+    body: [
+      '<main>',
+      '<h1>Jobs at Australian startups, mapped with migration pathways and visa requirements!</h1>',
+      `<p>${esc(
+        'Curated startup and scaleup roles across Australia for international students ' +
+          'and graduates. Every listing shows the visa pathways, ANZSCO occupation and ' +
+          'skills assessment that apply, and whether the employer sponsors visas.'
+      )}</p>`,
+      nav,
+      `<h2>Latest roles${jobs.length > recent.length ? ` (${recent.length} of ${jobs.length.toLocaleString('en-AU')})` : ''}</h2>`,
+      '<ul>',
+      ...recent.map(jobLink),
+      '</ul>',
+      '</main>',
+    ].join(''),
   });
 
   const sitemap = [

@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { Filters, FilterOptions, FilterState } from './Filters';
 
 const OPTIONS: FilterOptions = {
-  // The empty string is the "not specified" marker some roles land in.
   companies: ['Acme', 'Zeta'],
   states: ['Victoria', 'New South Wales'],
   types: ['Full time', 'Internship', ''],
@@ -51,359 +50,182 @@ const EMPTY: FilterState = {
   postedWithinDays: 0,
   salaryMin: 0,
   salaryMax: 0,
+  minRating: 0,
 };
 
-/** Holds the state the real page holds, so selections survive a re-render. */
+const COUNTS = {
+  minRating: new Map([
+    ['3', 12],
+    ['3.5', 8],
+    ['4', 3],
+    ['4.5', 1],
+    ['-1', 30],
+  ]),
+};
+
 function Harness() {
   const [filters, setFilters] = useState<FilterState>(EMPTY);
   return (
     <Filters
       filters={filters}
       options={OPTIONS}
+      counts={COUNTS}
+      resultCount={42}
       onChange={setFilters}
       onClear={() => setFilters(EMPTY)}
     />
   );
 }
 
-// The applied-filter chips carry the field name too, so triggers are matched on aria-
-// expanded — only the dropdown triggers have it.
-const openFilter = (name: RegExp) =>
-  fireEvent.click(screen.getByRole('button', { name, expanded: false }));
-
-const closeFilter = (name: RegExp) =>
+const trigger = (name: RegExp) => screen.getByRole('button', { name, expanded: false });
+const openTrigger = (name: RegExp) => fireEvent.click(trigger(name));
+const closeTrigger = (name: RegExp) =>
   fireEvent.click(screen.getByRole('button', { name, expanded: true }));
+const openModal = () => fireEvent.click(screen.getByRole('button', { name: /More filters/ }));
+const modal = () => screen.getByRole('dialog', { name: 'Filters' });
+const done = () => fireEvent.click(screen.getByRole('button', { name: /Show \d+ roles?/ }));
 
-const openTrigger = (name: RegExp) => screen.getByRole('button', { name, expanded: true });
-
-test('a filter holds several values at once', () => {
-  render(<Harness />);
-  openFilter(/leads to visa/i);
-
-  fireEvent.click(screen.getByRole('checkbox', { name: /186/ }));
-  fireEvent.click(screen.getByRole('checkbox', { name: /482/ }));
-
-  expect(screen.getByRole('checkbox', { name: /186/ })).toBeChecked();
-  expect(screen.getByRole('checkbox', { name: /482/ })).toBeChecked();
-  expect(openTrigger(/leads to visa/i)).toHaveTextContent('2');
-});
-
-test('each selection gets a chip that removes only itself', () => {
-  render(<Harness />);
-  openFilter(/leads to visa/i);
-  fireEvent.click(screen.getByRole('checkbox', { name: /186/ }));
-  fireEvent.click(screen.getByRole('checkbox', { name: /482/ }));
-  closeFilter(/leads to visa/i);
-
-  fireEvent.click(screen.getByRole('button', { name: /Leads to visa.*186/ }));
-
-  expect(screen.queryByRole('button', { name: /Leads to visa.*186/ })).not.toBeInTheDocument();
-  expect(screen.getByRole('button', { name: /Leads to visa.*482/ })).toBeInTheDocument();
-});
-
-test('selections in different filters stack up', () => {
-  render(<Harness />);
-
-  openFilter(/job type/i);
-  fireEvent.click(screen.getByRole('checkbox', { name: /Internship/ }));
-  closeFilter(/job type/i);
-
-  openFilter(/location/i);
-  fireEvent.click(screen.getByRole('checkbox', { name: /Melbourne/ }));
-  closeFilter(/location/i);
-
-  expect(screen.getByRole('button', { name: /Clear all/ })).toHaveTextContent('2');
-});
-
-describe('roles that don’t say', () => {
-  test('the blank option is labelled rather than an empty tick box', () => {
+describe('the filter bar', () => {
+  test('carries the main filters, in order', () => {
     render(<Harness />);
-    openFilter(/job type/i);
-    expect(screen.getByRole('checkbox', { name: /Not specified/ })).toBeInTheDocument();
+    expect(screen.getByRole('searchbox', { name: /search jobs/i })).toBeInTheDocument();
+
+    const order = screen
+      .getAllByRole('button', { expanded: false })
+      .map((b) => b.textContent ?? '');
+    const seq = [
+      /^Posted/,
+      /^Hires international students and graduates/,
+      /^Accredited sponsor/,
+      /^In the latest invitation round/,
+      /^ANZSCO occupations/,
+      /^Leads to visa/,
+      /^Salary/,
+    ].map((re) => order.findIndex((t) => re.test(t)));
+
+    expect(seq.every((i) => i >= 0)).toBe(true);
+    expect(seq).toEqual([...seq].sort((a, b) => a - b));
+
+    expect(screen.getByRole('button', { name: /More filters/ })).toBeInTheDocument();
+    // The rest are not on the bar.
+    expect(screen.queryByRole('button', { name: /^Company$/, expanded: false })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Work arrangement/, expanded: false })).not.toBeInTheDocument();
   });
 
-  test('choosing it chips as "Not specified", not as blank', () => {
+  test('a bar filter narrows and chips', () => {
     render(<Harness />);
-    openFilter(/job type/i);
-    fireEvent.click(screen.getByRole('checkbox', { name: /Not specified/ }));
-    closeFilter(/job type/i);
-    expect(screen.getByRole('button', { name: /Job type.*Not specified/ })).toBeInTheDocument();
-  });
-});
-
-describe('the company’s own tags', () => {
-  test('they filter separately from what the role does', () => {
-    // "Job type" is what you would be doing; this is what the company is.
-    render(<Harness />);
-    openFilter(/job type/i);
-    expect(screen.getByRole('checkbox', { name: /Full Time/ })).toBeInTheDocument();
-    closeFilter(/job type/i);
-
-    openFilter(/model & tech/i);
-    expect(screen.getByRole('checkbox', { name: /SaaS/ })).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: /Commission/ })).toBeInTheDocument();
-  });
-
-  test('a company with no tags is reachable as "Not specified"', () => {
-    render(<Harness />);
-    openFilter(/model & tech/i);
-    fireEvent.click(screen.getByRole('checkbox', { name: /Not specified/ }));
-    closeFilter(/model & tech/i);
-    expect(
-      screen.getByRole('button', { name: /Model & tech.*Not specified/ })
-    ).toBeInTheDocument();
-  });
-});
-
-describe('the occupation list filter', () => {
-  test('each acronym is spelled out, since MLTSSL means nothing on its own', () => {
-    render(<Harness />);
-    openFilter(/occupation list/i);
-    expect(
-      screen.getByRole('checkbox', { name: /Medium and Long-term Strategic Skills List/ })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('checkbox', { name: /Core Skills Occupation List/ })
-    ).toBeInTheDocument();
-  });
-
-  test('a role on no list is reachable, not hidden', () => {
-    // Most roles carry no ANZSCO code at all, so most sit on no list.
-    render(<Harness />);
-    openFilter(/occupation list/i);
-    expect(screen.getByRole('checkbox', { name: /Not specified/ })).toBeInTheDocument();
-  });
-
-  test('picking one chips under its own field name', () => {
-    render(<Harness />);
-    openFilter(/occupation list/i);
-    fireEvent.click(screen.getByRole('checkbox', { name: /Core Skills Occupation List/ }));
-    closeFilter(/occupation list/i);
-    expect(screen.getByRole('button', { name: /Occupation list.*CSOL/ })).toBeInTheDocument();
-  });
-});
-
-describe('the company filter', () => {
-  test('names are offered as the source wrote them, not re-cased', () => {
-    // Company names are proper nouns; capitalising them would invent brands that do not
-    // exist.
-    render(<Harness />);
-    openFilter(/^Company/);
-    expect(screen.getByRole('checkbox', { name: /Acme/ })).toBeInTheDocument();
-  });
-
-  test('picking one chips under its own field name', () => {
-    render(<Harness />);
-    openFilter(/^Company/);
-    fireEvent.click(screen.getByRole('checkbox', { name: /Zeta/ }));
-    closeFilter(/^Company/);
-    expect(screen.getByRole('button', { name: /Company.*Zeta/ })).toBeInTheDocument();
-  });
-});
-
-describe('stage and head office', () => {
-  test('the stage stands alone, rather than paired with the segment', () => {
-    // The detail page shows "startup · early stage" as one fact.
-    render(<Harness />);
-    openFilter(/^Stage/);
-    // Capitalised on the way out — the source writes them lowercase.
-    ['Early Stage', 'Breakout Stage', 'Late Stage'].forEach((label) =>
-      expect(screen.getByRole('checkbox', { name: new RegExp(label) })).toBeInTheDocument()
-    );
-  });
-
-  test('the head office is the company\u2019s, not the role\u2019s city', () => {
-    // "Location" is where the job is; this is where the company is.
-    render(<Harness />);
-    openFilter(/head office/i);
-    expect(screen.getByRole('checkbox', { name: /Geelong/ })).toBeInTheDocument();
-    closeFilter(/head office/i);
-    openFilter(/location/i);
-    expect(screen.getByRole('checkbox', { name: /Sydney/ })).toBeInTheDocument();
-  });
-
-  test('both chip under their own field name', () => {
-    render(<Harness />);
-    openFilter(/^Stage/);
-    fireEvent.click(screen.getByRole('checkbox', { name: /Late Stage/ }));
-    closeFilter(/^Stage/);
-    expect(screen.getByRole('button', { name: /Stage.*Late Stage/ })).toBeInTheDocument();
-  });
-});
-
-describe('the two hand-checked answers', () => {
-  test('they are separate controls, not one "sponsors visas?"', () => {
-    // Accreditation is a formal status with the Department; hiring international students
-    // is a hiring habit.
-    render(<Harness />);
-    expect(
-      screen.getByRole('button', { name: /Accredited sponsor/, expanded: false })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /Hires international students/, expanded: false })
-    ).toBeInTheDocument();
-  });
-
-  test('each can be asked separately, and each chips under its own name', () => {
-    render(<Harness />);
-    openFilter(/Accredited sponsor/);
+    openTrigger(/Accredited sponsor/);
     fireEvent.click(screen.getByRole('checkbox', { name: /Yes/ }));
-    closeFilter(/Accredited sponsor/);
-
+    closeTrigger(/Accredited sponsor/);
     expect(screen.getByRole('button', { name: /Accredited sponsor.*Yes/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Clear all/ })).toHaveTextContent('1');
   });
 
-  test('both at once narrows on both', () => {
+  test('ANZSCO occupations is a real dropdown on the bar', () => {
     render(<Harness />);
-    openFilter(/Accredited sponsor/);
-    fireEvent.click(screen.getByRole('checkbox', { name: /Yes/ }));
-    closeFilter(/Accredited sponsor/);
-    openFilter(/Hires international students/);
-    fireEvent.click(screen.getByRole('checkbox', { name: /Yes/ }));
-    closeFilter(/Hires international students/);
-
-    expect(screen.getByRole('button', { name: /Clear all/ })).toHaveTextContent('2');
-  });
-
-  test('an unchecked company is reachable, since blank never means "no"', () => {
-    render(<Harness />);
-    openFilter(/Hires international students/);
-    expect(screen.getByRole('checkbox', { name: /Not checked yet/ })).toBeInTheDocument();
+    openTrigger(/ANZSCO occupations/);
+    fireEvent.click(screen.getByRole('checkbox', { name: /261313/ }));
+    closeTrigger(/ANZSCO occupations/);
+    expect(screen.getByRole('button', { name: /ANZSCO occupations.*261313/ })).toBeInTheDocument();
   });
 });
 
-describe('the recency filter', () => {
-  test('looks back, in the windows a returning reader thinks in', () => {
+describe('the More filters modal', () => {
+  test('opens with the same section headings, closes on Escape and on "Show N roles"', () => {
     render(<Harness />);
-    openFilter(/posted/i);
-    ['Last 24 hours', 'Last 7 days', 'Last month'].forEach((label) =>
-      expect(screen.getByRole('radio', { name: new RegExp(label) })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    openModal();
+    ['Where', 'The role', 'The employer', 'Occupation and visa'].forEach((s) =>
+      expect(within(modal()).getByRole('heading', { name: s })).toBeInTheDocument()
     );
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    openModal();
+    done();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  test('is single-choice — picking again replaces, never accumulates', () => {
+  test('a modal filter takes several picks without reopening, then chips each', () => {
     render(<Harness />);
-    openFilter(/posted/i);
-    fireEvent.click(screen.getByRole('radio', { name: /Last 7 days/ }));
-    // A single-choice panel closes on its answer — there is nothing left to decide — so
-    // asking again means opening it again.
-    openFilter(/posted/i);
-    fireEvent.click(screen.getByRole('radio', { name: /Last month/ }));
+    openModal();
+    fireEvent.click(within(modal()).getByRole('button', { name: /Work arrangement/, expanded: false }));
+    // Both ticks land from the one open panel — it must not close after the first —
+    // and the second is a click on the option's text label, not the box itself.
+    fireEvent.click(screen.getByRole('checkbox', { name: /^Remote/ }));
+    fireEvent.click(screen.getByText('On-site'));
+    expect(screen.getByRole('checkbox', { name: /^Remote/ })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /^On-site/ })).toBeChecked();
+    done();
+    expect(screen.getByRole('button', { name: /Work arrangement.*Remote/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Work arrangement.*On-site/ })).toBeInTheDocument();
+  });
 
-    expect(screen.getByRole('button', { name: /Posted.*Last month/ })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Posted.*Last 7 days/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Clear all/ })).toHaveTextContent('1');
+  test('"Clear all" empties bar and modal filters alike', () => {
+    render(<Harness />);
+    openTrigger(/Accredited sponsor/);
+    fireEvent.click(screen.getByRole('checkbox', { name: /Yes/ }));
+    closeTrigger(/Accredited sponsor/);
+
+    openModal();
+    fireEvent.click(within(modal()).getByRole('button', { name: /Employer rating/, expanded: false }));
+    fireEvent.click(screen.getByRole('radio', { name: /4\.0 and up/ }));
+    fireEvent.click(within(modal()).getByRole('button', { name: /Clear all/ }));
+
+    expect(screen.queryByRole('button', { name: /Accredited sponsor.*Yes/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Employer rating/, expanded: false })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Employer rating.*and up/ })).not.toBeInTheDocument();
   });
 });
 
-describe('option counts', () => {
-  const COUNTS = {
-    types: new Map([['Full time', 4], ['Internship', 0], ['', 2]]),
-    pathwayVisas: new Map([['186', 3]]),
-    sponsor: new Map([['yes', 5]]),
-    postedWithinDays: new Map([['7', 6]]),
+describe('the employer rating filter', () => {
+  const openRating = () => {
+    openModal();
+    fireEvent.click(
+      within(modal()).getByRole('button', { name: /Employer rating/, expanded: false })
+    );
   };
 
-  const withCounts = () =>
-    render(
-      <Filters
-        filters={EMPTY}
-        options={OPTIONS}
-        counts={COUNTS}
-        onChange={() => undefined}
-        onClear={() => undefined}
-      />
-    );
-
-  test('each option says how many roles it would leave', () => {
-    withCounts();
-    openFilter(/job type/i);
-    expect(screen.getByRole('checkbox', { name: /Full Time.*4/ })).toBeInTheDocument();
-  });
-
-  test('an option that would leave nothing reads as zero, not as blank', () => {
-    withCounts();
-    openFilter(/job type/i);
-    expect(screen.getByRole('checkbox', { name: /Internship.*0/ })).toBeInTheDocument();
-  });
-
-  test('the hand-checked answers are counted too', () => {
-    withCounts();
-    openFilter(/Accredited sponsor/);
-    expect(screen.getByRole('checkbox', { name: /Yes.*5/ })).toBeInTheDocument();
-  });
-
-  test('the date windows count as well', () => {
-    withCounts();
-    openFilter(/posted/i);
-    expect(screen.getByRole('radio', { name: /Last 7 days.*6/ })).toBeInTheDocument();
-  });
-});
-
-describe('the working-conditions filters', () => {
-  test('employment type is a distinct control from the Dealroom "Job type"', () => {
+  test('is single-choice and chips as "N and up"', () => {
     render(<Harness />);
-    openFilter(/^Employment type/);
-    expect(screen.getByRole('checkbox', { name: /Full-time/ })).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: /Contract/ })).toBeInTheDocument();
+    openRating();
+    fireEvent.click(screen.getByRole('radio', { name: /3\.5 and up/ }));
+    done();
+    expect(screen.getByRole('button', { name: /Employer rating.*3.5 and up/ })).toBeInTheDocument();
   });
 
-  test('job level and work arrangement each chip under their own name', () => {
+  test('each rung shows how many employers it would leave, and "Not specified" is an option', () => {
     render(<Harness />);
-    openFilter(/^Job level/);
-    fireEvent.click(screen.getByRole('checkbox', { name: /Senior/ }));
-    closeFilter(/^Job level/);
-    expect(screen.getByRole('button', { name: /Job level.*Senior/ })).toBeInTheDocument();
-
-    openFilter(/^Work arrangement/);
-    fireEvent.click(screen.getByRole('checkbox', { name: /Remote/ }));
-    closeFilter(/^Work arrangement/);
-    expect(screen.getByRole('button', { name: /Work arrangement.*Remote/ })).toBeInTheDocument();
+    openRating();
+    const optionRow = (name: RegExp) =>
+      screen.getByRole('radio', { name }).closest('label') as HTMLElement;
+    expect(optionRow(/3\.0 and up/)).toHaveTextContent('12');
+    expect(optionRow(/4\.0 and up/)).toHaveTextContent('3');
+    expect(optionRow(/Not specified/)).toHaveTextContent('30');
   });
-});
 
-describe('the salary range', () => {
-  test('picking a minimum chips as a range and counts as one active filter', () => {
+  test('"Not specified" chips on its own and clears', () => {
     render(<Harness />);
-    openFilter(/^Salary/);
-    fireEvent.change(screen.getByRole('combobox', { name: /min/i }), {
-      target: { value: '100000' },
-    });
-    closeFilter(/^Salary/);
-    // The chip carries the "Remove filter" label; the reopened-trigger summary does not.
+    openRating();
+    fireEvent.click(screen.getByRole('radio', { name: /Not specified/ }));
+    done();
+    const chip = screen.getByRole('button', { name: /Employer rating.*Not specified/ });
+    expect(chip).toBeInTheDocument();
+    fireEvent.click(chip);
     expect(
-      screen.getByRole('button', { name: /Salary.*A\$100k.*Any.*Remove filter/ })
-    ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Clear all/ })).toHaveTextContent('1');
-  });
-
-  test('the max cannot be set below the chosen min', () => {
-    render(<Harness />);
-    openFilter(/^Salary/);
-    fireEvent.change(screen.getByRole('combobox', { name: /min/i }), {
-      target: { value: '120000' },
-    });
-    const max = screen.getByRole('combobox', { name: /max/i }) as HTMLSelectElement;
-    const values = Array.from(max.options).map((o) => o.value).filter(Boolean);
-    expect(values.every((v) => Number(v) > 120000)).toBe(true);
+      screen.queryByRole('button', { name: /Employer rating.*Not specified/ })
+    ).not.toBeInTheDocument();
   });
 });
 
-describe('the state filter', () => {
-  test('states are offered as the source writes them', () => {
-    // The board is national now, so where a role is comes before what it is.
+describe('the salary range on the bar', () => {
+  test('min is chosen with a plain select and it chips', () => {
     render(<Harness />);
-    openFilter(/^State/);
-    expect(screen.getByRole('checkbox', { name: /Victoria/ })).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: /New South Wales/ })).toBeInTheDocument();
-  });
-
-  test('picking one chips under its own field name', () => {
-    render(<Harness />);
-    openFilter(/^State/);
-    fireEvent.click(screen.getByRole('checkbox', { name: /Victoria/ }));
-    closeFilter(/^State/);
-    expect(screen.getByRole('button', { name: /State.*Victoria/ })).toBeInTheDocument();
+    openTrigger(/^Salary/);
+    fireEvent.change(screen.getByRole('combobox', { name: /min/i }), { target: { value: '100000' } });
+    closeTrigger(/^Salary/);
+    // The chip below the bar carries the chosen range.
+    expect(screen.getByTitle('Salary: A$100k – Any')).toBeInTheDocument();
   });
 });

@@ -3,7 +3,7 @@
 // carries its employer's columns, and the jobs page reads those (see jobs.ts).
 
 import { Company } from './types';
-import { parseCsv, splitList, triState } from './csv';
+import { parseCsv, splitList, triState, glassdoorFields } from './csv';
 import { dataUrl } from './dataUrl';
 
 export type { Company } from './types';
@@ -31,6 +31,7 @@ function toCompany(row: Record<string, string>): Company {
     openings: Number.parseInt(pick(row, 'Job openings'), 10) || 0,
     accreditedSponsor: triState(pick(row, 'Accredited sponsor', 'Sponsor visa available')),
     hiresInternationalStudents: triState(pick(row, 'Hires international students')),
+    ...glassdoorFields(row),
   };
 }
 
@@ -58,6 +59,46 @@ export function loadCompanies(): Promise<Company[]> {
 }
 
 export type CompanySort = 'openings' | 'name';
+
+/** The list-valued filters on the companies page. */
+export type CompanyFilterKey =
+  | 'states'
+  | 'industries'
+  | 'companyTypes'
+  | 'growthStages'
+  | 'hqCities'
+  | 'openRoles'
+  | 'sponsor'
+  | 'students';
+
+export type CompanyFilters = Record<CompanyFilterKey, string[]>;
+
+export const NO_COMPANY_FILTERS: CompanyFilters = {
+  states: [],
+  industries: [],
+  companyTypes: [],
+  growthStages: [],
+  hqCities: [],
+  openRoles: [],
+  sponsor: [],
+  students: [],
+};
+
+/** Everything the companies page reads from — and writes to — the URL. */
+export interface CompanyView {
+  query: string;
+  filters: CompanyFilters;
+  /** Minimum Glassdoor rating; 0 any, -1 only the unrated. */
+  minRating: number;
+  sort: CompanySort;
+}
+
+export const DEFAULT_COMPANY_VIEW: CompanyView = {
+  query: '',
+  filters: NO_COMPANY_FILTERS,
+  minRating: 0,
+  sort: 'openings',
+};
 
 /** Sorted for display: most roles first, or alphabetically. */
 export function sortCompanies(companies: Company[], sort: CompanySort): Company[] {

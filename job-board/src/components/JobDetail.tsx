@@ -1,12 +1,6 @@
 import { Fragment, Suspense, lazy, useState } from 'react';
 import { Job, Salary, hasSalary, jobLocation } from '../types';
-import {
-  formatDate,
-  formatMoney,
-  formatSalary,
-  orNotSpecified,
-  NOT_SPECIFIED,
-} from '../format';
+import { formatDate, formatSalaryAud, orNotSpecified, NOT_SPECIFIED } from '../format';
 import {
   visaUrl,
   resolveOccupations,
@@ -15,7 +9,9 @@ import {
   occupationListsFor,
   occupationListUrl,
   occupationListLabel,
-  LEVELS_FYI_SALARY_NOTE,
+  salarySourceLabel,
+  salarySourceNote,
+  salarySourceUrl,
   OCCUPATION_LIST_NOTE,
   resolveOsca,
   unitGroupsFor,
@@ -29,6 +25,7 @@ import {
   VISA_DISCLAIMER,
 } from '../references';
 import { InfoTooltip } from './InfoTooltip';
+import { GlassdoorRating } from './GlassdoorRating';
 import { ShareJob } from './ShareJob';
 import { jobShareUrl } from '../App';
 import { OUTBOUND, outboundHref, emailApplyHref, safeHref } from '../outbound';
@@ -207,15 +204,32 @@ function Answer({ value, yes, no }: { value: boolean | undefined; yes: string; n
 
 /**
  * A role's pay, as a single AUD figure or range — the advertised base range if
- * we have one, otherwise levels.fyi's estimate. The estimate's provenance is
- * carried by the "i" beside the label, not spelled out here.
+ * we have one, otherwise the estimate, which is prefixed "~" and whose figure
+ * links to its source (Glassdoor / levels.fyi); the "i" by the label names it.
  */
 function SalaryFact({ salary }: { salary: Salary }) {
-  const aud =
-    formatSalary(salary.base?.minAud, salary.base?.maxAud, 'AUD') ||
-    (salary.estimateAud ? formatMoney(salary.estimateAud, 'AUD') : '');
+  const aud = formatSalaryAud(salary);
+  if (!aud) return <dd className="fact-value">{NOT_SPECIFIED}</dd>;
 
-  return <dd className="fact-value">{aud || NOT_SPECIFIED}</dd>;
+  const source = salary.isEstimate ? salarySourceUrl(salary.sourceUrl) : undefined;
+  const href = source ? outboundHref(source, 'salary') : undefined;
+
+  return (
+    <dd className="fact-value">
+      {href ? (
+        <a
+          className="reference-link"
+          href={href}
+          title={`Salary estimate — ${salarySourceLabel(salary.source)}`}
+          {...OUTBOUND}
+        >
+          {aud}
+        </a>
+      ) : (
+        aud
+      )}
+    </dd>
+  );
 }
 
 // Apply action.
@@ -335,7 +349,7 @@ export function JobDetail({ job }: { job: Job }) {
                 Salary{' '}
                 {hasSalary(job.salary) && job.salary.isEstimate && (
                   <InfoTooltip
-                    text={LEVELS_FYI_SALARY_NOTE}
+                    text={salarySourceNote(job.salary.source)}
                     label="Salary source"
                     placement="bottom"
                   />
@@ -366,12 +380,6 @@ export function JobDetail({ job }: { job: Job }) {
             <div className="fact">
               <dt className="fact-label">Location</dt>
               <dd className="fact-value">{orNotSpecified(jobLocation(job))}</dd>
-            </div>
-            <div className="fact">
-              <dt className="fact-label">Posted</dt>
-              <dd className="fact-value">
-                {job.posted ? formatDate(job.posted) : NOT_SPECIFIED}
-              </dd>
             </div>
           </dl>
         </section>
@@ -563,6 +571,16 @@ export function JobDetail({ job }: { job: Job }) {
                 </dd>
               </div>
             )}
+            <div className="fact">
+              <dt className="fact-label">Employer rating</dt>
+              <dd className="fact-value">
+                {company.glassdoorRating ? (
+                  <GlassdoorRating company={company} showSource={false} />
+                ) : (
+                  NOT_SPECIFIED
+                )}
+              </dd>
+            </div>
             {company.employees && (
               <div className="fact">
                 <dt className="fact-label">Employees</dt>

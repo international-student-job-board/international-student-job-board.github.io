@@ -149,6 +149,49 @@ export const abbreviateState = (state: string): string | undefined =>
   STATE_NAMES[(state ?? '').trim().toLowerCase()];
 
 /**
+ * The Australian state the reader is most likely in, from their browser's IANA
+ * time zone — free, offline, and no permission prompt, which a GPS lookup isn't.
+ * It's a hint, not a fact (a Melburnian on a Sydney VPN reads as NSW), so the
+ * caller only uses it as a default the reader can change. Blank when the zone
+ * isn't an Australian one we recognise.
+ */
+const TIME_ZONE_STATES: Record<string, string> = {
+  'Australia/Sydney': 'New South Wales',
+  'Australia/NSW': 'New South Wales',
+  'Australia/Broken_Hill': 'New South Wales',
+  'Australia/Yancowinna': 'New South Wales',
+  'Australia/Lord_Howe': 'New South Wales',
+  'Australia/LHI': 'New South Wales',
+  'Australia/Melbourne': 'Victoria',
+  'Australia/Victoria': 'Victoria',
+  'Australia/Brisbane': 'Queensland',
+  'Australia/Queensland': 'Queensland',
+  'Australia/Lindeman': 'Queensland',
+  'Australia/Perth': 'Western Australia',
+  'Australia/West': 'Western Australia',
+  'Australia/Eucla': 'Western Australia',
+  'Australia/Adelaide': 'South Australia',
+  'Australia/South': 'South Australia',
+  'Australia/Hobart': 'Tasmania',
+  'Australia/Tasmania': 'Tasmania',
+  'Australia/Currie': 'Tasmania',
+  'Antarctica/Macquarie': 'Tasmania',
+  'Australia/Darwin': 'Northern Territory',
+  'Australia/North': 'Northern Territory',
+  'Australia/Canberra': 'Australian Capital Territory',
+  'Australia/ACT': 'Australian Capital Territory',
+};
+
+export function inferAustralianState(): string {
+  try {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return TIME_ZONE_STATES[zone] ?? '';
+  } catch {
+    return '';
+  }
+}
+
+/**
  * Where a state's employers sit when we can't place them any closer.
  *
  * Only Melbourne has suburb-level coordinates in this file, so everywhere else

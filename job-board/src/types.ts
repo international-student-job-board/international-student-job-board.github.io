@@ -27,6 +27,11 @@ export interface Company {
    */
   accreditedSponsor: boolean | undefined;
   hiresInternationalStudents: boolean | undefined;
+  /** Glassdoor's overall rating out of 5, the review count behind it, and the
+   * Overview page — undefined when we couldn't match the company on Glassdoor. */
+  glassdoorRating?: number;
+  glassdoorReviews?: number;
+  glassdoorUrl?: string;
 }
 
 export interface Job {
@@ -70,8 +75,16 @@ export interface Job {
    */
   state: string;
   country: string;
-  /** When the role was posted. Orders the board and drives the recency filter. */
+  /**
+   * When the role was posted — the advert's own date where we could read one
+   * (often weeks before the CSV's "Date posted", which is really Dealroom's
+   * discovery date and batches many roles onto one day), otherwise that. Orders
+   * the board and drives the recency filter.
+   */
   posted: string;
+  /** True when `posted` came from the advert's coarse "N weeks ago" — a good
+   * sort key, but not a date to render to the day. */
+  postedApprox: boolean;
   applyUrl: string;
   company: Company;
   /**
@@ -90,22 +103,23 @@ export interface Job {
 /**
  * A role's pay, as far as it is known.
  *
- * Two figures, because they answer different questions and neither is
- * authoritative on its own:
- *  - `base` is the advertised base-salary range, kept in the currency levels.fyi
- *    reported it in plus a copy converted to AUD.
- *  - `estimateAud` is levels.fyi's total-comp estimate for the level it matched
- *    the role to — a single AUD figure.
+ *  - `base` is a base-salary range, in its original currency and converted to AUD.
+ *  - `estimateAud` is a single "typical" AUD figure (Glassdoor's median, or
+ *    levels.fyi's total-comp estimate).
+ *  - `source` is where the figure came from: `advert` (the employer published
+ *    it — not an estimate), `glassdoor` or `levels.fyi` (an estimate).
+ *  - `sourceUrl` is the page to link to for a Glassdoor / levels.fyi figure.
  *
- * `isEstimate` is true whenever the numbers came from levels.fyi rather than a
- * figure the employer published; it drives the "estimated" note on the detail
- * page. `levelsUrl` is the levels.fyi listing the figures came from.
+ * `isEstimate` is derived: true unless the source is the advert.
  */
+export type SalarySource = 'advert' | 'glassdoor' | 'levels.fyi' | '';
+
 export interface Salary {
   base?: { min?: number; max?: number; currency: string; minAud?: number; maxAud?: number };
   estimateAud?: number;
+  source: SalarySource;
+  sourceUrl: string;
   isEstimate: boolean;
-  levelsUrl: string;
 }
 
 /** True when a role carries any pay figure at all. */

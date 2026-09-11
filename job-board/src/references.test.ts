@@ -10,7 +10,9 @@ import {
   listOccupations,
   visaUrl,
   occupationListLabel,
-  LEVELS_FYI_SALARY_NOTE,
+  salarySourceNote,
+  salarySourceUrl,
+  glassdoorUrl,
 } from './references';
 import { Job } from './types';
 
@@ -187,7 +189,21 @@ describe('government links', () => {
     );
   });
 
-  test('the salary note names levels.fyi as the source', () => {
-    expect(LEVELS_FYI_SALARY_NOTE).toMatch(/levels\.fyi/i);
+  test('the salary source note names the source, or is blank for the advert', () => {
+    expect(salarySourceNote('glassdoor')).toBe('Source: Glassdoor');
+    expect(salarySourceNote('levels.fyi')).toBe('Source: Levels.fyi');
+    expect(salarySourceNote('advert')).toBe('');
+  });
+
+  test('a salary-source URL is passed through only for Glassdoor or levels.fyi', () => {
+    expect(salarySourceUrl('https://www.glassdoor.com.au/Salary/x.htm')).toContain('glassdoor');
+    expect(salarySourceUrl('https://www.levels.fyi/jobs?jobId=1')).toContain('levels.fyi');
+    expect(salarySourceUrl('https://evil.example/glassdoor.com')).toBeUndefined();
+  });
+
+  test('a Glassdoor Overview URL is validated by host', () => {
+    expect(glassdoorUrl('https://www.glassdoor.com.au/Overview/x.htm')).toContain('glassdoor');
+    expect(glassdoorUrl('https://phish.test/glassdoor')).toBeUndefined();
+    expect(glassdoorUrl(undefined)).toBeUndefined();
   });
 });

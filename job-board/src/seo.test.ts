@@ -20,7 +20,7 @@ const job = (over: Partial<Job> = {}): Job =>
     jobLevel: '',
     workArrangement: '',
     educationLevels: [],
-    salary: { isEstimate: false, levelsUrl: '' },
+    salary: { source: '', sourceUrl: '', isEstimate: false },
     company: {
       name: 'Acme',
       segment: '',
@@ -127,8 +127,9 @@ describe('JobPosting structured data', () => {
         workArrangement: 'Remote',
         salary: {
           base: { minAud: 95000, maxAud: 110000, currency: 'AUD' },
+          source: 'advert',
+          sourceUrl: '',
           isEstimate: false,
-          levelsUrl: '',
         },
       }),
       `${ORIGIN}/jobs/7`,
@@ -143,13 +144,14 @@ describe('JobPosting structured data', () => {
     });
   });
 
-  test('a levels.fyi estimate is kept out of the structured data', () => {
+  test('an estimate is kept out of the structured data', () => {
     const s = jobPostingSchema(
       job({
         salary: {
-          base: { minAud: 95000, maxAud: 110000, currency: 'USD' },
+          base: { minAud: 95000, maxAud: 110000, currency: 'AUD' },
+          source: 'glassdoor',
+          sourceUrl: 'https://www.glassdoor.com.au/Salary/x.htm',
           isEstimate: true,
-          levelsUrl: 'https://www.levels.fyi/jobs?jobId=1',
         },
       }),
       `${ORIGIN}/jobs/7`,

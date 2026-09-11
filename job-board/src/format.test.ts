@@ -5,7 +5,16 @@ import {
   NOT_SPECIFIED,
   formatMoney,
   formatSalary,
+  formatSalaryAud,
 } from './format';
+import type { Salary } from './types';
+
+const salary = (over: Partial<Salary>): Salary => ({
+  source: '',
+  sourceUrl: '',
+  isEstimate: false,
+  ...over,
+});
 
 describe('a role start date has three possible answers', () => {
   test('a date reads as a date', () => {
@@ -51,5 +60,24 @@ describe('salary figures', () => {
   test('nothing to show is the empty string, not "A$0"', () => {
     expect(formatSalary()).toBe('');
     expect(formatSalary(0, 0)).toBe('');
+  });
+});
+
+describe('formatSalaryAud', () => {
+  test('an advert-stated range is shown as-is, no "~"', () => {
+    expect(
+      formatSalaryAud(salary({ base: { currency: 'AUD', minAud: 95000, maxAud: 110000 }, source: 'advert' }))
+    ).toBe('A$95k–A$110k');
+  });
+
+  test('a Glassdoor / levels.fyi figure is prefixed "~"', () => {
+    expect(
+      formatSalaryAud(salary({ base: { currency: 'AUD', minAud: 120000, maxAud: 158000 }, isEstimate: true }))
+    ).toBe('~A$120k–A$158k');
+    expect(formatSalaryAud(salary({ estimateAud: 145000, isEstimate: true }))).toBe('~A$145k');
+  });
+
+  test('no pay figure is the empty string', () => {
+    expect(formatSalaryAud(salary({}))).toBe('');
   });
 });

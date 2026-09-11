@@ -1,5 +1,5 @@
-import { Job, hasSalary, salaryRangeAud, jobLocation } from '../types';
-import { formatDate, formatSalary } from '../format';
+import { Job, hasSalary, jobLocation } from '../types';
+import { formatDate, formatSalaryAud } from '../format';
 
 interface Props {
   job: Job;
@@ -8,12 +8,11 @@ interface Props {
 }
 
 export function JobCard({ job, selected, onSelect }: Props) {
-  const pay = hasSalary(job.salary) ? salaryRangeAud(job.salary) : null;
   const meta = [
     job.type,
     job.workArrangement,
     jobLocation(job),
-    pay ? `${formatSalary(pay[0], pay[1], 'AUD')}${job.salary.isEstimate ? ' est.' : ''}` : '',
+    hasSalary(job.salary) ? formatSalaryAud(job.salary) : '',
   ]
     .filter(Boolean)
     .join(' · ');

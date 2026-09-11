@@ -1,13 +1,14 @@
 // content/jobs.csv is the board: one row per open role, with the employer's columns
 // repeated on each of its roles.
 
-import { Job, Company, Salary } from './types';
+import { Job, Company, Salary, SalarySource } from './types';
 import {
   parseCsv,
   splitList,
   splitNames,
   triState,
   int,
+  glassdoorFields,
   anzscoCodes,
   unitGroupCodes,
 } from './csv';
@@ -44,6 +45,9 @@ export const COLUMNS = [
   'Job openings',
   'Accredited sponsor',
   'Hires international students',
+  'Glassdoor rating',
+  'Glassdoor reviews',
+  'Glassdoor URL',
   'Job title',
   'Job type',
   'ANZSCO occupation',
@@ -70,8 +74,9 @@ export const COLUMNS = [
   'Base salary min AUD',
   'Base salary max AUD',
   'Company salary estimate AUD',
-  'Salary is estimate',
-  'levels.fyi URL',
+  'Salary source',
+  'Salary source URL',
+  'Advert posted',
 ] as const;
 
 function toCompany(row: Record<string, string>): Company {
@@ -91,6 +96,7 @@ function toCompany(row: Record<string, string>): Company {
     openings: Number.parseInt(row['Job openings'] ?? '', 10) || 0,
     accreditedSponsor: triState(row['Accredited sponsor']),
     hiresInternationalStudents: triState(row['Hires international students']),
+    ...glassdoorFields(row),
   };
 }
 
@@ -130,11 +136,15 @@ function toSalary(row: Record<string, string>): Salary {
     min || max || minAud || maxAud
       ? { min, max, currency: currency || 'AUD', minAud, maxAud }
       : undefined;
+  const raw = (row['Salary source'] ?? '').trim().toLowerCase();
+  const source: SalarySource =
+    raw === 'advert' || raw === 'glassdoor' || raw === 'levels.fyi' ? raw : '';
   return {
     base,
     estimateAud: int(row['Company salary estimate AUD']),
-    isEstimate: triState(row['Salary is estimate']) === true,
-    levelsUrl: (row['levels.fyi URL'] ?? '').trim(),
+    source,
+    sourceUrl: (row['Salary source URL'] ?? '').trim(),
+    isEstimate: source === 'glassdoor' || source === 'levels.fyi',
   };
 }
 
@@ -154,7 +164,8 @@ function toJob(row: Record<string, string>, company: Company): Job {
     city: (row['Job city'] ?? '').trim(),
     state: (row['State'] ?? '').trim(),
     country: (row['Job country'] ?? '').trim(),
-    posted: (row['Date posted'] ?? '').trim(),
+    posted: (row['Advert posted'] || row['Date posted'] || '').trim(),
+    postedApprox: Boolean((row['Advert posted'] ?? '').trim()),
     applyUrl: (row['Job URL'] ?? '').trim(),
     company,
     employmentType: (row['Employment type'] ?? '').trim(),
@@ -200,7 +211,21 @@ export function toJobs(rows: Record<string, string>[]): Job[] {
       return toJob(row, companies.get(name) ?? toCompany(row));
     })
     .filter((job) => job.id && job.title)
-    .sort((a, b) => (dateValue(b.posted) || 0) - (dateValue(a.posted) || 0));
+    .sort((a, b) => {
+      const byDate = (dateValue(b.posted) || 0) - (dateValue(a.posted) || 0);
+      if (byDate) return byDate;
+      // Same day — and hundreds of roles can share Dealroom's batch date. A
+      // LinkedIn job id increases with time, so it orders them within the day;
+      // the Job id is the last resort so the sort stays stable.
+      return linkedinId(b.applyUrl) - linkedinId(a.applyUrl) || b.id.localeCompare(a.id);
+    });
+}
+
+/** The numeric id in a LinkedIn job URL, or 0. LinkedIn allocates these roughly
+ * in time order, so a larger one is newer. */
+export function linkedinId(url: string): number {
+  const match = url.match(/linkedin\.com\/jobs\/view\/(?:[a-z0-9-]*-)?(\d{6,})/i);
+  return match ? Number(match[1]) : 0;
 }
 
 /** How long a role stays on the board after it was posted. */

@@ -1,9 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { JobDetail } from './JobDetail';
 import { setOccupations } from '../references';
 import { Job, Salary } from '../types';
 
-const emptySalary: Salary = { isEstimate: false, levelsUrl: '' };
+const emptySalary: Salary = { source: '', sourceUrl: '', isEstimate: false };
 
 const job = (over: Partial<Job> = {}): Job =>
   ({
@@ -65,43 +65,75 @@ test('the working-conditions facts show what a role carries and "Not specified" 
   expect(screen.getByText('Work arrangement').closest('.fact')).toHaveTextContent('On-site');
   // Salary was not enriched here.
   expect(screen.getByText('Salary').closest('.fact')).toHaveTextContent('Not specified');
+  // No stray "Posted" fact in the nutshell (it's already in the header).
+  expect(screen.queryByText('Posted')).not.toBeInTheDocument();
 });
 
-test('an estimated salary shows just the AUD figure, with the "i" source note', () => {
+test('the Glassdoor rating shows only as an "Employer rating" fact, not by the company name', () => {
+  const j = job();
+  (j.company as { glassdoorRating?: number }).glassdoorRating = 4;
+  (j.company as { glassdoorReviews?: number }).glassdoorReviews = 36;
+  (j.company as { glassdoorUrl?: string }).glassdoorUrl =
+    'https://www.glassdoor.com.au/Overview/Working-at-Acme-EI_IE1.htm';
+  render(<JobDetail job={j} />);
+
+  // The header no longer carries a rating line.
+  expect(screen.queryByText(/based on 36 reviews/)?.closest('.detail-head')).toBeFalsy();
+
+  // The employer section has a labelled fact, its value linked, without "on Glassdoor".
+  const fact = screen.getByText('Employer rating').closest('.fact') as HTMLElement;
+  const factLink = within(fact).getByRole('link', { name: '4.0 based on 36 reviews' });
+  expect(factLink).toHaveAttribute('href', expect.stringContaining('glassdoor'));
+  expect(factLink).not.toHaveTextContent('on Glassdoor');
+});
+
+test('the Employer rating fact still shows, as "Not specified", when the company is not on Glassdoor', () => {
+  render(<JobDetail job={job()} />);
+  const fact = screen.getByText('Employer rating').closest('.fact') as HTMLElement;
+  expect(fact).toHaveTextContent('Not specified');
+  expect(within(fact).queryByRole('link')).not.toBeInTheDocument();
+});
+
+test('an estimated salary shows the AUD figure and links its source', () => {
   render(
     <JobDetail
       job={job({
         salary: {
-          base: { minAud: 142788, maxAud: 160727, currency: 'USD', min: 101268, max: 113991 },
-          estimateAud: 106331,
+          base: { minAud: 120000, maxAud: 157900, currency: 'AUD' },
+          estimateAud: 145000,
+          source: 'glassdoor',
+          sourceUrl: 'https://www.glassdoor.com.au/Salary/Culture-Amp-Salaries-E742274.htm',
           isEstimate: true,
-          levelsUrl: 'https://www.levels.fyi/jobs?jobId=1',
         },
       })}
     />
   );
-  const fact = screen.getByText('Salary').closest('.fact') as HTMLElement;
-  expect(fact).toHaveTextContent('A$143k–A$161k');
-  // No original-currency aside, no estimate tail, no inline link.
-  expect(fact).not.toHaveTextContent('US$');
-  expect(fact).not.toHaveTextContent('estimate');
-  expect(screen.queryByRole('link', { name: /levels\.fyi/i })).not.toBeInTheDocument();
+  // The figure itself is the link - no "Glassdoor" label text beside it -
+  // and it's marked an estimate with a leading "~".
+  const link = screen.getByRole('link', { name: /A\$120k/ });
+  expect(link).toHaveTextContent('~A$120k–A$158k');
+  expect(link).toHaveAttribute('href', expect.stringContaining('glassdoor.com.au'));
+  expect(link).toHaveAttribute('target', '_blank');
+  // The "i" beside the label still names the source.
   expect(screen.getByLabelText('Salary source')).toBeInTheDocument();
 });
 
-test('a published salary carries no source note', () => {
+test('a published salary carries no source note or link', () => {
   render(
     <JobDetail
       job={job({
         salary: {
           base: { minAud: 95000, maxAud: 110000, currency: 'AUD' },
+          source: 'advert',
+          sourceUrl: '',
           isEstimate: false,
-          levelsUrl: '',
         },
       })}
     />
   );
   const fact = screen.getByText('Salary').closest('.fact') as HTMLElement;
   expect(fact).toHaveTextContent('A$95k–A$110k');
+  expect(fact).not.toHaveTextContent('~');
   expect(screen.queryByLabelText('Salary source')).not.toBeInTheDocument();
+  expect(screen.queryByRole('link', { name: /glassdoor|levels/i })).not.toBeInTheDocument();
 });

@@ -22,6 +22,13 @@ interface Props {
   tooltip?: string;
   /** A source link, in that same footer beside the tooltip. */
   footerLink?: { label: string; href: string };
+  /** Show the type-to-filter box for long lists. Off on touch, where it only
+   * summons a keyboard that covers the options. Default on. */
+  searchable?: boolean;
+  /** Float the panel over everything (position: fixed) rather than anchoring it
+   * to the trigger. Needed inside the scrolling filter modal, where an absolute
+   * panel would be clipped. */
+  overlay?: boolean;
 }
 
 /** Longer lists get a filter box; short ones are faster to just read. */
@@ -29,6 +36,8 @@ const SEARCH_THRESHOLD = 8;
 
 /** Roughly the panel width, used to decide which edge to anchor it to. */
 const PANEL_WIDTH = 300;
+
+type Pos = { top: number; left: number; width: number; maxHeight: number };
 
 export function FilterSelect({
   label,
@@ -38,16 +47,19 @@ export function FilterSelect({
   multiple = true,
   tooltip,
   footerLink,
+  searchable = true,
+  overlay = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [alignRight, setAlignRight] = useState(false);
+  const [pos, setPos] = useState<Pos | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const panelId = useId();
 
-  const showSearch = options.length > SEARCH_THRESHOLD;
+  const showSearch = searchable && options.length > SEARCH_THRESHOLD;
   const needle = query.trim().toLowerCase();
   const shown = needle
     ? options.filter((o) => o.label.toLowerCase().includes(needle))
@@ -75,23 +87,48 @@ export function FilterSelect({
     document.addEventListener('pointerdown', onPointerDown);
     document.addEventListener('keydown', onKeyDown);
     root?.addEventListener('focusout', onFocusOut);
+    // A floating panel can't follow the page or modal behind it, so it closes on
+    // a scroll there — but NOT on a scroll of its own option list, which is what
+    // ticking a box near the bottom of a long list does.
+    const onScroll = (event: Event) => {
+      if (!root?.contains(event.target as Node)) setOpen(false);
+    };
+    if (overlay) window.addEventListener('scroll', onScroll, true);
     return () => {
       document.removeEventListener('pointerdown', onPointerDown);
       document.removeEventListener('keydown', onKeyDown);
       root?.removeEventListener('focusout', onFocusOut);
+      if (overlay) window.removeEventListener('scroll', onScroll, true);
     };
-  }, [open]);
+  }, [open, overlay]);
 
-  // Anchor the panel to whichever edge keeps it on screen — the filter row wraps, so a
-  // control can sit anywhere across the width.
+  // Position the panel: anchored to the roomier edge normally, or floated over
+  // everything (from the trigger's viewport rect) when `overlay`.
   useLayoutEffect(() => {
     if (!open) return;
     const trigger = triggerRef.current;
     if (!trigger) return;
-    const { left } = trigger.getBoundingClientRect();
-    setAlignRight(left + PANEL_WIDTH > window.innerWidth - 16);
+    const rect = trigger.getBoundingClientRect();
+    setAlignRight(rect.left + PANEL_WIDTH > window.innerWidth - 16);
+    if (overlay) {
+      const width = Math.min(PANEL_WIDTH, window.innerWidth - 24);
+      const left = Math.min(Math.max(12, rect.left), window.innerWidth - width - 12);
+      const below = window.innerHeight - rect.bottom - 12;
+      const above = rect.top - 12;
+      const dropDown = below >= 220 || below >= above;
+      const room = dropDown ? below : above;
+      setPos({
+        top: dropDown ? rect.bottom + 6 : Math.max(12, rect.top - 6 - Math.min(above, 360)),
+        left,
+        width,
+        // Bounded by the room on that side so the panel can't run off the
+        // screen, and capped so it isn't needlessly tall on a desktop; the
+        // option list scrolls within whatever height this leaves.
+        maxHeight: Math.max(140, Math.min(room, 420)),
+      });
+    }
     searchRef.current?.focus();
-  }, [open]);
+  }, [open, overlay]);
 
   const toggle = (value: string) => {
     if (!multiple) {
@@ -139,7 +176,17 @@ export function FilterSelect({
       </button>
 
       {open && (
-        <div className="fselect-panel" id={panelId} data-align={alignRight ? 'right' : 'left'}>
+        <div
+          className="fselect-panel"
+          id={panelId}
+          data-align={alignRight ? 'right' : 'left'}
+          data-overlay={overlay ? '' : undefined}
+          style={
+            overlay && pos
+              ? { position: 'fixed', top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxHeight }
+              : undefined
+          }
+        >
           {showSearch && (
             <input
               ref={searchRef}

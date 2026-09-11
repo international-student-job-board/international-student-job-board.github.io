@@ -1,3 +1,5 @@
+import type { Salary } from './types';
+
 // Milliseconds since the epoch for an ISO date, or NaN when the value is missing or
 // unreadable.
 export function dateValue(iso: string): number {
@@ -37,6 +39,19 @@ export function formatSalary(min?: number, max?: number, currency = 'AUD'): stri
   if (lo && hi && lo !== hi) return `${formatMoney(lo, currency)}–${formatMoney(hi, currency)}`;
   const one = lo ?? hi;
   return one ? formatMoney(one, currency) : '';
+}
+
+/**
+ * A role's AUD pay for display: the converted base range, else the single
+ * estimate figure — prefixed "~" when it's an estimate (Glassdoor / levels.fyi)
+ * rather than a figure the employer published. "" when there's no pay at all.
+ */
+export function formatSalaryAud(salary: Salary): string {
+  const value =
+    formatSalary(salary.base?.minAud, salary.base?.maxAud, 'AUD') ||
+    (salary.estimateAud ? formatMoney(salary.estimateAud, 'AUD') : '');
+  if (!value) return '';
+  return salary.isEstimate ? `~${value}` : value;
 }
 
 /** What a field reads as when a role doesn't carry it. */

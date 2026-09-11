@@ -1,4 +1,11 @@
-import { postcodeOf, clusterCompanies, placeFor, stateOfPostcode, POSTCODE_PLACES } from './geo';
+import {
+  postcodeOf,
+  clusterCompanies,
+  placeFor,
+  stateOfPostcode,
+  inferAustralianState,
+  POSTCODE_PLACES,
+} from './geo';
 import { Company } from './types';
 
 const company = (name: string, address: string, state = 'Victoria'): Company =>
@@ -101,6 +108,38 @@ describe('placing an employer nationally', () => {
     expect(stateOfPostcode('4000')).toBe('QLD');
     expect(stateOfPostcode('6000')).toBe('WA');
     expect(stateOfPostcode('0000')).toBeUndefined();
+  });
+});
+
+describe('inferAustralianState', () => {
+  const withZone = (zone: string | undefined, run: () => void) => {
+    const real = Intl.DateTimeFormat;
+    // @ts-expect-error - narrow shim, only resolvedOptions().timeZone is read
+    Intl.DateTimeFormat = () => ({ resolvedOptions: () => ({ timeZone: zone }) });
+    try {
+      run();
+    } finally {
+      Intl.DateTimeFormat = real;
+    }
+  };
+
+  test('maps the common capital-city zones to their state name', () => {
+    withZone('Australia/Melbourne', () => expect(inferAustralianState()).toBe('Victoria'));
+    withZone('Australia/Sydney', () =>
+      expect(inferAustralianState()).toBe('New South Wales')
+    );
+    withZone('Australia/Brisbane', () => expect(inferAustralianState()).toBe('Queensland'));
+    withZone('Australia/Perth', () =>
+      expect(inferAustralianState()).toBe('Western Australia')
+    );
+    withZone('Australia/Adelaide', () =>
+      expect(inferAustralianState()).toBe('South Australia')
+    );
+  });
+
+  test('a non-Australian or unknown zone yields nothing', () => {
+    withZone('Europe/London', () => expect(inferAustralianState()).toBe(''));
+    withZone(undefined, () => expect(inferAustralianState()).toBe(''));
   });
 });
 

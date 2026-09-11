@@ -1,4 +1,4 @@
-import { toJobs, companiesFrom, isRecent, MONTHS_LISTED, COLUMNS } from './jobs';
+import { toJobs, companiesFrom, isRecent, linkedinId, MONTHS_LISTED, COLUMNS } from './jobs';
 import { parseCsv, escapeCell, toCsvRow, splitList, anzscoCodes, triState } from './csv';
 
 const HEADER = COLUMNS.join(',');
@@ -13,6 +13,14 @@ const row = (over: Record<string, string> = {}) => ({
   'Job ID': '1',
   'Date posted': '2026-01-01',
   ...over,
+});
+
+test('linkedinId pulls the numeric id out of a LinkedIn job URL', () => {
+  expect(linkedinId('https://www.linkedin.com/jobs/view/4458174510/')).toBe(4458174510);
+  expect(linkedinId('https://www.linkedin.com/jobs/view/full-stack-engineer-at-x-4458174510')).toBe(
+    4458174510
+  );
+  expect(linkedinId('https://boards.greenhouse.io/x/jobs/123')).toBe(0);
 });
 
 describe('reading the CSV', () => {
@@ -39,8 +47,8 @@ describe('reading the CSV', () => {
             'Base salary min AUD': '142788',
             'Base salary max AUD': '160727',
             'Company salary estimate AUD': '106331',
-            'Salary is estimate': 'True',
-            'levels.fyi URL': 'https://www.levels.fyi/jobs?jobId=1',
+            'Salary source': 'levels.fyi',
+            'Salary source URL': 'https://www.levels.fyi/jobs?jobId=1',
           })
         )
       )
@@ -57,8 +65,43 @@ describe('reading the CSV', () => {
       maxAud: 160727,
     });
     expect(job.salary.estimateAud).toBe(106331);
+    expect(job.salary.source).toBe('levels.fyi');
     expect(job.salary.isEstimate).toBe(true);
-    expect(job.salary.levelsUrl).toContain('levels.fyi');
+    expect(job.salary.sourceUrl).toContain('levels.fyi');
+  });
+
+  test('an advert-sourced salary is not an estimate', () => {
+    const [job] = toJobs(
+      parseCsv(
+        csv(
+          row({
+            'Base salary min AUD': '115000',
+            'Base salary max AUD': '160000',
+            'Base salary currency': 'AUD',
+            'Salary source': 'advert',
+          })
+        )
+      )
+    );
+    expect(job.salary.source).toBe('advert');
+    expect(job.salary.isEstimate).toBe(false);
+  });
+
+  test('the Glassdoor rating folds onto the employer', () => {
+    const [job] = toJobs(
+      parseCsv(
+        csv(
+          row({
+            'Glassdoor rating': '3.2',
+            'Glassdoor reviews': '346',
+            'Glassdoor URL': 'https://www.glassdoor.com.au/Overview/Working-at-Acme-EI_IE1.htm',
+          })
+        )
+      )
+    );
+    expect(job.company.glassdoorRating).toBe(3.2);
+    expect(job.company.glassdoorReviews).toBe(346);
+    expect(job.company.glassdoorUrl).toContain('glassdoor');
   });
 
   test('a role with no salary data carries an empty pay block', () => {
@@ -67,6 +110,35 @@ describe('reading the CSV', () => {
     expect(job.salary.estimateAud).toBeUndefined();
     expect(job.salary.isEstimate).toBe(false);
     expect(job.educationLevels).toEqual([]);
+  });
+
+  test('the advert date, when known, stands in for Dealroom’s batch date', () => {
+    const [job] = toJobs(
+      parseCsv(
+        csv(row({ 'Date posted': '2026-09-07', 'Advert posted': '2026-08-19' }))
+      )
+    );
+    expect(job.posted).toBe('2026-08-19');
+    expect(job.postedApprox).toBe(true);
+  });
+
+  test('without an advert date it falls back to Dealroom’s, marked exact', () => {
+    const [job] = toJobs(parseCsv(csv(row({ 'Date posted': '2026-09-07' }))));
+    expect(job.posted).toBe('2026-09-07');
+    expect(job.postedApprox).toBe(false);
+  });
+
+  test('roles sharing a date order by LinkedIn id, newest first', () => {
+    const jobs = toJobs(
+      parseCsv(
+        csv(
+          row({ 'Job ID': 'a', 'Date posted': '2026-09-07', 'Job URL': 'https://www.linkedin.com/jobs/view/4460000000/' }),
+          row({ 'Job ID': 'b', 'Date posted': '2026-09-07', 'Job URL': 'https://www.linkedin.com/jobs/view/4464000000/' }),
+          row({ 'Job ID': 'c', 'Date posted': '2026-09-07', 'Job URL': 'https://www.linkedin.com/jobs/view/4462000000/' })
+        )
+      )
+    );
+    expect(jobs.map((j) => j.id)).toEqual(['b', 'c', 'a']);
   });
 
   test('a comma inside a cell survives the round trip', () => {

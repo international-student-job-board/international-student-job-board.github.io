@@ -86,11 +86,18 @@ describe('the row lands in the right columns', () => {
     expect(toCsvRow(row, [...COLUMNS])).toContain('"Acme, Inc"');
   });
 
-  test('the form knows every column except the two it never fills in', () => {
-    // 'Job ID' is assigned by the server; 'Invited Score' is derived upstream from the
-    // ANZSCO occupation against the SkillSelect round, never typed or picked.
+  test('the form knows every column except the ones the pipeline derives', () => {
+    // 'Job ID' is assigned by the server; the rest are filled by the data pipeline -
+    // the SkillSelect round, the advert's own date, the Glassdoor scrape - never typed.
     const known = new Set(FIELDS.map((f) => f.key));
     const missing = COLUMNS.filter((c) => !known.has(c));
-    expect(missing).toEqual(['Job ID', 'Invited Score']);
+    expect(missing).toEqual([
+      'Glassdoor rating',
+      'Glassdoor reviews',
+      'Glassdoor URL',
+      'Job ID',
+      'Invited Score',
+      'Advert posted',
+    ]);
   });
 });

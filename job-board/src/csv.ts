@@ -92,6 +92,28 @@ export function int(value: string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+/** A decimal cell — "3.2" -> 3.2, blank or unparseable -> undefined. */
+export function dec(value: string | undefined): number | undefined {
+  const trimmed = (value ?? '').trim();
+  if (!trimmed) return undefined;
+  const parsed = Number.parseFloat(trimmed);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+/** The three Glassdoor columns, folded off a company row the same way from both
+ * CSVs (jobs.csv repeats them per role; companies.csv has its own). */
+export function glassdoorFields(row: Record<string, string>): {
+  glassdoorRating?: number;
+  glassdoorReviews?: number;
+  glassdoorUrl?: string;
+} {
+  return {
+    glassdoorRating: dec(row['Glassdoor rating']),
+    glassdoorReviews: int(row['Glassdoor reviews']),
+    glassdoorUrl: (row['Glassdoor URL'] ?? '').trim() || undefined,
+  };
+}
+
 /** A cell holding several values. */
 export const splitList = (value: string) =>
   (value ?? '')

@@ -6,6 +6,9 @@ const HEADERS_OLD =
 const HEADERS_NEW =
   'Company name,Segment,Type,Website,Growth stage,Employees,Industries,HQ city,HQ address,Tagline,LinkedIn,Profile,Job openings,Accredited sponsor,Hires international students';
 
+const HEADERS_GLASSDOOR =
+  `${HEADERS_NEW},Glassdoor rating,Glassdoor reviews,Glassdoor URL`;
+
 const stubCsv = (text: string) => {
   (global as unknown as { fetch: jest.Mock }).fetch = jest.fn().mockResolvedValue({
     ok: true,
@@ -53,6 +56,19 @@ describe('reading the companies CSV', () => {
     expect(c.openings).toBe(4);
     expect(c.accreditedSponsor).toBe(true);
     expect(c.hiresInternationalStudents).toBe(false);
+  });
+
+  test('the Glassdoor columns are read when present, and skipped when not', async () => {
+    const [rated] = await freshLoad(
+      `${HEADERS_GLASSDOOR}\nAcme,,,,,,,,,,,,,,,3.2,346,https://www.glassdoor.com.au/Overview/x.htm`
+    );
+    expect(rated.glassdoorRating).toBe(3.2);
+    expect(rated.glassdoorReviews).toBe(346);
+    expect(rated.glassdoorUrl).toContain('glassdoor');
+
+    const [plain] = await freshLoad(`${HEADERS_NEW}\nAcme,,,,,,,,,,,,,,`);
+    expect(plain.glassdoorRating).toBeUndefined();
+    expect(plain.glassdoorUrl).toBeUndefined();
   });
 
   test('both spellings of the sponsor column are read, so either file works', async () => {

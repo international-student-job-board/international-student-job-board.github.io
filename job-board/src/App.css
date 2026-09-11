@@ -354,6 +354,204 @@ optgroup {
   letter-spacing: normal;
 }
 
+/* ---- "More filters" button + the filter modal --------------------------- */
+
+/* Plain text, like the old "Filters" label — pushed to the right of the row. */
+.more-filters {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-left: auto;
+  padding: var(--s2) 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-strong);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.more-filters:hover,
+.more-filters:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.more-filters-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--white);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  letter-spacing: normal;
+}
+
+.fmodal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s5);
+  background: rgba(0, 23, 31, 0.42);
+  animation: fmodal-fade 0.15s var(--ease);
+}
+
+.fmodal {
+  display: flex;
+  flex-direction: column;
+  width: min(620px, 100%);
+  max-height: min(860px, 88vh);
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: fmodal-rise 0.18s var(--ease);
+}
+
+.fmodal-head,
+.fmodal-foot {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: var(--s4) var(--s5);
+}
+
+.fmodal-head {
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+}
+
+.fmodal-head h2 {
+  margin: 0;
+  font-size: var(--fs-h3);
+}
+
+.fmodal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-right: -8px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.fmodal-close:hover {
+  background: var(--soft);
+  color: var(--ink);
+}
+
+.fmodal-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--s5);
+  /* More space between sections than within one — the grouping is the spacing. */
+  display: flex;
+  flex-direction: column;
+  gap: var(--s6);
+}
+
+.fmodal-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+
+.fmodal-section > h3 {
+  margin: 0;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.fmodal-foot {
+  justify-content: space-between;
+  gap: var(--s3);
+  border-top: 1px solid var(--line);
+}
+
+.fmodal-clear {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--muted);
+}
+
+.fmodal-clear:hover {
+  text-decoration-color: var(--ink);
+}
+
+.fmodal-foot .btn {
+  padding: var(--s3) var(--s5);
+}
+
+/* ---- the filter controls inside a section ------------------------------ */
+
+.fmodal-section-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3);
+}
+
+.fmodal-control {
+  display: inline-flex;
+}
+
+/* The dropdown trigger reads as a normal control, same as on the bar. */
+.fmodal-control .fselect-trigger {
+  min-height: 40px;
+}
+
+@keyframes fmodal-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fmodal-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@media (max-width: 640px) {
+  .fmodal-overlay {
+    padding: 0;
+  }
+  .fmodal {
+    width: 100%;
+    max-height: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+}
+
 .filterbar {
   flex-shrink: 0;
   padding: var(--s4) var(--gutter) var(--s5);
@@ -592,12 +790,19 @@ optgroup {
 
 /* Anchored to whichever edge keeps the panel on screen — set by the component,
    since the row wraps and a control can end up anywhere across the width. */
-.fselect-panel[data-align='left'] {
+.fselect-panel[data-align='left']:not([data-overlay]) {
   left: 0;
 }
 
-.fselect-panel[data-align='right'] {
+.fselect-panel[data-align='right']:not([data-overlay]) {
   right: 0;
+}
+
+/* Floated over the filter modal: its top/left/width come from the trigger's
+   viewport rect, and it must clear the modal (z-index 200). */
+.fselect-panel[data-overlay] {
+  z-index: 300;
+  overflow: hidden;
 }
 
 @keyframes panel-in {
@@ -615,7 +820,7 @@ optgroup {
   padding: 0;
   border-radius: 0;
   background: transparent;
-  color: var(--muted-ink, var(--ink));
+  color: var(--muted);
   font-weight: var(--fw-strong);
   white-space: nowrap;
 }
@@ -636,27 +841,64 @@ optgroup {
 
 .range-field select {
   width: 100%;
-  padding: 6px 8px;
+  padding: 6px 34px 6px 10px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--white);
+  background-color: var(--white);
+  background-image: var(--chevron);
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  appearance: none;
+  -webkit-appearance: none;
   font: inherit;
-  font-weight: var(--fw-normal, 400);
+  font-weight: 400;
 }
 
-/* A quiet aside next to a fact value — the original-currency figure, the
-   "· levels.fyi estimate" tail. */
-.fact-note {
-  color: var(--muted-ink, var(--ink));
-  font-size: var(--fs-xs);
+/* Glassdoor rating — "★ 4.0 based on 36 reviews", one line, one link. The same
+   type as the rest of the body text (buttons and cards don't inherit it, hence
+   the explicit values), muted grey, star in the usual ink. */
+.glassdoor-rating {
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  line-height: var(--lh-body);
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.glassdoor-rating:hover,
+.glassdoor-rating:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* As the value of an "Employer rating" fact it is one row among many, so it
+   takes the same size and colour as every other fact value rather than its
+   standalone treatment. */
+.fact-value .glassdoor-rating {
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+.glassdoor-star {
+  color: var(--ink);
+  vertical-align: -2px;
+}
+
+.company-card-glassdoor {
+  margin-top: 6px;
 }
 
 .fselect-search {
+  flex-shrink: 0;
   width: 100%;
   height: 38px;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  /* Same corner as the search boxes on the bar outside the modal. */
+  border-radius: var(--ctrl-radius);
   background: var(--white);
   font-family: inherit;
   font-size: var(--fs-body);
@@ -679,6 +921,20 @@ optgroup {
   overscroll-behavior: contain;
 }
 
+/* Inside the floating modal panel the panel's own computed height is the cap:
+   the option list takes whatever is left between the search box and the footer
+   and scrolls within it, so on a short (mobile) screen the list never spills
+   past the panel and the Clear control stays reachable. */
+.fselect-panel[data-overlay] .fselect-options {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+}
+
+.fselect-panel[data-overlay] .fselect-foot {
+  flex-shrink: 0;
+}
+
 .fselect-option {
   display: flex;
   align-items: center;
@@ -690,6 +946,19 @@ optgroup {
   color: var(--ink);
   cursor: pointer;
   transition: background 0.12s var(--ease);
+  /* The whole row toggles the box — including the label text and the count.
+     Without this a tap that drifts a pixel is read as a text selection and the
+     option never toggles, which is easy to hit on a phone. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* A comfortable touch target on a phone even though the text is small. */
+@media (max-width: 640px) {
+  .fselect-option {
+    padding: 11px 8px;
+  }
 }
 
 .fselect-option:hover {
@@ -2881,6 +3150,13 @@ a.occ-visa-code:focus-visible {
   .filter-row .fselect,
   .filter-row .chip-toggle {
     flex: 1 1 140px;
+  }
+
+  /* Full width on its own row on a phone, still right-aligned. */
+  .filter-row .more-filters {
+    flex: 1 0 100%;
+    justify-content: flex-end;
+    margin: var(--s1) 0 0;
   }
 
   .filter-row .fselect-trigger {

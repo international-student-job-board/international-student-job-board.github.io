@@ -54,13 +54,19 @@ export const FIELDS: Field[] = [
     placeholder: '105000',
   },
   {
-    key: 'Salary is estimate',
-    label: 'Salary is an estimate?',
+    key: 'Salary source',
+    label: 'Salary source',
     type: 'select',
-    options: ['', 'True'],
-    hint: 'Set when the figure is from levels.fyi rather than the ad.',
+    options: ['', 'advert', 'glassdoor', 'levels.fyi'],
+    hint: '"advert" if the employer stated it; "glassdoor"/"levels.fyi" if it is an estimate.',
   },
-  { key: 'levels.fyi URL', label: 'levels.fyi URL', type: 'url', placeholder: 'https://www.levels.fyi/jobs?jobId=…' },
+  {
+    key: 'Salary source URL',
+    label: 'Salary source URL',
+    type: 'url',
+    placeholder: 'https://www.glassdoor.com.au/Salary/…',
+    hint: 'The page to link to for a Glassdoor / levels.fyi figure.',
+  },
   { key: 'Job city', label: 'City', type: 'text', placeholder: 'Melbourne' },
   { key: 'Job country', label: 'Country', type: 'text', placeholder: 'Australia' },
   {
@@ -132,7 +138,7 @@ export const FIELD_GROUPS: { title: string; keys: string[] }[] = [
     keys: [
       'Base salary min', 'Base salary max', 'Base salary currency',
       'Base salary min AUD', 'Base salary max AUD', 'Company salary estimate AUD',
-      'Salary is estimate', 'levels.fyi URL',
+      'Salary source', 'Salary source URL',
     ],
   },
   {

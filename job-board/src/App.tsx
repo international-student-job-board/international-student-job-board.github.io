@@ -13,6 +13,8 @@ import {
   invitedOccupationCodesFor,
 } from './references';
 import { Header } from './components/Header';
+import { inferAustralianState } from './geo';
+import { filtersToParams, filtersFromParams, hasFilterParams, pruneToOptions } from './filterParams';
 import { Route, parsePath, pathFor, pathFromLegacyHash } from './routes';
 import { applyMeta, applySchema, metaFor, jobPostingSchema, websiteSchema } from './seo';
 import { trackPageView } from './analytics';
@@ -23,6 +25,8 @@ import {
   FilterListKey,
   countActiveFilters,
 } from './components/Filters';
+import { FiltersDisclosure } from './components/FiltersDisclosure';
+import { RATING_UNSPECIFIED, RATING_VALUES } from './components/RatingFilter';
 import { JobCard } from './components/JobCard';
 import { JobDetail } from './components/JobDetail';
 import { About } from './components/About';
@@ -66,6 +70,7 @@ const EMPTY_FILTERS: FilterState = {
   postedWithinDays: 0,
   salaryMin: 0,
   salaryMax: 0,
+  minRating: 0,
 };
 
 /** The value a filter uses to mean "roles that don't say". */
@@ -118,6 +123,16 @@ function matches(job: Job, filters: FilterState, postedAfter: number): boolean {
   if (!overlaps(filters.sponsor, answer(job.company.accreditedSponsor))) return false;
   if (!overlaps(filters.students, answer(job.company.hiresInternationalStudents))) return false;
 
+  // Employer rating: a company we couldn't match on Glassdoor can't be shown to
+  // clear the bar, so it drops out once a minimum is asked for — or it's the
+  // only thing shown when the reader asks for the unrated ones.
+  if (filters.minRating === RATING_UNSPECIFIED) {
+    if (job.company.glassdoorRating) return false;
+  } else if (filters.minRating > 0) {
+    const rating = job.company.glassdoorRating;
+    if (!rating || rating < filters.minRating) return false;
+  }
+
   // A role we can't date can't be shown to be recent, so it drops out when the reader asks
   // for recent ones.
   if (postedAfter > 0) {
@@ -167,21 +182,30 @@ function lapseDate(posted: string, months: number): string {
 
 export { IS_LOCAL, jobShareUrl } from './routes';
 
+/** The filters the address asks for on arrival — a shared or bookmarked view. */
+const filtersFromUrl = () =>
+  filtersFromParams(
+    new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search),
+    EMPTY_FILTERS
+  );
+
 function App() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
+  const [filters, setFilters] = useState<FilterState>(filtersFromUrl);
+  // Whether the reader arrived on a link that already carried filters: if so we
+  // leave them be rather than layering an inferred home state on top.
+  const arrivedWithFilters = useRef(
+    typeof window !== 'undefined' &&
+      hasFilterParams(new URLSearchParams(window.location.search))
+  );
+  const syncedFromData = useRef(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // On mobile the list and detail are separate "pages"; this flips to the detail page when
   // a job is tapped.
   const [showDetail, setShowDetail] = useState(false);
   const [route, setRoute] = useState<Route>(() => parsePath(window.location.pathname).route);
   const [page, setPage] = useState(1);
-  // Closed to begin with: the results are what the page is for, and a wall of
-  // controls above them asks a first-time reader to make decisions before they
-  // have seen anything to decide about. The toggle carries a count, so an
-  // active filter is never hidden.
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const detailRef = useRef<HTMLElement>(null);
   const listRef = useRef<HTMLElement>(null);
 
@@ -213,6 +237,17 @@ function App() {
       }
     };
 
+    // Back/forward can land on a different set of filters (they live in the
+    // query string), so a history step re-reads them; in-app navigation keeps
+    // the filters it already has. The companies page keeps its own query params
+    // under some of the same names, so only re-read while the board is showing.
+    const onPopState = () => {
+      read();
+      if (parsePath(window.location.pathname).route === 'jobs') {
+        setFilters(filtersFromUrl());
+      }
+    };
+
     /** Internal links navigate in place rather than reloading the whole app. */
     const onClick = (event: MouseEvent) => {
       if (event.defaultPrevented || event.button !== 0) return;
@@ -233,20 +268,34 @@ function App() {
     };
 
     read();
-    window.addEventListener('popstate', read);
+    window.addEventListener('popstate', onPopState);
     document.addEventListener('click', onClick);
     return () => {
-      window.removeEventListener('popstate', read);
+      window.removeEventListener('popstate', onPopState);
       document.removeEventListener('click', onClick);
     };
   }, []);
+
+  /**
+   * The filters live in the query string so a narrowed board can be bookmarked
+   * or shared. Every change rewrites it in place (no new history entry per
+   * keystroke); the path itself — which role is open — is left untouched.
+   */
+  useEffect(() => {
+    if (route !== 'jobs') return;
+    const qs = filtersToParams(filters).toString();
+    const search = qs ? `?${qs}` : '';
+    if (search === window.location.search) return;
+    window.history.replaceState(window.history.state, '', `${window.location.pathname}${search}`);
+  }, [filters, route, selectedId]);
 
   const openJob = (id: string) => {
     setSelectedId(id);
     setShowDetail(true);
     // replaceState rather than pushState: picking through a list shouldn't bury the page
-    // you arrived from under twenty back-button steps.
-    window.history.replaceState(null, '', pathFor('jobs', id));
+    // you arrived from under twenty back-button steps. The filter query rides along so
+    // closing the role returns to the same narrowed list.
+    window.history.replaceState(null, '', pathFor('jobs', id) + window.location.search);
     window.scrollTo({ top: 0 });
   };
 
@@ -329,7 +378,14 @@ function App() {
       postedCounts.set(value, openJobs.filter((job) => matches(job, asked, cutoff(asked))).length);
     });
 
-    return { ...byFilter, postedWithinDays: postedCounts };
+    // Same story for the rating rungs: thresholds, not values a role carries.
+    const ratingCounts = new Map<string, number>();
+    RATING_VALUES.forEach((value) => {
+      const asked = { ...filters, minRating: Number(value) };
+      ratingCounts.set(value, openJobs.filter((job) => matches(job, asked, postedAfter)).length);
+    });
+
+    return { ...byFilter, postedWithinDays: postedCounts, minRating: ratingCounts };
   }, [openJobs, filters]);
 
   const options: FilterOptions = useMemo(() => {
@@ -370,6 +426,31 @@ function App() {
     };
   }, [openJobs]);
 
+  /**
+   * Once the data is in, settle the filters against it — one time.
+   *  - arrived on a filtered link: drop any values the data can no longer offer
+   *    (a company with nothing open now, a typo) so the link never sits matching
+   *    nothing without saying why;
+   *  - arrived clean: default the State filter to the reader's own, inferred
+   *    from their time zone, when that state has roles. It's just a starting
+   *    point — the chip shows it and one click clears it.
+   */
+  useEffect(() => {
+    if (status !== 'ready' || syncedFromData.current) return;
+    syncedFromData.current = true;
+
+    setFilters((current) => {
+      if (arrivedWithFilters.current) return pruneToOptions(current, options);
+      if (countActiveFilters(current) > 0) return current;
+      const home = inferAustralianState();
+      return home && options.states.includes(home)
+        ? { ...current, states: [home] }
+        : current;
+    });
+    // options is derived from the loaded jobs and stable by the time status flips.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
+
   // loadJobs already sorted newest first, and filtering preserves that order.
   const [companyCount, setCompanyCount] = useState(0);
   useEffect(() => {
@@ -387,7 +468,6 @@ function App() {
     const postedAfter = cutoff(filters);
     return openJobs.filter((job) => matches(job, filters, postedAfter));
   }, [openJobs, filters]);
-  const activeFilters = countActiveFilters(filters);
 
   const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -445,29 +525,16 @@ function App() {
       </header>
 
       <div className="filters-region" hidden={status === 'ready' && openJobs.length === 0}>
-        <button
-          type="button"
-          className="filters-toggle"
-          aria-expanded={filtersOpen}
-          onClick={() => setFiltersOpen((o) => !o)}
-        >
-          Filters
-          {activeFilters > 0 && (
-            <span className="filters-toggle-count">
-              {activeFilters}
-              <span className="visually-hidden"> active</span>
-            </span>
-          )}
-        </button>
-        {filtersOpen && (
+        <FiltersDisclosure activeCount={countActiveFilters(filters)}>
           <Filters
             filters={filters}
             options={options}
             counts={counts}
+            resultCount={visible.length}
             onChange={setFilters}
             onClear={() => setFilters(EMPTY_FILTERS)}
           />
-        )}
+        </FiltersDisclosure>
       </div>
 
       <div className="workspace">

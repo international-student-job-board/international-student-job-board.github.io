@@ -1,15 +1,35 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Company,
+  CompanyFilterKey,
+  CompanyFilters,
   CompanySort,
+  CompanyView,
+  DEFAULT_COMPANY_VIEW,
+  NO_COMPANY_FILTERS as NO_FILTERS,
   loadCompanies,
   searchCompanies,
   sortCompanies,
 } from '../companies';
+import {
+  companyViewFromParams,
+  companyViewToParams,
+  pruneCompanyFilters,
+} from '../filterParams';
 import { FilterSelect } from './FilterSelect';
+import { FiltersModal, FilterSection } from './FiltersModal';
+import { FiltersDisclosure } from './FiltersDisclosure';
+import {
+  RatingFilter,
+  RATING_RUNGS,
+  RATING_UNSPECIFIED,
+  ratingChipLabel,
+} from './RatingFilter';
+import { GlassdoorRating } from './GlassdoorRating';
 import { NOT_SPECIFIED } from '../format';
 import { prettyLabel } from '../labels';
 import { MANUAL_REVIEW_NOTE } from '../references';
+import { useIsMobile } from '../useMediaQuery';
 import { ActiveFilters, ActiveChip } from './ActiveFilters';
 import { outboundHref } from '../outbound';
 // Leaflet and its stylesheet are a big chunk of the site's weight, and only this page's map
@@ -39,16 +59,6 @@ const answerOf = (value: boolean | undefined) =>
 /** The three answers the two hand-checked columns can hold. */
 const answerLabel = (value: string) =>
   value === 'yes' ? 'Yes' : value === 'no' ? 'No' : 'Not checked yet';
-
-type CompanyFilterKey =
-  | 'states'
-  | 'industries'
-  | 'companyTypes'
-  | 'growthStages'
-  | 'hqCities'
-  | 'openRoles'
-  | 'sponsor'
-  | 'students';
 
 /** Every filter on this page, defined once. */
 const FIELDS: {
@@ -95,29 +105,29 @@ const FIELDS: {
   },
 ];
 
-/** The same grouping the job board uses, so the two pages read alike. */
-const GROUPS: { title: string; keys: CompanyFilterKey[] }[] = [
+/** Filters that stay on the bar; the rest live in the "More filters" modal —
+ * the same split the job board uses. */
+const QUICK_KEYS: CompanyFilterKey[] = ['sponsor', 'students'];
+
+/** The modal's sections — the same headings the job board uses. */
+const MODAL_GROUPS: { title: string; keys: (CompanyFilterKey | 'rating')[] }[] = [
   { title: 'Where', keys: ['states', 'hqCities'] },
-  { title: 'The company', keys: ['industries', 'companyTypes', 'growthStages', 'openRoles'] },
-  { title: 'Hiring', keys: ['sponsor', 'students'] },
+  {
+    title: 'The company',
+    keys: ['industries', 'companyTypes', 'growthStages', 'openRoles', 'rating'],
+  },
 ];
 
 const BY_KEY = new Map(FIELDS.map((f) => [f.key, f]));
 
-type CompanyFilters = Record<CompanyFilterKey, string[]>;
-
-const NO_FILTERS: CompanyFilters = {
-  states: [],
-  industries: [],
-  companyTypes: [],
-  growthStages: [],
-  hqCities: [],
-  openRoles: [],
-  sponsor: [],
-  students: [],
-};
-
 const base = process.env.PUBLIC_URL || '';
+
+/** The filters the address asks for on arrival — a shared or bookmarked view. */
+const viewFromUrl = (): CompanyView =>
+  companyViewFromParams(
+    new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search),
+    DEFAULT_COMPANY_VIEW
+  );
 
 /**
  * Cards per page.
@@ -135,19 +145,21 @@ const uniqueSorted = (values: string[]) => Array.from(new Set(values)).sort();
 export function Companies() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [query, setQuery] = useState('');
-  const [filters, setFilters] = useState<CompanyFilters>(NO_FILTERS);
-  // Closed to begin with: the results are what the page is for, and a wall of
-  // controls above them asks a first-time reader to make decisions before they
-  // have seen anything to decide about. The toggle carries a count, so an
-  // active filter is never hidden.
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  // The filters, search and sort all live in the URL query so a narrowed list
+  // can be bookmarked or shared; read once here, kept in sync below.
+  const start = useRef(viewFromUrl()).current;
+  const [query, setQuery] = useState(start.query);
+  const [filters, setFilters] = useState<CompanyFilters>(start.filters);
+  const [minRating, setMinRating] = useState(start.minRating);
+  const [sort, setSort] = useState<CompanySort>(start.sort);
+  const [modalOpen, setModalOpen] = useState(false);
+  const isMobile = useIsMobile();
   const [page, setPage] = useState(1);
   const topRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<View>('cards');
-  const [sort, setSort] = useState<CompanySort>('openings');
   // Which card the pointer is on, so the map can open that suburb alongside it.
   const [hovered, setHovered] = useState<string | null>(null);
+  const prunedOnce = useRef(false);
 
   useEffect(() => {
     loadCompanies()
@@ -156,6 +168,28 @@ export function Companies() {
         setStatus('ready');
       })
       .catch(() => setStatus('error'));
+  }, []);
+
+  // Reflect the view into the query string in place — no new history entry per
+  // keystroke, and the path (which is always /companies here) is left alone.
+  useEffect(() => {
+    const qs = companyViewToParams({ query, filters, minRating, sort }).toString();
+    const search = qs ? `?${qs}` : '';
+    if (search === window.location.search) return;
+    window.history.replaceState(window.history.state, '', `${window.location.pathname}${search}`);
+  }, [query, filters, minRating, sort]);
+
+  // Back/forward moves between saved views.
+  useEffect(() => {
+    const onPopState = () => {
+      const next = viewFromUrl();
+      setQuery(next.query);
+      setFilters(next.filters);
+      setMinRating(next.minRating);
+      setSort(next.sort);
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
   /**
@@ -177,6 +211,15 @@ export function Companies() {
     return built;
   }, [companies]);
 
+  // Once the data is in, drop any filter values a shared link asked for that the
+  // list can't actually offer, so it never sits there matching nothing.
+  useEffect(() => {
+    if (status !== 'ready' || prunedOnce.current) return;
+    prunedOnce.current = true;
+    setFilters((current) => pruneCompanyFilters(current, options));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
+
   // Values within a filter are OR'd and separate filters are AND'd, matching how the job
   // board's filters behave — one rule to learn, not two.
   const overlaps = (selected: string[], values: string[]) =>
@@ -188,11 +231,35 @@ export function Companies() {
   const matches = (c: Company, active: CompanyFilters) =>
     FIELDS.every((field) => overlaps(active[field.key], field.pick(c)));
 
+  // 0 = any, -1 = only the ones with no Glassdoor match, else a minimum rating.
+  const passesRating = (c: Company) =>
+    minRating === 0 ||
+    (minRating === RATING_UNSPECIFIED
+      ? !c.glassdoorRating
+      : !!c.glassdoorRating && c.glassdoorRating >= minRating);
+
   const shown = useMemo(() => {
-    const filtered = searchCompanies(companies, query).filter((c) => matches(c, filters));
+    const filtered = searchCompanies(companies, query).filter(
+      (c) => matches(c, filters) && passesRating(c)
+    );
     return sortCompanies(filtered, sort);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companies, query, filters, sort]);
+  }, [companies, query, filters, sort, minRating]);
+
+  /** How many companies each rating option would leave, the other filters held. */
+  const ratingCounts = useMemo(() => {
+    const pool = searchCompanies(companies, query).filter((c) => matches(c, filters));
+    const counted = new Map<string, number>();
+    RATING_RUNGS.forEach((rung) =>
+      counted.set(
+        String(rung),
+        pool.filter((c) => !!c.glassdoorRating && c.glassdoorRating >= rung).length
+      )
+    );
+    counted.set(String(RATING_UNSPECIFIED), pool.filter((c) => !c.glassdoorRating).length);
+    return counted;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companies, query, filters]);
 
   /**
    * How many companies each option would leave, counted with that filter's own selection
@@ -221,7 +288,12 @@ export function Companies() {
   // never left on page 40 of a set that now has three.
   useEffect(() => {
     setPage(1);
-  }, [query, filters, sort]);
+  }, [query, filters, sort, minRating]);
+
+  const clearAll = () => {
+    setFilters(NO_FILTERS);
+    setMinRating(0);
+  };
 
   const totalPages = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -261,6 +333,50 @@ export function Companies() {
         })),
     }))
   );
+  if (minRating !== 0) {
+    chips.push({
+      id: 'rating',
+      field: 'Employer rating',
+      value: ratingChipLabel(minRating),
+      remove: () => setMinRating(0),
+    });
+  }
+
+  const modalCount =
+    MODAL_GROUPS.reduce(
+      (total, group) =>
+        total +
+        group.keys.reduce(
+          (n, key) => n + (key === 'rating' ? 0 : filters[key as CompanyFilterKey].length),
+          0
+        ),
+      0
+    ) + (minRating !== 0 ? 1 : 0);
+
+  const selectFor = (key: CompanyFilterKey, overlay: boolean) => {
+    const field = BY_KEY.get(key);
+    if (!field) return null;
+    const el = (
+      <FilterSelect
+        label={field.label}
+        tooltip={field.tooltip}
+        searchable={!isMobile}
+        overlay={overlay}
+        options={options[key].map((v) => ({
+          value: v,
+          label: label(v, field.format),
+          count: counts[key].get(v) ?? 0,
+        }))}
+        selected={filters[key]}
+        onChange={(next) => setFilters((prev) => ({ ...prev, [key]: next }))}
+      />
+    );
+    return field.accent ? (
+      <div className={`fselect-sponsor${filters[key].length ? ' is-set' : ''}`}>{el}</div>
+    ) : (
+      el
+    );
+  };
 
   return (
     <div className="about" ref={topRef}>
@@ -270,94 +386,84 @@ export function Companies() {
 
       <section className="about-section" aria-labelledby="companies-heading">
         <div className="filters-region companies-filters">
-          <button
-            type="button"
-            className="filters-toggle"
-            aria-expanded={filtersOpen}
-            onClick={() => setFiltersOpen((open) => !open)}
-          >
-            Filters
-            {chips.length > 0 && (
-              <span className="filters-toggle-count">
-                {chips.length}
-                <span className="visually-hidden"> active</span>
-              </span>
-            )}
-          </button>
-
-          {filtersOpen && (
+          <FiltersDisclosure activeCount={chips.length + (query.trim() ? 1 : 0)}>
             <div className="filterbar" role="search">
-            <div className="filter-row">
-              <div className="filter-search">
-                <label className="visually-hidden" htmlFor="company-search">
-                  Search companies
-                </label>
-                <img
-                  className="search-icon"
-                  src={`${base}/icons/magifying-glass.svg`}
-                  alt=""
-                  aria-hidden="true"
-                  width={18}
-                  height={18}
+              <div className="filter-row">
+                <div className="filter-search">
+                  <label className="visually-hidden" htmlFor="company-search">
+                    Search companies
+                  </label>
+                  <img
+                    className="search-icon"
+                    src={`${base}/icons/magifying-glass.svg`}
+                    alt=""
+                    aria-hidden="true"
+                    width={18}
+                    height={18}
+                  />
+                  <input
+                    id="company-search"
+                    type="search"
+                    placeholder="Search by name, industry or what they build"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                  />
+                </div>
+
+                {QUICK_KEYS.map((key) => (
+                  <span key={key}>{selectFor(key, false)}</span>
+                ))}
+
+                <FilterSelect
+                  label="Sort"
+                  multiple={false}
+                  searchable={false}
+                  options={SORTS.map((s) => ({ value: s.value, label: s.label }))}
+                  selected={[sort]}
+                  onChange={(next) => setSort((next[0] as CompanySort) ?? 'openings')}
                 />
-                <input
-                  id="company-search"
-                  type="search"
-                  placeholder="Search by name, industry or what they build"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
+
+                <button
+                  type="button"
+                  className={`more-filters${modalCount ? ' is-set' : ''}`}
+                  onClick={() => setModalOpen(true)}
+                >
+                  More filters
+                  {modalCount > 0 && <span className="more-filters-count">{modalCount}</span>}
+                </button>
               </div>
 
-              {GROUPS.map((group) => (
-                <div className="filter-group" key={group.title}>
-                  {group.keys.map((key) => {
-                    const field = BY_KEY.get(key);
-                    if (!field) return null;
-                    const select = (
-                      <FilterSelect
-                        key={field.key}
-                        label={field.label}
-                        tooltip={field.tooltip}
-                        options={options[field.key].map((v) => ({
-                          value: v,
-                          label: label(v, field.format),
-                          count: counts[field.key].get(v) ?? 0,
-                        }))}
-                        selected={filters[field.key]}
-                        onChange={(next) =>
-                          setFilters((prev) => ({ ...prev, [field.key]: next }))
-                        }
-                      />
-                    );
-                    return field.accent ? (
-                      <div
-                        key={field.key}
-                        className={`fselect-sponsor${filters[field.key].length ? ' is-set' : ''}`}
-                      >
-                        {select}
+              <ActiveFilters chips={chips} onClear={clearAll} />
+
+              <FiltersModal
+                open={modalOpen}
+                onClose={() => setModalOpen(false)}
+                onClear={clearAll}
+                resultCount={shown.length}
+                resultNoun="company"
+                resultNounPlural="companies"
+              >
+                {MODAL_GROUPS.map((group) => (
+                  <FilterSection title={group.title} key={group.title}>
+                    {group.keys.map((key) => (
+                      <div className="fmodal-control" key={key}>
+                        {key === 'rating' ? (
+                          <RatingFilter
+                            value={minRating}
+                            onChange={setMinRating}
+                            counts={ratingCounts}
+                            overlay
+                          />
+                        ) : (
+                          selectFor(key as CompanyFilterKey, true)
+                        )}
                       </div>
-                    ) : (
-                      select
-                    );
-                  })}
-                </div>
-              ))}
-
-              <FilterSelect
-                label="Sort"
-                multiple={false}
-                options={SORTS.map((s) => ({ value: s.value, label: s.label }))}
-                selected={[sort]}
-                onChange={(next) => setSort((next[0] as CompanySort) ?? 'openings')}
-              />
-
+                    ))}
+                  </FilterSection>
+                ))}
+              </FiltersModal>
             </div>
-
-
-              <ActiveFilters chips={chips} onClear={() => setFilters(NO_FILTERS)} />
-            </div>
-          )}
+          </FiltersDisclosure>
         </div>
 
         {status === 'loading' && <p className="panel-note">Loading companies . . .</p>}
@@ -496,6 +602,8 @@ function CompanyCard({
       </div>
 
       {company.tagline && <p className="company-card-tagline">{company.tagline}</p>}
+
+      <GlassdoorRating company={company} className="company-card-glassdoor" />
 
       {(company.accreditedSponsor || company.hiresInternationalStudents) && (
         <ul className="company-card-flags" aria-label="Visa support">

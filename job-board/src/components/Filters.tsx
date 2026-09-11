@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   occupationName,
   occupationListLabel,
@@ -14,16 +15,16 @@ import {
 } from '../references';
 import { NOT_SPECIFIED, formatMoney } from '../format';
 import { prettyLabel } from '../labels';
+import { useIsMobile } from '../useMediaQuery';
 import { ActiveFilters, ActiveChip } from './ActiveFilters';
 import { FilterSelect, SelectOption } from './FilterSelect';
 import { RangeFilter } from './RangeFilter';
+import { RatingFilter, ratingChipLabel } from './RatingFilter';
+import { FiltersModal, FilterSection } from './FiltersModal';
 
 const base = process.env.PUBLIC_URL || '';
 
-/**
- * Every dimension holds a list, so a student can ask for (say) two pathway visas and three
- * occupations at once.
- */
+/** Every list dimension holds an array, so a student can ask for several at once. */
 export interface FilterState {
   query: string;
   companies: string[];
@@ -55,6 +56,8 @@ export interface FilterState {
   /** AUD bounds on pay; 0 at either end means unbounded there. */
   salaryMin: number;
   salaryMax: number;
+  /** Minimum Glassdoor employer rating out of 5; 0 means any. */
+  minRating: number;
 }
 
 /** The list-valued keys, which are exactly the keys of FilterOptions. */
@@ -84,11 +87,8 @@ export type FilterOptions = Record<FilterListKey, string[]>;
 
 /** "261313" -> "261313 - Software Engineer"; the bare code if we can't name it. */
 const codeLabel = (code: string, name: string) => (name ? `${code} - ${name}` : code);
-
 const anzscoLabel = (code: string) => codeLabel(code, occupationName(code));
 
-// "261313 - Software Engineer (min. 65)" — the score is the same for every job carrying
-// this code, so it reads as a fact about the occupation rather than about any one role.
 const invitedOccupationLabel = (code: string) => {
   const score = invitedScoreFor(code);
   const label = anzscoLabel(code);
@@ -96,7 +96,6 @@ const invitedOccupationLabel = (code: string) => {
 };
 
 const unitGroupLabel = (code: string) => codeLabel(code, unitGroupTitle(code));
-
 const oscaLabel = (code: string) => codeLabel(code, oscaName(code));
 
 // "189" -> "189 - Skilled Independent".
@@ -105,9 +104,7 @@ const visaLabel = (code: string) => {
   return name ? `${code} - ${name}` : code;
 };
 
-// Single-choice: asking for "within a week" and "within a month" at once only ever means a
-// month.
-const POSTED_WINDOWS = [
+export const POSTED_WINDOWS = [
   { value: '1', label: 'Last 24 hours' },
   { value: '2', label: 'Last 2 days' },
   { value: '7', label: 'Last 7 days' },
@@ -123,23 +120,21 @@ export const SALARY_STEPS = [
 
 export const SALARY_NOTE =
   'If the salary is not provided in the job advert, an estimate is provided ' +
-  'from Levels.fyi. Some jobs could have neither, unfortunately.';
+  'from Levels.fyi or Glassdoor. Some jobs could have neither, unfortunately.';
 
 /** The three answers the two hand-checked columns can hold. */
-const answerLabel = (value: string) =>
+export const answerLabel = (value: string) =>
   value === 'yes' ? 'Yes' : value === 'no' ? 'No' : 'Not checked yet';
 
-const FIELDS: {
+interface FieldMeta {
   key: FilterListKey;
   label: string;
   format?: (value: string) => string;
-  /** Shown on an "i" in the open panel, beside the count. */
   tooltip?: string;
-  /** A source link in the same footer, beside the tooltip. */
-  footerLink?: { label: string; href: string };
-  /** Given the accent, because it is what this audience came for. */
   accent?: boolean;
-}[] = [
+}
+
+const FIELDS: FieldMeta[] = [
   { key: 'companies', label: 'Company' },
   { key: 'states', label: 'State' },
   { key: 'types', label: 'Job type', format: prettyLabel },
@@ -149,10 +144,7 @@ const FIELDS: {
   { key: 'educationLevels', label: 'Education' },
   { key: 'cities', label: 'Location', format: prettyLabel },
   { key: 'industries', label: 'Industry', format: prettyLabel },
-  // Named the same as the fact on the job detail page.
   { key: 'companyTypes', label: 'Model & tech', format: prettyLabel },
-  // The growth stage on its own, not the "startup · early stage" pair the detail page
-  // shows.
   { key: 'growthStages', label: 'Stage', format: prettyLabel },
   { key: 'hqCities', label: 'Head office', format: prettyLabel },
   { key: 'anzscos', label: 'ANZSCO occupations', format: anzscoLabel, tooltip: ANZSCO_NOTE },
@@ -163,12 +155,7 @@ const FIELDS: {
     tooltip: INVITED_ROUND_NOTE,
     accent: true,
   },
-  {
-    key: 'unitGroups',
-    label: 'ANZSCO unit group',
-    format: unitGroupLabel,
-    tooltip: UNIT_GROUP_NOTE,
-  },
+  { key: 'unitGroups', label: 'ANZSCO unit group', format: unitGroupLabel, tooltip: UNIT_GROUP_NOTE },
   { key: 'oscas', label: 'OSCA occupations', format: oscaLabel, tooltip: OSCA_NOTE },
   {
     key: 'occupationLists',
@@ -177,14 +164,7 @@ const FIELDS: {
     tooltip: OCCUPATION_LIST_NOTE,
   },
   { key: 'pathwayVisas', label: 'Leads to visa', format: visaLabel },
-  // Two questions, so two controls.
-  {
-    key: 'sponsor',
-    label: 'Accredited sponsor',
-    format: answerLabel,
-    tooltip: MANUAL_REVIEW_NOTE,
-    accent: true,
-  },
+  { key: 'sponsor', label: 'Accredited sponsor', format: answerLabel, tooltip: MANUAL_REVIEW_NOTE, accent: true },
   {
     key: 'students',
     label: 'Hires international students and graduates',
@@ -194,105 +174,117 @@ const FIELDS: {
   },
 ];
 
-/**
- * The filters, in groups.
- *
- * Fifteen controls in one row is a wall: nothing says that State and Location
- * answer the same question while Stage answers another, so the whole set has to
- * be read before any of it can be used. The grouping is carried by spacing —
- * more space around a group than within it — which is the rule Refactoring UI
- * gives for grouping without a visible separator.
- */
-const GROUPS: { title: string; keys: (FilterListKey | 'posted' | 'salary')[] }[] = [
+const FIELD_BY_KEY = new Map(FIELDS.map((f) => [f.key, f]));
+
+/** Filters that stay on the bar; the rest live in the modal. */
+const QUICK_KEYS: FilterListKey[] = [
+  'anzscos',
+  'invitedOccupations',
+  'pathwayVisas',
+  'sponsor',
+  'students',
+];
+
+/** The modal's filters, in sections — the same headings the companies page uses. */
+const MODAL_GROUPS: { title: string; keys: (FilterListKey | 'rating')[] }[] = [
   { title: 'Where', keys: ['states', 'cities', 'hqCities'] },
   {
     title: 'The role',
-    keys: [
-      'types',
-      'employmentTypes',
-      'jobLevels',
-      'workArrangements',
-      'educationLevels',
-      'salary',
-      'posted',
-    ],
+    keys: ['types', 'employmentTypes', 'jobLevels', 'workArrangements', 'educationLevels'],
   },
-  { title: 'The employer', keys: ['companies', 'industries', 'companyTypes', 'growthStages'] },
-  {
-    title: 'Occupation and visa',
-    keys: ['invitedOccupations', 'anzscos', 'unitGroups', 'oscas', 'occupationLists', 'pathwayVisas'],
-  },
-  { title: 'Hiring', keys: ['sponsor', 'students'] },
+  { title: 'The employer', keys: ['companies', 'industries', 'companyTypes', 'growthStages', 'rating'] },
+  { title: 'Occupation and visa', keys: ['unitGroups', 'oscas', 'occupationLists'] },
 ];
+
+const listCount = (filters: FilterState) =>
+  FIELDS.reduce((total, field) => total + filters[field.key].length, 0);
 
 /** How many filters are narrowing the list right now. */
 export function countActiveFilters(filters: FilterState): number {
   return (
-    FIELDS.reduce((total, field) => total + filters[field.key].length, 0) +
+    listCount(filters) +
     (filters.postedWithinDays > 0 ? 1 : 0) +
     (filters.salaryMin > 0 || filters.salaryMax > 0 ? 1 : 0) +
+    (filters.minRating !== 0 ? 1 : 0) +
     (filters.query.trim() ? 1 : 0)
   );
+}
+
+/** How many of the modal's filters are set — the count on the "More filters" button. */
+function countModalFilters(filters: FilterState): number {
+  const onBar = [...QUICK_KEYS].reduce((total, key) => total + filters[key].length, 0);
+  return listCount(filters) - onBar + (filters.minRating !== 0 ? 1 : 0);
 }
 
 interface Props {
   filters: FilterState;
   options: FilterOptions;
   /** How many roles each option would leave, keyed by filter then by value. */
-  counts?: Partial<Record<FilterListKey | 'postedWithinDays', Map<string, number>>>;
+  counts?: Partial<Record<FilterListKey | 'postedWithinDays' | 'minRating', Map<string, number>>>;
+  resultCount: number;
   onChange: (next: FilterState) => void;
   onClear: () => void;
 }
 
-const BY_KEY = new Map(FIELDS.map((f) => [f.key, f]));
+/** A blank value is the "not specified" marker; it needs a readable label. */
+const optionLabel = (value: string, format?: (v: string) => string) =>
+  (format ? format(value) : value) || NOT_SPECIFIED;
 
-export function Filters({ filters, options, counts, onChange, onClear }: Props) {
+export function Filters({ filters, options, counts, resultCount, onChange, onClear }: Props) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const isMobile = useIsMobile();
   const set = (patch: Partial<FilterState>) => onChange({ ...filters, ...patch });
 
-  /**
-   * A blank value is the "not specified" marker; it needs a label or it renders as an
-   * unlabelled tick box.
-   */
-  const label = (value: string, format?: (v: string) => string) =>
-    (format ? format(value) : value) || NOT_SPECIFIED;
-
-  const toOptions = (
-    key: FilterListKey,
-    values: string[],
-    format?: (v: string) => string
-  ): SelectOption[] =>
-    values.map((value) => ({
+  const toOptions = (key: FilterListKey, format?: (v: string) => string): SelectOption[] =>
+    options[key].map((value) => ({
       value,
-      label: label(value, format),
+      label: optionLabel(value, format),
       count: counts?.[key]?.get(value) ?? 0,
     }));
 
-  // Rather than a bare count, each selection gets its own chip below the row, so what is
-  // currently narrowing the list is readable at a glance and can be undone one at a time.
-  const chips: ActiveChip[] = [];
+  // A plain multi-select for one field, on the bar or in the modal.
+  const select = (key: FilterListKey, overlay: boolean) => {
+    const field = FIELD_BY_KEY.get(key);
+    if (!field) return null;
+    const el = (
+      <FilterSelect
+        label={field.label}
+        tooltip={field.tooltip}
+        searchable={!isMobile}
+        overlay={overlay}
+        options={toOptions(key, field.format)}
+        selected={filters[key]}
+        onChange={(next) => set({ [key]: next } as Partial<FilterState>)}
+      />
+    );
+    return field.accent ? (
+      <div className={`fselect-sponsor${filters[key].length ? ' is-set' : ''}`}>{el}</div>
+    ) : (
+      el
+    );
+  };
 
+  // Every applied filter gets its own chip below the bar.
+  const chips: ActiveChip[] = [];
   FIELDS.forEach((field) => {
     filters[field.key].forEach((value) => {
       chips.push({
         id: `${field.key}:${value}`,
         field: field.label,
-        value: label(value, field.format),
+        value: optionLabel(value, field.format),
         remove: () =>
           set({ [field.key]: filters[field.key].filter((v) => v !== value) } as Partial<FilterState>),
       });
     });
   });
-
   if (filters.postedWithinDays > 0) {
     chips.push({
       id: 'posted',
       field: 'Posted',
-      value:
-        POSTED_WINDOWS.find((w) => w.value === String(filters.postedWithinDays))?.label ?? '',
+      value: POSTED_WINDOWS.find((w) => w.value === String(filters.postedWithinDays))?.label ?? '',
       remove: () => set({ postedWithinDays: 0 }),
     });
   }
-
   if (filters.salaryMin > 0 || filters.salaryMax > 0) {
     chips.push({
       id: 'salary',
@@ -303,6 +295,16 @@ export function Filters({ filters, options, counts, onChange, onClear }: Props) 
       remove: () => set({ salaryMin: 0, salaryMax: 0 }),
     });
   }
+  if (filters.minRating !== 0) {
+    chips.push({
+      id: 'rating',
+      field: 'Employer rating',
+      value: ratingChipLabel(filters.minRating),
+      remove: () => set({ minRating: 0 }),
+    });
+  }
+
+  const modalCount = countModalFilters(filters);
 
   return (
     <div className="filterbar" role="search">
@@ -328,70 +330,71 @@ export function Filters({ filters, options, counts, onChange, onClear }: Props) 
           />
         </div>
 
-        {GROUPS.map((group) => (
-          <div className="filter-group" key={group.title}>
-            {group.keys.map((key) => {
-              if (key === 'posted') {
-                return (
-                  <FilterSelect
-                    key="posted"
-                    label="Posted"
-                    multiple={false}
-                    options={POSTED_WINDOWS.map((w) => ({
-                      ...w,
-                      count: counts?.postedWithinDays?.get(w.value) ?? 0,
-                    }))}
-                    selected={
-                      filters.postedWithinDays > 0 ? [String(filters.postedWithinDays)] : []
-                    }
-                    onChange={(next) => set({ postedWithinDays: Number(next[0] ?? 0) })}
-                  />
-                );
-              }
+        <FilterSelect
+          label="Posted"
+          multiple={false}
+          searchable={false}
+          options={POSTED_WINDOWS.map((w) => ({
+            ...w,
+            count: counts?.postedWithinDays?.get(w.value) ?? 0,
+          }))}
+          selected={filters.postedWithinDays > 0 ? [String(filters.postedWithinDays)] : []}
+          onChange={(next) => set({ postedWithinDays: Number(next[0] ?? 0) })}
+        />
 
-              if (key === 'salary') {
-                return (
-                  <RangeFilter
-                    key="salary"
-                    label="Salary"
-                    value={{ min: filters.salaryMin, max: filters.salaryMax }}
-                    onChange={(next) => set({ salaryMin: next.min, salaryMax: next.max })}
-                    steps={SALARY_STEPS}
-                    format={(aud) => formatMoney(aud)}
-                    tooltip={SALARY_NOTE}
-                  />
-                );
-              }
+        {select('students', false)}
+        {select('sponsor', false)}
+        {select('invitedOccupations', false)}
+        {select('anzscos', false)}
+        {select('pathwayVisas', false)}
 
-              const field = BY_KEY.get(key);
-              if (!field) return null;
-              const select = (
-                <FilterSelect
-                  key={field.key}
-                  label={field.label}
-                  tooltip={field.tooltip}
-                  footerLink={field.footerLink}
-                  options={toOptions(field.key, options[field.key], field.format)}
-                  selected={filters[field.key]}
-                  onChange={(next) => set({ [field.key]: next } as Partial<FilterState>)}
-                />
-              );
-              return field.accent ? (
-                <div
-                  key={field.key}
-                  className={`fselect-sponsor${filters[field.key].length ? ' is-set' : ''}`}
-                >
-                  {select}
-                </div>
-              ) : (
-                select
-              );
-            })}
-          </div>
-        ))}
+        <RangeFilter
+          label="Salary"
+          value={{ min: filters.salaryMin, max: filters.salaryMax }}
+          onChange={(next) => set({ salaryMin: next.min, salaryMax: next.max })}
+          steps={SALARY_STEPS}
+          format={(aud) => formatMoney(aud)}
+          tooltip={SALARY_NOTE}
+        />
+
+        <button
+          type="button"
+          className={`more-filters${modalCount ? ' is-set' : ''}`}
+          onClick={() => setModalOpen(true)}
+        >
+          More filters
+          {modalCount > 0 && <span className="more-filters-count">{modalCount}</span>}
+        </button>
       </div>
 
       <ActiveFilters chips={chips} onClear={onClear} />
+
+      <FiltersModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onClear={onClear}
+        resultCount={resultCount}
+        resultNoun="role"
+      >
+        {MODAL_GROUPS.map((group) => (
+          <FilterSection title={group.title} key={group.title}>
+            {group.keys.map((key) => (
+              <div className="fmodal-control" key={key}>
+                {key === 'rating' ? (
+                  <RatingFilter
+                    value={filters.minRating}
+                    onChange={(next) => set({ minRating: next })}
+                    counts={counts?.minRating}
+                    overlay
+                  />
+                ) : (
+                  select(key, true)
+                )}
+              </div>
+            ))}
+          </FilterSection>
+        ))}
+      </FiltersModal>
     </div>
   );
 }
