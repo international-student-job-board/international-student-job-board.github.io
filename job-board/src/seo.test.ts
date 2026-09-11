@@ -110,11 +110,10 @@ describe('JobPosting structured data', () => {
   });
 
   test('a field the file does not have is left out rather than guessed', () => {
-    const bare = jobPostingSchema(
-      job({ posted: '', type: '' }),
-      `${ORIGIN}/jobs/7`,
-      ''
-    ) as Record<string, any>;
+    const bare = jobPostingSchema(job({ posted: '', type: '' }), `${ORIGIN}/jobs/7`, '') as Record<
+      string,
+      any
+    >;
     expect(bare.datePosted).toBeUndefined();
     expect(bare.employmentType).toBeUndefined();
     expect(bare.validThrough).toBeUndefined();

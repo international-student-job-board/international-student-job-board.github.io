@@ -15,7 +15,10 @@ const view = (
 });
 
 const roundTrip = (v: CompanyView) =>
-  companyViewFromParams(new URLSearchParams(companyViewToParams(v).toString()), DEFAULT_COMPANY_VIEW);
+  companyViewFromParams(
+    new URLSearchParams(companyViewToParams(v).toString()),
+    DEFAULT_COMPANY_VIEW
+  );
 
 test('the default view writes no query', () => {
   expect(companyViewToParams(DEFAULT_COMPANY_VIEW).toString()).toBe('');
@@ -51,7 +54,9 @@ test('an unknown sort falls back to the base', () => {
 
 test('"only unrated" round-trips and junk rating is dropped', () => {
   expect(roundTrip(view({ minRating: -1 })).minRating).toBe(-1);
-  expect(companyViewFromParams(new URLSearchParams('rating=9'), DEFAULT_COMPANY_VIEW).minRating).toBe(0);
+  expect(
+    companyViewFromParams(new URLSearchParams('rating=9'), DEFAULT_COMPANY_VIEW).minRating
+  ).toBe(0);
 });
 
 test('hasCompanyFilterParams tells a shared link from a bare visit', () => {

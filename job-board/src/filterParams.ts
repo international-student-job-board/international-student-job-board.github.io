@@ -83,7 +83,7 @@ export function filtersFromParams(params: URLSearchParams, base: FilterState): F
 
   for (const key of LIST_KEYS) {
     const values = params.getAll(LIST_PARAM[key]).map(decodeValue);
-    // De-dupe, keep order, drop nothing else — validity against the live options
+    // De-dupe, keep order, drop nothing else - validity against the live options
     // is the caller's call once the data has loaded.
     if (values.length) next[key] = Array.from(new Set(values));
     else next[key] = [];
@@ -140,7 +140,7 @@ function prune<K extends string>(
   return { filters: next, changed };
 }
 
-/** Keep only filter values the loaded data can actually offer — used once the
+/** Keep only filter values the loaded data can actually offer - used once the
  * options are known, so a shared link with a typo or a since-removed company
  * doesn't sit there matching nothing. */
 export function pruneToOptions(
@@ -152,7 +152,7 @@ export function pruneToOptions(
 }
 
 /* ------------------------------------------------------------------ *
- *  The companies page — the same idea, its own (smaller) filter set.  *
+ *  The companies page - the same idea, its own (smaller) filter set.  *
  * ------------------------------------------------------------------ */
 
 const COMPANY_LIST_PARAM: Record<CompanyFilterKey, string> = {

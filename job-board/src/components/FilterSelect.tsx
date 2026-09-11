@@ -61,12 +61,10 @@ export function FilterSelect({
 
   const showSearch = searchable && options.length > SEARCH_THRESHOLD;
   const needle = query.trim().toLowerCase();
-  const shown = needle
-    ? options.filter((o) => o.label.toLowerCase().includes(needle))
-    : options;
+  const shown = needle ? options.filter((o) => o.label.toLowerCase().includes(needle)) : options;
 
   // An open panel closes on a click anywhere outside it, on Escape, and when focus tabs
-  // away — three ways out, so it never feels like a trap.
+  // away - three ways out, so it never feels like a trap.
   useEffect(() => {
     if (!open) return;
     const root = rootRef.current;
@@ -88,7 +86,7 @@ export function FilterSelect({
     document.addEventListener('keydown', onKeyDown);
     root?.addEventListener('focusout', onFocusOut);
     // A floating panel can't follow the page or modal behind it, so it closes on
-    // a scroll there — but NOT on a scroll of its own option list, which is what
+    // a scroll there - but NOT on a scroll of its own option list, which is what
     // ticking a box near the bottom of a long list does.
     const onScroll = (event: Event) => {
       if (!root?.contains(event.target as Node)) setOpen(false);
@@ -137,11 +135,7 @@ export function FilterSelect({
       triggerRef.current?.focus();
       return;
     }
-    onChange(
-      selected.includes(value)
-        ? selected.filter((v) => v !== value)
-        : [...selected, value]
-    );
+    onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
   };
 
   const openPanel = (next: boolean) => {
@@ -149,11 +143,7 @@ export function FilterSelect({
     if (!next) setQuery('');
   };
 
-  const className = [
-    'fselect',
-    open ? 'is-open' : '',
-    selected.length > 0 ? 'is-active' : '',
-  ]
+  const className = ['fselect', open ? 'is-open' : '', selected.length > 0 ? 'is-active' : '']
     .filter(Boolean)
     .join(' ');
 
@@ -183,7 +173,13 @@ export function FilterSelect({
           data-overlay={overlay ? '' : undefined}
           style={
             overlay && pos
-              ? { position: 'fixed', top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxHeight }
+              ? {
+                  position: 'fixed',
+                  top: pos.top,
+                  left: pos.left,
+                  width: pos.width,
+                  maxHeight: pos.maxHeight,
+                }
               : undefined
           }
         >
@@ -204,14 +200,19 @@ export function FilterSelect({
               <p className="fselect-empty">No matches for “{query}”</p>
             ) : (
               shown.map((option) => (
-                <label key={option.value} className="fselect-option">
+                <label
+                  key={option.value}
+                  className="fselect-option"
+                  // Stops the modal's tabIndex={-1} dialog from stealing focus on mousedown, which would close this panel before the click toggles the option.
+                  onMouseDown={(e) => e.preventDefault()}
+                >
                   <input
                     type={multiple ? 'checkbox' : 'radio'}
                     name={multiple ? undefined : panelId}
                     checked={selected.includes(option.value)}
                     onChange={() => toggle(option.value)}
                     // Re-picking the option a radio already holds fires no change event, so
-                    // close on the click itself — otherwise that one option leaves the
+                    // close on the click itself - otherwise that one option leaves the
                     // panel stuck open.
                     onClick={() => {
                       if (!multiple && selected.includes(option.value)) setOpen(false);

@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
-/** Keeps the latest callback reachable from an effect without making it a dep —
+/** Keeps the latest callback reachable from an effect without making it a dep -
  * the parent hands us a fresh `onClose` on every render, and re-running the
  * open effect for that would steal focus back into the dialog mid-interaction. */
 function useLatest<T>(value: T) {
@@ -16,7 +16,7 @@ interface Props {
   onClear: () => void;
   /** The count the "Show N …" button reports. */
   resultCount: number;
-  /** Singular noun for the count — "role", "company". */
+  /** Singular noun for the count - "role", "company". */
   resultNoun?: string;
   /** Its plural, where a trailing "s" is wrong ("companies"). */
   resultNounPlural?: string;
@@ -24,7 +24,7 @@ interface Props {
 }
 
 /**
- * The "More filters" dialog — a full-height sheet on a phone, a centred panel on
+ * The "More filters" dialog - a full-height sheet on a phone, a centred panel on
  * a wide screen. The sections it holds are passed in as children, so the jobs
  * and companies pages build the same shell around their own filters.
  */
@@ -73,7 +73,7 @@ export function FiltersModal({
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prevOverflow;
     };
-    // `open` is the only real trigger — see useLatest above for why onClose isn't a dep.
+    // `open` is the only real trigger - see useLatest above for why onClose isn't a dep.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -92,7 +92,12 @@ export function FiltersModal({
       >
         <header className="fmodal-head">
           <h2>Filters</h2>
-          <button type="button" className="fmodal-close" onClick={onClose} aria-label="Close filters">
+          <button
+            type="button"
+            className="fmodal-close"
+            onClick={onClose}
+            aria-label="Close filters"
+          >
             <span aria-hidden="true">×</span>
           </button>
         </header>
@@ -113,7 +118,7 @@ export function FiltersModal({
   );
 }
 
-/** One titled block inside the modal — same spacing/heading treatment on both pages. */
+/** One titled block inside the modal - same spacing/heading treatment on both pages. */
 export function FilterSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="fmodal-section">

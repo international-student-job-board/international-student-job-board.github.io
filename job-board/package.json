@@ -29,7 +29,10 @@
     "postbuild:pages": "node scripts/sync-data.js ../docs && node scripts/seo-assets.js ../docs",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "build-osca": "node scripts/build-osca-index.js"
+    "build-osca": "node scripts/build-osca-index.js",
+    "lint": "eslint src --ext .ts,.tsx",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\""
   },
   "proxy": "http://localhost:4000",
   "eslintConfig": {
@@ -68,5 +71,8 @@
     "js-yaml": "^4.1.1",
     "underscore": "^1.13.7",
     "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.6"
   }
 }

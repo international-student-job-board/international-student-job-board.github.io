@@ -20,7 +20,13 @@ const CHECKED = ['Not checked yet', 'Yes', 'No'];
 
 export const FIELDS: Field[] = [
   // ---- The role ----------------------------------------------------------
-  { key: 'Job title', label: 'Job title', type: 'text', required: true, placeholder: 'Graduate Software Engineer' },
+  {
+    key: 'Job title',
+    label: 'Job title',
+    type: 'text',
+    required: true,
+    placeholder: 'Graduate Software Engineer',
+  },
   { key: 'Job type', label: 'Job type', type: 'select', options: getConstant('type') },
   {
     key: 'Employment type',
@@ -28,7 +34,12 @@ export const FIELDS: Field[] = [
     type: 'select',
     options: ['', ...getConstant('type')],
   },
-  { key: 'Job level', label: 'Job level', type: 'select', options: ['', ...getConstant('jobLevel')] },
+  {
+    key: 'Job level',
+    label: 'Job level',
+    type: 'select',
+    options: ['', ...getConstant('jobLevel')],
+  },
   {
     key: 'Work arrangement',
     label: 'Work arrangement',
@@ -45,8 +56,18 @@ export const FIELDS: Field[] = [
   { key: 'Base salary min', label: 'Base salary min', type: 'text', placeholder: '90000' },
   { key: 'Base salary max', label: 'Base salary max', type: 'text', placeholder: '110000' },
   { key: 'Base salary currency', label: 'Base salary currency', type: 'text', placeholder: 'AUD' },
-  { key: 'Base salary min AUD', label: 'Base salary min (AUD)', type: 'text', placeholder: '90000' },
-  { key: 'Base salary max AUD', label: 'Base salary max (AUD)', type: 'text', placeholder: '110000' },
+  {
+    key: 'Base salary min AUD',
+    label: 'Base salary min (AUD)',
+    type: 'text',
+    placeholder: '90000',
+  },
+  {
+    key: 'Base salary max AUD',
+    label: 'Base salary max (AUD)',
+    type: 'text',
+    placeholder: '110000',
+  },
   {
     key: 'Company salary estimate AUD',
     label: 'Company salary estimate (AUD)',
@@ -84,7 +105,7 @@ export const FIELDS: Field[] = [
     hint: 'Orders the board and drives the "posted recently" filter. Defaults to today.',
   },
   // The three occupation columns are written by the picker rather than typed, so they carry
-  // no input of their own — see AdminAddJob.
+  // no input of their own - see AdminAddJob.
   { key: 'ANZSCO occupation', label: 'ANZSCO occupation', type: 'text' },
   { key: 'ANZSCO 2022', label: 'ANZSCO 2022', type: 'text' },
   { key: 'ANZSCO 2013', label: 'ANZSCO 2013', type: 'text' },
@@ -103,17 +124,45 @@ export const FIELDS: Field[] = [
   // ---- The employer ------------------------------------------------------
   { key: 'Company name', label: 'Company name', type: 'text', required: true, placeholder: 'Acme' },
   { key: 'State', label: 'State', type: 'text', placeholder: 'Victoria' },
-  { key: 'Tagline', label: 'Tagline', type: 'textarea', maxLength: 300, placeholder: 'The company’s own one-liner.' },
+  {
+    key: 'Tagline',
+    label: 'Tagline',
+    type: 'textarea',
+    maxLength: 300,
+    placeholder: 'The company’s own one-liner.',
+  },
   { key: 'Website', label: 'Website', type: 'url', placeholder: 'https://www.acme.com' },
-  { key: 'LinkedIn', label: 'LinkedIn', type: 'url', placeholder: 'https://www.linkedin.com/company/acme' },
+  {
+    key: 'LinkedIn',
+    label: 'LinkedIn',
+    type: 'url',
+    placeholder: 'https://www.linkedin.com/company/acme',
+  },
   { key: 'Segment', label: 'Segment', type: 'text', placeholder: 'startup' },
-  { key: 'Type', label: 'Builds', type: 'text', placeholder: 'saas; machine learning', hint: 'Separate with semicolons.' },
-  { key: 'Industries', label: 'Industries', type: 'text', placeholder: 'fintech; health', hint: 'Separate with semicolons.' },
+  {
+    key: 'Type',
+    label: 'Builds',
+    type: 'text',
+    placeholder: 'saas; machine learning',
+    hint: 'Separate with semicolons.',
+  },
+  {
+    key: 'Industries',
+    label: 'Industries',
+    type: 'text',
+    placeholder: 'fintech; health',
+    hint: 'Separate with semicolons.',
+  },
   { key: 'Growth stage', label: 'Growth stage', type: 'text', placeholder: 'early growth' },
   { key: 'Employees', label: 'Employees', type: 'text', placeholder: '101-250' },
   { key: 'HQ city', label: 'HQ city', type: 'text', placeholder: 'Melbourne' },
   { key: 'HQ address', label: 'HQ address', type: 'text', placeholder: 'Cremorne VIC 3121' },
-  { key: 'Job openings', label: 'Job openings', type: 'text', hint: 'How many roles the company says it has open.' },
+  {
+    key: 'Job openings',
+    label: 'Job openings',
+    type: 'text',
+    hint: 'How many roles the company says it has open.',
+  },
   { key: 'Accredited sponsor', label: 'Accredited sponsor?', type: 'select', options: CHECKED },
   {
     key: 'Hires international students',
@@ -129,16 +178,29 @@ export const FIELD_GROUPS: { title: string; keys: string[] }[] = [
   {
     title: 'The role',
     keys: [
-      'Job title', 'Job type', 'Employment type', 'Job level', 'Work arrangement',
-      'Education level', 'Job city', 'Job country', 'Job URL', 'Date posted',
+      'Job title',
+      'Job type',
+      'Employment type',
+      'Job level',
+      'Work arrangement',
+      'Education level',
+      'Job city',
+      'Job country',
+      'Job URL',
+      'Date posted',
     ],
   },
   {
     title: 'Salary',
     keys: [
-      'Base salary min', 'Base salary max', 'Base salary currency',
-      'Base salary min AUD', 'Base salary max AUD', 'Company salary estimate AUD',
-      'Salary source', 'Salary source URL',
+      'Base salary min',
+      'Base salary max',
+      'Base salary currency',
+      'Base salary min AUD',
+      'Base salary max AUD',
+      'Company salary estimate AUD',
+      'Salary source',
+      'Salary source URL',
     ],
   },
   {

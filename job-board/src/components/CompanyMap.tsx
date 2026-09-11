@@ -9,8 +9,9 @@ const MELBOURNE: L.LatLngExpression = [-37.8136, 144.9631];
 
 /** Escapes text going into popup HTML, which Leaflet takes as a raw string. */
 const esc = (text: string) =>
-  text.replace(/[&<>"']/g, (c) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string)
+  text.replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string
   );
 
 /** Companies plotted by the postcode in their address, one marker per suburb. */
@@ -70,7 +71,7 @@ export function CompanyMap({
     clusters.forEach((cluster) => {
       const count = cluster.companies.length;
       const marker = L.circleMarker([cluster.lat, cluster.lng], {
-        // Area, not radius, tracks the count — doubling a radius quadruples the ink and
+        // Area, not radius, tracks the count - doubling a radius quadruples the ink and
         // reads as four times as many.
         radius: 8 + Math.sqrt(count) * 3,
         weight: 2,
@@ -96,15 +97,15 @@ export function CompanyMap({
       marker.bindPopup(
         `<div class="map-pop">
            <p class="map-pop-title">${esc(cluster.suburb)} · ${count} ${
-          count === 1 ? 'company' : 'companies'
-        }</p>
+             count === 1 ? 'company' : 'companies'
+           }</p>
            <ul class="map-pop-list">${list}</ul>
            ${more}
          </div>`,
         { closeButton: true, maxHeight: 240 }
       );
 
-      // Opens on hover as asked, and stays open so the links inside can be clicked — a
+      // Opens on hover as asked, and stays open so the links inside can be clicked - a
       // tooltip that vanishes when you reach for it is no use.
       marker.on('mouseover', () => marker.openPopup());
       marker.on('click', () => marker.openPopup());
@@ -113,10 +114,10 @@ export function CompanyMap({
     });
 
     if (clusters.length) {
-      map.fitBounds(
-        L.latLngBounds(clusters.map((c) => [c.lat, c.lng] as L.LatLngTuple)),
-        { padding: [40, 40], maxZoom: 13 }
-      );
+      map.fitBounds(L.latLngBounds(clusters.map((c) => [c.lat, c.lng] as L.LatLngTuple)), {
+        padding: [40, 40],
+        maxZoom: 13,
+      });
     }
   }, [clusters]);
 

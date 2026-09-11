@@ -81,7 +81,6 @@ export const POSTCODE_PLACES: Record<string, Place> = {
   '3800': { suburb: 'Clayton (Monash)', lat: -37.9105, lng: 145.1362 },
 };
 
-/** The Victorian postcode in a free-text address, if there is one. */
 /**
  * The postcode in an address, nationally.
  *
@@ -150,7 +149,7 @@ export const abbreviateState = (state: string): string | undefined =>
 
 /**
  * The Australian state the reader is most likely in, from their browser's IANA
- * time zone — free, offline, and no permission prompt, which a GPS lookup isn't.
+ * time zone - free, offline, and no permission prompt, which a GPS lookup isn't.
  * It's a hint, not a fact (a Melburnian on a Sydney VPN reads as NSW), so the
  * caller only uses it as a default the reader can change. Blank when the zone
  * isn't an Australian one we recognise.
@@ -192,6 +191,39 @@ export function inferAustralianState(): string {
 }
 
 /**
+ * The visitor's country (ISO 3166-1 alpha-2), from the region their browser's
+ * own locale resolves to - set by the OS, not something a site asks for. A
+ * bare language tag ("en") still comes back with a likely region filled in
+ * (`maximize()`), so this works even when the visitor never picked a
+ * region-specific locale. Undefined when the API isn't there or resolves to
+ * nothing usable - the caller then just assumes nothing about location.
+ */
+export function inferVisitorCountry(): string | undefined {
+  try {
+    const resolved = Intl.NumberFormat().resolvedOptions().locale;
+    return new Intl.Locale(resolved).maximize().region || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Best guess at whether the visitor is in Australia at all - the gate for
+ * defaulting the "State" filter and for showing pay unconverted in AUD.
+ *
+ * The time zone is checked first and wins outright: it tracks where someone
+ * actually is (people correct it when they travel, or their OS does), while
+ * the browser's locale tracks language/formatting preference and often
+ * doesn't move with them - an Australian on an en-GB Windows install would
+ * otherwise be read as being in the UK. Only when the zone isn't one of ours
+ * does the locale region get a say.
+ */
+export function isLikelyAustralia(): boolean {
+  if (inferAustralianState()) return true;
+  return inferVisitorCountry() === 'AU';
+}
+
+/**
  * Where a state's employers sit when we can't place them any closer.
  *
  * Only Melbourne has suburb-level coordinates in this file, so everywhere else
@@ -213,7 +245,7 @@ export const CAPITALS: Record<string, Place> = {
  * The best place we can put something, and how precisely we know it.
  *
  * A postcode that disagrees with the row's own state column is discarded rather
- * than trusted — that is what a street number misread as a postcode looks like,
+ * than trusted - that is what a street number misread as a postcode looks like,
  * and the state column is the more reliable of the two.
  */
 export function placeFor(
@@ -243,7 +275,7 @@ export interface AddressCluster<T> extends Place {
  * Anything with an address, grouped into the suburb its postcode points at.
  *
  * Biggest group first, so the busiest areas draw on top. Whatever has no
- * readable postcode is returned separately rather than dropped — a map that
+ * readable postcode is returned separately rather than dropped - a map that
  * quietly loses a third of the list is worse than one that says so.
  */
 export function clusterByAddress<T>(
@@ -262,7 +294,7 @@ export function clusterByAddress<T>(
     }
     // Anything placed only to its capital shares one pin per state, so the key
     // is the suburb rather than a postcode we didn't really use.
-    const key = found.exact ? postcodeOf(address) ?? found.place.suburb : found.place.suburb;
+    const key = found.exact ? (postcodeOf(address) ?? found.place.suburb) : found.place.suburb;
     const existing = byPostcode.get(key);
     if (existing) existing.items.push(item);
     else byPostcode.set(key, { ...found.place, postcode: key, items: [item] });

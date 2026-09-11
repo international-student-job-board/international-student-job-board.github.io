@@ -25,7 +25,7 @@ describe('sending a page view', () => {
   });
 
   test('it does nothing when the tag is not there', () => {
-    // Blocked script, local build, test run — analytics failing must never be
+    // Blocked script, local build, test run - analytics failing must never be
     // something the page notices.
     expect(() => trackPageView(META)).not.toThrow();
   });

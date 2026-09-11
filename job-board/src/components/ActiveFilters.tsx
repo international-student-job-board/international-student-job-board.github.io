@@ -4,7 +4,7 @@
  */
 export interface ActiveChip {
   id: string;
-  /** Which filter it came from — "Industry", "Stage". */
+  /** Which filter it came from - "Industry", "Stage". */
   field: string;
   value: string;
   remove: () => void;

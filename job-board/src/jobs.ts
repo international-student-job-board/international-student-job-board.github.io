@@ -63,7 +63,7 @@ export const COLUMNS = [
   'Job URL',
   'Job ID',
   'Invited Score',
-  // Enriched from levels.fyi by the data pipeline — see find-startups/enrich.py.
+  // Enriched from levels.fyi by the data pipeline - see find-startups/enrich.py.
   'Employment type',
   'Job level',
   'Work arrangement',
@@ -194,7 +194,7 @@ export function toJobs(rows: Record<string, string>[]): Job[] {
 
   // Likewise the invited scores: SkillSelect scores an occupation, not a row, so every code
   // a row carries gets the same score. The first row to name a code wins, same as titles
-  // above — every row for one occupation carries the same figure anyway.
+  // above - every row for one occupation carries the same figure anyway.
   const scores: Record<string, number> = {};
   for (const row of rows) {
     const score = invitedScore(row['Invited Score']);
@@ -214,7 +214,7 @@ export function toJobs(rows: Record<string, string>[]): Job[] {
     .sort((a, b) => {
       const byDate = (dateValue(b.posted) || 0) - (dateValue(a.posted) || 0);
       if (byDate) return byDate;
-      // Same day — and hundreds of roles can share Dealroom's batch date. A
+      // Same day - and hundreds of roles can share Dealroom's batch date. A
       // LinkedIn job id increases with time, so it orders them within the day;
       // the Job id is the last resort so the sort stays stable.
       return linkedinId(b.applyUrl) - linkedinId(a.applyUrl) || b.id.localeCompare(a.id);
@@ -248,7 +248,7 @@ function monthsBefore(iso: string, months: number): string {
 }
 
 /**
- * Whether a role is recent enough to still be worth showing, both dates being YYYY-MM-DD —
+ * Whether a role is recent enough to still be worth showing, both dates being YYYY-MM-DD -
  * ISO dates compare correctly as plain strings, which sidesteps the timezone trap in
  * parsing them.
  */
@@ -269,9 +269,7 @@ export function companiesFrom(jobs: Job[]): { company: Company; jobs: Job[] }[] 
     if (seen) seen.jobs.push(job);
     else byName.set(key, { company: job.company, jobs: [job] });
   }
-  return Array.from(byName.values()).sort((a, b) =>
-    a.company.name.localeCompare(b.company.name)
-  );
+  return Array.from(byName.values()).sort((a, b) => a.company.name.localeCompare(b.company.name));
 }
 
 /** Fills each employer's gaps from the companies file. */

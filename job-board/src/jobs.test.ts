@@ -25,7 +25,9 @@ test('linkedinId pulls the numeric id out of a LinkedIn job URL', () => {
 
 describe('reading the CSV', () => {
   test('a row becomes a role with its employer attached', () => {
-    const [job] = toJobs(parseCsv(csv(row({ 'Job type': 'Full-time', Tagline: 'We build things' }))));
+    const [job] = toJobs(
+      parseCsv(csv(row({ 'Job type': 'Full-time', Tagline: 'We build things' })))
+    );
     expect(job.title).toBe('Engineer');
     expect(job.type).toBe('Full-time');
     expect(job.company.name).toBe('Acme');
@@ -114,9 +116,7 @@ describe('reading the CSV', () => {
 
   test('the advert date, when known, stands in for Dealroom’s batch date', () => {
     const [job] = toJobs(
-      parseCsv(
-        csv(row({ 'Date posted': '2026-09-07', 'Advert posted': '2026-08-19' }))
-      )
+      parseCsv(csv(row({ 'Date posted': '2026-09-07', 'Advert posted': '2026-08-19' })))
     );
     expect(job.posted).toBe('2026-08-19');
     expect(job.postedApprox).toBe(true);
@@ -132,9 +132,21 @@ describe('reading the CSV', () => {
     const jobs = toJobs(
       parseCsv(
         csv(
-          row({ 'Job ID': 'a', 'Date posted': '2026-09-07', 'Job URL': 'https://www.linkedin.com/jobs/view/4460000000/' }),
-          row({ 'Job ID': 'b', 'Date posted': '2026-09-07', 'Job URL': 'https://www.linkedin.com/jobs/view/4464000000/' }),
-          row({ 'Job ID': 'c', 'Date posted': '2026-09-07', 'Job URL': 'https://www.linkedin.com/jobs/view/4462000000/' })
+          row({
+            'Job ID': 'a',
+            'Date posted': '2026-09-07',
+            'Job URL': 'https://www.linkedin.com/jobs/view/4460000000/',
+          }),
+          row({
+            'Job ID': 'b',
+            'Date posted': '2026-09-07',
+            'Job URL': 'https://www.linkedin.com/jobs/view/4464000000/',
+          }),
+          row({
+            'Job ID': 'c',
+            'Date posted': '2026-09-07',
+            'Job URL': 'https://www.linkedin.com/jobs/view/4462000000/',
+          })
         )
       )
     );
@@ -142,7 +154,9 @@ describe('reading the CSV', () => {
   });
 
   test('a comma inside a cell survives the round trip', () => {
-    const [job] = toJobs(parseCsv(csv(row({ 'Company name': 'Acme, Inc', Tagline: 'Fast, cheap' }))));
+    const [job] = toJobs(
+      parseCsv(csv(row({ 'Company name': 'Acme, Inc', Tagline: 'Fast, cheap' })))
+    );
     expect(job.company.name).toBe('Acme, Inc');
     expect(job.company.tagline).toBe('Fast, cheap');
   });
@@ -168,7 +182,9 @@ describe('reading the CSV', () => {
   });
 
   test('the location is the city and country together', () => {
-    const [job] = toJobs(parseCsv(csv(row({ 'Job city': 'Melbourne', 'Job country': 'Australia' }))));
+    const [job] = toJobs(
+      parseCsv(csv(row({ 'Job city': 'Melbourne', 'Job country': 'Australia' })))
+    );
     expect(job.city).toBe('Melbourne');
     expect(job.country).toBe('Australia');
   });
@@ -190,9 +206,7 @@ describe('several ANZSCO codes on one role', () => {
   });
 
   test('the two classification versions stay apart', () => {
-    const [job] = toJobs(
-      parseCsv(csv(row({ 'ANZSCO 2022': '224114', 'ANZSCO 2013': '224999' })))
-    );
+    const [job] = toJobs(parseCsv(csv(row({ 'ANZSCO 2022': '224114', 'ANZSCO 2013': '224999' }))));
     expect(job.anzsco2022).toEqual(['224114']);
     expect(job.anzsco2013).toEqual(['224999']);
   });
@@ -398,7 +412,7 @@ describe('roles older than the listing window', () => {
   });
 
   test('a short month does not quietly shorten the window', () => {
-    // Two months before 30 April is 28 February, not 2 March — letting the day roll forward
+    // Two months before 30 April is 28 February, not 2 March - letting the day roll forward
     // would drop three days of roles in exactly the months where nobody would think to
     // check.
     expect(isRecent(job('2026-02-28'), '2026-04-30')).toBe(true);

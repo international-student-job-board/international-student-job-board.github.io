@@ -3,8 +3,7 @@
 
 import { Job } from './types';
 
-export const VISA_LISTING =
-  'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing';
+export const VISA_LISTING = 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing';
 
 // Home Affairs visa-listing page per subclass.
 const VISA_LINKS: Record<string, string> = {
@@ -14,7 +13,7 @@ const VISA_LINKS: Record<string, string> = {
   '190': `${VISA_LISTING}/skilled-nominated-190`,
   '191': `${VISA_LISTING}/skilled-regional-191`,
   '400': `${VISA_LISTING}/temporary-work-short-stay-specialist-400`,
-  // Was `training-visa-407`, which 404s — the slug drops the word "visa".
+  // Was `training-visa-407`, which 404s - the slug drops the word "visa".
   '407': `${VISA_LISTING}/training-407`,
   '408': `${VISA_LISTING}/temporary-activity-408`,
   '417': `${VISA_LISTING}/work-holiday-417`,
@@ -133,7 +132,10 @@ let RETRIEVED = '';
 export async function loadOccupations(): Promise<void> {
   const res = await fetch(`${process.env.PUBLIC_URL || ''}/data/occupation-index.json`);
   if (!res.ok) throw new Error(`Could not load the occupation index (${res.status})`);
-  const payload = (await res.json()) as { retrieved?: string; occupations?: Record<string, IndexEntry> };
+  const payload = (await res.json()) as {
+    retrieved?: string;
+    occupations?: Record<string, IndexEntry>;
+  };
   OCCUPATIONS = payload.occupations ?? {};
   RETRIEVED = payload.retrieved ?? '';
 }
@@ -331,8 +333,8 @@ export function setOscaOccupations(records: Record<string, OscaEntry>): void {
 /**
  * The ABS page for an OSCA code.
  *
- * A six-digit code contains its own path — 111131 sits under 1 / 11 / 111 /
- * 1111 — so the URL is built rather than stored, which keeps 1,156 long strings
+ * A six-digit code contains its own path - 111131 sits under 1 / 11 / 111 /
+ * 1111 - so the URL is built rather than stored, which keeps 1,156 long strings
  * out of the file the browser downloads.
  */
 export function oscaUrl(code: string): string | undefined {
@@ -372,7 +374,7 @@ export function oscaName(code: string): string {
 /**
  * Unit-group titles, keyed by code.
  *
- * Neither reference file has these — the four-digit titles come only from the
+ * Neither reference file has these - the four-digit titles come only from the
  * jobs CSV, so the loader registers what it saw and the filter reads it back.
  */
 let UNIT_GROUP_TITLES: Record<string, string> = {};
@@ -389,8 +391,8 @@ export function unitGroupTitle(code: string): string {
 /**
  * The unit groups a role sits in: the four-digit level above the occupation.
  *
- * A role can sit in more than one — a marketing job maps to both the manager
- * group and the professional group — so codes and titles are paired by
+ * A role can sit in more than one - a marketing job maps to both the manager
+ * group and the professional group - so codes and titles are paired by
  * position, the way the file writes them. Where the column is blank the group
  * is derived from a six-digit code instead, since its first four digits are its
  * unit group.
@@ -434,7 +436,7 @@ export const SKILLSELECT_INVITATION_ROUNDS_URL =
 
 /**
  * Minimum score by ANZSCO code, for whichever occupations the latest SkillSelect round
- * invited. Neither reference file has this either — like the unit-group titles, it comes
+ * invited. Neither reference file has this either - like the unit-group titles, it comes
  * only from the jobs CSV's own "Invited Score" column, so the loader registers what it saw
  * and the filter reads it back.
  */
@@ -451,14 +453,14 @@ export function invitedScoreFor(code: string): number | undefined {
 
 /**
  * A role's occupation codes, but only when the role was in the latest SkillSelect
- * invitation round — the empty list otherwise, so it drops out of a filter built from this
+ * invitation round - the empty list otherwise, so it drops out of a filter built from this
  * rather than showing up unselectable.
  */
 export function invitedOccupationCodesFor(job: Job): string[] {
   return job.invitedScore === undefined ? [] : occupationCodesFor(job);
 }
 
-// Which round "Invited Score" was read off — content/invitation_round.json, written by
+// Which round "Invited Score" was read off - content/invitation_round.json, written by
 // find-startups/build.py alongside the CSVs, since that date belongs to the round, not to
 // any one job's row.
 let INVITATION_ROUND_DATE = '';
@@ -492,7 +494,7 @@ export const OSCA_NOTE =
 
 /** What the invited-round filter and tag mean, wherever a score is shown. */
 export const INVITED_ROUND_NOTE =
-  "The occupations and the minimum points score to receive an invitation to apply for the Skilled Independent visa (subclass 189), by the Department of Home Affairs in the latest invitation round in June, 2026.";
+  'The occupations and the minimum points score to receive an invitation to apply for the Skilled Independent visa (subclass 189), by the Department of Home Affairs in the latest invitation round in June, 2026.';
 
 /** How the two hand-checked columns are filled in, on both pages. */
 export const MANUAL_REVIEW_NOTE =
@@ -523,8 +525,7 @@ const SALARY_SOURCE_LABEL: Record<string, string> = {
   'levels.fyi': 'Levels.fyi',
 };
 
-export const salarySourceLabel = (source: string): string =>
-  SALARY_SOURCE_LABEL[source] ?? '';
+export const salarySourceLabel = (source: string): string => SALARY_SOURCE_LABEL[source] ?? '';
 
 export const salarySourceNote = (source: string): string => {
   const label = salarySourceLabel(source);

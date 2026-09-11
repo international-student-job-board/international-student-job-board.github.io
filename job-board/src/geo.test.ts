@@ -4,18 +4,51 @@ import {
   placeFor,
   stateOfPostcode,
   inferAustralianState,
+  inferVisitorCountry,
+  isLikelyAustralia,
   POSTCODE_PLACES,
 } from './geo';
 import { Company } from './types';
 
+const withZone = (zone: string | undefined, run: () => void) => {
+  const real = Intl.DateTimeFormat;
+  // @ts-expect-error - narrow shim, only resolvedOptions().timeZone is read
+  Intl.DateTimeFormat = () => ({ resolvedOptions: () => ({ timeZone: zone }) });
+  try {
+    run();
+  } finally {
+    Intl.DateTimeFormat = real;
+  }
+};
+
+/** Shims both the pieces `inferVisitorCountry` reads: the resolved locale
+ * string, and what `Intl.Locale(...).maximize()` says its region is. */
+const withRegion = (region: string | undefined, run: () => void) => {
+  const realNumberFormat = Intl.NumberFormat;
+  const realLocale = Intl.Locale;
+  // @ts-expect-error - narrow shim, only resolvedOptions().locale is read
+  Intl.NumberFormat = () => ({ resolvedOptions: () => ({ locale: 'x' }) });
+  // @ts-expect-error - narrow shim, only .maximize().region is read
+  Intl.Locale = function Shim() {
+    return { maximize: () => ({ region }) };
+  };
+  try {
+    run();
+  } finally {
+    Intl.NumberFormat = realNumberFormat;
+    // @ts-expect-error - Locale is typed readonly; restoring it is still safe
+    Intl.Locale = realLocale;
+  }
+};
+
 const company = (name: string, address: string, state = 'Victoria'): Company =>
-  ({ name, state, hqAddress: address, website: `https://${name}.test`, openings: 1 } as Company);
+  ({ name, state, hqAddress: address, website: `https://${name}.test`, openings: 1 }) as Company;
 
 describe('postcodeOf', () => {
   test('finds the postcode in a full address', () => {
-    expect(
-      postcodeOf('Victoria Street, Carlton, Melbourne, Victoria, 3053, Australia')
-    ).toBe('3053');
+    expect(postcodeOf('Victoria Street, Carlton, Melbourne, Victoria, 3053, Australia')).toBe(
+      '3053'
+    );
   });
 
   test('finds it when it leads the suburb, as half this file does', () => {
@@ -112,34 +145,52 @@ describe('placing an employer nationally', () => {
 });
 
 describe('inferAustralianState', () => {
-  const withZone = (zone: string | undefined, run: () => void) => {
-    const real = Intl.DateTimeFormat;
-    // @ts-expect-error - narrow shim, only resolvedOptions().timeZone is read
-    Intl.DateTimeFormat = () => ({ resolvedOptions: () => ({ timeZone: zone }) });
-    try {
-      run();
-    } finally {
-      Intl.DateTimeFormat = real;
-    }
-  };
-
   test('maps the common capital-city zones to their state name', () => {
     withZone('Australia/Melbourne', () => expect(inferAustralianState()).toBe('Victoria'));
-    withZone('Australia/Sydney', () =>
-      expect(inferAustralianState()).toBe('New South Wales')
-    );
+    withZone('Australia/Sydney', () => expect(inferAustralianState()).toBe('New South Wales'));
     withZone('Australia/Brisbane', () => expect(inferAustralianState()).toBe('Queensland'));
-    withZone('Australia/Perth', () =>
-      expect(inferAustralianState()).toBe('Western Australia')
-    );
-    withZone('Australia/Adelaide', () =>
-      expect(inferAustralianState()).toBe('South Australia')
-    );
+    withZone('Australia/Perth', () => expect(inferAustralianState()).toBe('Western Australia'));
+    withZone('Australia/Adelaide', () => expect(inferAustralianState()).toBe('South Australia'));
   });
 
   test('a non-Australian or unknown zone yields nothing', () => {
     withZone('Europe/London', () => expect(inferAustralianState()).toBe(''));
     withZone(undefined, () => expect(inferAustralianState()).toBe(''));
+  });
+});
+
+describe('inferVisitorCountry', () => {
+  test('reads the region the browser locale resolves to', () => {
+    withRegion('IN', () => expect(inferVisitorCountry()).toBe('IN'));
+    withRegion('AU', () => expect(inferVisitorCountry()).toBe('AU'));
+  });
+
+  test('no region at all yields undefined, not a guess', () => {
+    withRegion(undefined, () => expect(inferVisitorCountry()).toBeUndefined());
+    withRegion('', () => expect(inferVisitorCountry()).toBeUndefined());
+  });
+});
+
+describe('isLikelyAustralia', () => {
+  test('the time zone wins even over a contradicting locale region', () => {
+    // The actual bug this guards: an Australian browser with an en-GB (or any
+    // non-AU) locale must still read as Australia.
+    withZone('Australia/Melbourne', () => {
+      withRegion('GB', () => expect(isLikelyAustralia()).toBe(true));
+    });
+  });
+
+  test('falls back to the locale region only when the zone is not one of ours', () => {
+    withZone('Europe/London', () => {
+      withRegion('AU', () => expect(isLikelyAustralia()).toBe(true));
+      withRegion('IN', () => expect(isLikelyAustralia()).toBe(false));
+    });
+  });
+
+  test('neither signal available is not Australia', () => {
+    withZone(undefined, () => {
+      withRegion(undefined, () => expect(isLikelyAustralia()).toBe(false));
+    });
   });
 });
 

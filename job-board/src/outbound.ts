@@ -28,7 +28,7 @@ export const OUTBOUND = {
  * LinkedIn is the only one so far, and it is here for local development rather
  * than for production: two thirds of the board's apply links are
  * linkedin.com/jobs/view/… pages, and they open fine from the live site with
- * the parameters attached. From localhost they don't — that request arrives
+ * the parameters attached. From localhost they don't - that request arrives
  * with utm_source=localhost and Referer: http://localhost:3000/, an insecure
  * non-public origin, and LinkedIn sends signed-out visitors to its login wall
  * instead of the job.
@@ -90,7 +90,7 @@ export function emailApplyHref(
   params.delete('subject');
   params.delete('body');
   // Built by hand rather than with URLSearchParams.toString(), which encodes a space as "+"
-  // — several mail clients paste that straight into the message.
+  // - several mail clients paste that straight into the message.
   const extra = Array.from(params.entries())
     .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
     .join('&');

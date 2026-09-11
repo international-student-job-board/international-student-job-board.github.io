@@ -3,13 +3,13 @@
 
 export interface Company {
   name: string;
-  /** The state the employer is in — the board is national now. */
+  /** The state the employer is in - the board is national now. */
   state: string;
   /** "startup" or "scaleup". */
   segment: string;
-  /** What the company builds — big data, saas, machine learning… */
+  /** What the company builds - big data, saas, machine learning… */
   types: string[];
-  /** The markets it sells into — fintech, health, marketing… */
+  /** The markets it sells into - fintech, health, marketing… */
   industries: string[];
   website: string;
   growthStage: string;
@@ -28,7 +28,7 @@ export interface Company {
   accreditedSponsor: boolean | undefined;
   hiresInternationalStudents: boolean | undefined;
   /** Glassdoor's overall rating out of 5, the review count behind it, and the
-   * Overview page — undefined when we couldn't match the company on Glassdoor. */
+   * Overview page - undefined when we couldn't match the company on Glassdoor. */
   glassdoorRating?: number;
   glassdoorReviews?: number;
   glassdoorUrl?: string;
@@ -61,7 +61,7 @@ export interface Job {
   oscaNames: string[];
   /**
    * The minimum score SkillSelect invited at, in the round most recently fetched, for this
-   * role's matched occupation. Undefined when that occupation wasn't in it — not the same
+   * role's matched occupation. Undefined when that occupation wasn't in it - not the same
    * as a score of zero, so left unset rather than defaulted.
    */
   invitedScore?: number;
@@ -76,13 +76,13 @@ export interface Job {
   state: string;
   country: string;
   /**
-   * When the role was posted — the advert's own date where we could read one
+   * When the role was posted - the advert's own date where we could read one
    * (often weeks before the CSV's "Date posted", which is really Dealroom's
    * discovery date and batches many roles onto one day), otherwise that. Orders
    * the board and drives the recency filter.
    */
   posted: string;
-  /** True when `posted` came from the advert's coarse "N weeks ago" — a good
+  /** True when `posted` came from the advert's coarse "N weeks ago" - a good
    * sort key, but not a date to render to the day. */
   postedApprox: boolean;
   applyUrl: string;
@@ -95,7 +95,7 @@ export interface Job {
   employmentType: string;
   jobLevel: string;
   workArrangement: string;
-  /** Degrees the advert mentions — a role can name more than one. */
+  /** Degrees the advert mentions - a role can name more than one. */
   educationLevels: string[];
   salary: Salary;
 }
@@ -107,7 +107,7 @@ export interface Job {
  *  - `estimateAud` is a single "typical" AUD figure (Glassdoor's median, or
  *    levels.fyi's total-comp estimate).
  *  - `source` is where the figure came from: `advert` (the employer published
- *    it — not an estimate), `glassdoor` or `levels.fyi` (an estimate).
+ *    it - not an estimate), `glassdoor` or `levels.fyi` (an estimate).
  *  - `sourceUrl` is the page to link to for a Glassdoor / levels.fyi figure.
  *
  * `isEstimate` is derived: true unless the source is the advert.
@@ -129,17 +129,15 @@ export function hasSalary(salary: Salary): boolean {
 
 /** The lowest and highest AUD figure a role's pay spans, for the range filter. */
 export function salaryRangeAud(salary: Salary): [number, number] | null {
-  const points = [
-    salary.base?.minAud,
-    salary.base?.maxAud,
-    salary.estimateAud,
-  ].filter((n): n is number => typeof n === 'number' && n > 0);
+  const points = [salary.base?.minAud, salary.base?.maxAud, salary.estimateAud].filter(
+    (n): n is number => typeof n === 'number' && n > 0
+  );
   if (!points.length) return null;
   return [Math.min(...points), Math.max(...points)];
 }
 
 /**
- * "Melbourne, Australia" — what the card, the detail page and the search
+ * "Melbourne, Australia" - what the card, the detail page and the search
  * snippet all show.
  *
  * The state is deliberately absent. The file records it per row but it tracks

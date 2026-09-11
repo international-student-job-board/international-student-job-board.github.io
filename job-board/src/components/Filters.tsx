@@ -30,7 +30,7 @@ export interface FilterState {
   companies: string[];
   states: string[];
   types: string[];
-  /** Full-time / Part-time / … — a different question from `types`, which is the
+  /** Full-time / Part-time / … - a different question from `types`, which is the
    * Dealroom role category ("Backend development"). */
   employmentTypes: string[];
   jobLevels: string[];
@@ -38,7 +38,7 @@ export interface FilterState {
   educationLevels: string[];
   cities: string[];
   industries: string[];
-  /** The company's own tags — what it makes and how it makes money. */
+  /** The company's own tags - what it makes and how it makes money. */
   companyTypes: string[];
   growthStages: string[];
   hqCities: string[];
@@ -114,9 +114,7 @@ export const POSTED_WINDOWS = [
 ];
 
 /** The rungs the salary range offers, in AUD. */
-export const SALARY_STEPS = [
-  40_000, 60_000, 80_000, 100_000, 120_000, 150_000, 200_000, 250_000,
-];
+export const SALARY_STEPS = [40_000, 60_000, 80_000, 100_000, 120_000, 150_000, 200_000, 250_000];
 
 export const SALARY_NOTE =
   'If the salary is not provided in the job advert, an estimate is provided ' +
@@ -155,7 +153,12 @@ const FIELDS: FieldMeta[] = [
     tooltip: INVITED_ROUND_NOTE,
     accent: true,
   },
-  { key: 'unitGroups', label: 'ANZSCO unit group', format: unitGroupLabel, tooltip: UNIT_GROUP_NOTE },
+  {
+    key: 'unitGroups',
+    label: 'ANZSCO unit group',
+    format: unitGroupLabel,
+    tooltip: UNIT_GROUP_NOTE,
+  },
   { key: 'oscas', label: 'OSCA occupations', format: oscaLabel, tooltip: OSCA_NOTE },
   {
     key: 'occupationLists',
@@ -164,7 +167,13 @@ const FIELDS: FieldMeta[] = [
     tooltip: OCCUPATION_LIST_NOTE,
   },
   { key: 'pathwayVisas', label: 'Leads to visa', format: visaLabel },
-  { key: 'sponsor', label: 'Accredited sponsor', format: answerLabel, tooltip: MANUAL_REVIEW_NOTE, accent: true },
+  {
+    key: 'sponsor',
+    label: 'Accredited sponsor',
+    format: answerLabel,
+    tooltip: MANUAL_REVIEW_NOTE,
+    accent: true,
+  },
   {
     key: 'students',
     label: 'Hires international students and graduates',
@@ -185,14 +194,17 @@ const QUICK_KEYS: FilterListKey[] = [
   'students',
 ];
 
-/** The modal's filters, in sections — the same headings the companies page uses. */
+/** The modal's filters, in sections - the same headings the companies page uses. */
 const MODAL_GROUPS: { title: string; keys: (FilterListKey | 'rating')[] }[] = [
   { title: 'Where', keys: ['states', 'cities', 'hqCities'] },
   {
     title: 'The role',
     keys: ['types', 'employmentTypes', 'jobLevels', 'workArrangements', 'educationLevels'],
   },
-  { title: 'The employer', keys: ['companies', 'industries', 'companyTypes', 'growthStages', 'rating'] },
+  {
+    title: 'The employer',
+    keys: ['companies', 'industries', 'companyTypes', 'growthStages', 'rating'],
+  },
   { title: 'Occupation and visa', keys: ['unitGroups', 'oscas', 'occupationLists'] },
 ];
 
@@ -210,7 +222,7 @@ export function countActiveFilters(filters: FilterState): number {
   );
 }
 
-/** How many of the modal's filters are set — the count on the "More filters" button. */
+/** How many of the modal's filters are set - the count on the "More filters" button. */
 function countModalFilters(filters: FilterState): number {
   const onBar = [...QUICK_KEYS].reduce((total, key) => total + filters[key].length, 0);
   return listCount(filters) - onBar + (filters.minRating !== 0 ? 1 : 0);
@@ -273,7 +285,9 @@ export function Filters({ filters, options, counts, resultCount, onChange, onCle
         field: field.label,
         value: optionLabel(value, field.format),
         remove: () =>
-          set({ [field.key]: filters[field.key].filter((v) => v !== value) } as Partial<FilterState>),
+          set({
+            [field.key]: filters[field.key].filter((v) => v !== value),
+          } as Partial<FilterState>),
       });
     });
   });
@@ -289,7 +303,7 @@ export function Filters({ filters, options, counts, resultCount, onChange, onCle
     chips.push({
       id: 'salary',
       field: 'Salary',
-      value: `${filters.salaryMin > 0 ? formatMoney(filters.salaryMin) : 'Any'} – ${
+      value: `${filters.salaryMin > 0 ? formatMoney(filters.salaryMin) : 'Any'} - ${
         filters.salaryMax > 0 ? formatMoney(filters.salaryMax) : 'Any'
       }`,
       remove: () => set({ salaryMin: 0, salaryMax: 0 }),

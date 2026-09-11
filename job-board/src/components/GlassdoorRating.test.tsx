@@ -47,7 +47,9 @@ test('renders nothing without a rating', () => {
 
 test('with a rating but no usable page link, shows the figure as plain text (no link)', () => {
   render(
-    <GlassdoorRating company={company({ glassdoorRating: 3.2, glassdoorUrl: 'https://evil.test/gd' })} />
+    <GlassdoorRating
+      company={company({ glassdoorRating: 3.2, glassdoorUrl: 'https://evil.test/gd' })}
+    />
   );
   expect(screen.queryByRole('link')).not.toBeInTheDocument();
   expect(screen.getByText(/3\.2/)).toBeInTheDocument();

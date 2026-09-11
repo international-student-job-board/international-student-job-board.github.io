@@ -6,8 +6,8 @@ import { placeFor } from '../geo';
 /**
  * One employer's whereabouts, from the postcode in its address.
  *
- * Only ever rendered once the reader has asked for it, so Leaflet — the largest
- * thing the site can load — stays out of the way of everyone who doesn't.
+ * Only ever rendered once the reader has asked for it, so Leaflet - the largest
+ * thing the site can load - stays out of the way of everyone who doesn't.
  */
 export function EmployerMap({ address, state }: { address: string; state: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -34,7 +34,7 @@ export function EmployerMap({ address, state }: { address: string; state: string
     }).addTo(map);
 
     // Leaflet measures its container once, and this one was display:none until
-    // the disclosure opened — so it has to be told to look again.
+    // the disclosure opened - so it has to be told to look again.
     const observer = new ResizeObserver(() => map.invalidateSize());
     observer.observe(containerRef.current);
     map.invalidateSize();
@@ -47,9 +47,7 @@ export function EmployerMap({ address, state }: { address: string; state: string
 
   if (!place) {
     return (
-      <p className="panel-note">
-        We can't place this employer on a map from the address we have.
-      </p>
+      <p className="panel-note">We can't place this employer on a map from the address we have.</p>
     );
   }
 

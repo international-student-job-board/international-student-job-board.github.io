@@ -6,6 +6,15 @@ import { Route } from './routes';
 import { SITE_NAME, SITE_URL } from './links';
 import { formatDate } from './format';
 import { resolveOccupations } from './references';
+import { MONTHS_LISTED } from './jobs';
+
+/** When a listing stops being true, for the structured data's validThrough. */
+export function validThroughFor(job: Job): string {
+  const date = new Date(`${job.posted}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return '';
+  date.setUTCMonth(date.getUTCMonth() + MONTHS_LISTED);
+  return date.toISOString().slice(0, 10);
+}
 
 export interface PageMeta {
   title: string;
@@ -68,7 +77,7 @@ export function metaFor(route: Route, job: Job | null, origin: string): PageMeta
       };
     default:
       return {
-        title: `${SITE_NAME} - Australian startup jobs for international students`,
+        title: `${SITE_NAME} | Australian Startup Jobs`,
         description: HOME_DESCRIPTION,
         url: at('/'),
       };
@@ -139,7 +148,7 @@ export function jobPostingSchema(job: Job, url: string, validThrough: string): o
 
   const employmentType = SCHEMA_EMPLOYMENT[job.employmentType];
   const { base } = job.salary;
-  // Only a figure the employer actually published belongs in structured data —
+  // Only a figure the employer actually published belongs in structured data -
   // a levels.fyi estimate would misrepresent it as the advertised salary.
   const baseSalary =
     !job.salary.isEstimate && base && (base.minAud || base.maxAud)

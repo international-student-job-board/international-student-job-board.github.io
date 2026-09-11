@@ -7,22 +7,18 @@ const NAV = [
   { route: 'post', label: 'Post a job' },
   { route: 'about', label: 'About' },
   // Only ever built into a local dev bundle, so it can't reach the live site.
-  ...(process.env.NODE_ENV === 'development'
-    ? [{ route: 'admin', label: 'Add a job' }]
-    : []),
+  ...(process.env.NODE_ENV === 'development' ? [{ route: 'admin', label: 'Add a job' }] : []),
 ];
 
 export function Header({ route }: { route: string }) {
   return (
     <header className="topbar">
-      <a className="brand" href={pathFor('jobs')} aria-label="International Student Job Board - home">
-        <img
-          className="brand-logo"
-          src={`${base}/icons/logo.svg`}
-          alt=""
-          width={40}
-          height={40}
-        />
+      <a
+        className="brand"
+        href={pathFor('jobs')}
+        aria-label="International Student Job Board - home"
+      >
+        <img className="brand-logo" src={`${base}/icons/logo.svg`} alt="" width={40} height={40} />
         <span className="brand-title">International Student Job Board</span>
       </a>
 

@@ -19,15 +19,7 @@ interface Props {
 }
 
 /** Company name field backed by the national startup list. */
-export function CompanyPicker({
-  id,
-  label,
-  value,
-  onChange,
-  onMatch,
-  required,
-  hint,
-}: Props) {
+export function CompanyPicker({ id, label, value, onChange, onMatch, required, hint }: Props) {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [open, setOpen] = useState(false);
@@ -62,7 +54,8 @@ export function CompanyPicker({
   useEffect(() => {
     onMatch(matched);
     // onMatch is a fresh closure each render in the parent; depending on it would fire this
-    // on every keystroke. eslint-disable-next-line react-hooks/exhaustive-deps
+    // on every keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matched]);
 
   const matches = useMemo(

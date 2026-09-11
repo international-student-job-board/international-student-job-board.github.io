@@ -17,6 +17,37 @@ data files on port 4000; CRA serves the app on port 3000 and forwards data
 requests to it. Starting CRA alone gives you a board with no jobs on it — see
 [Where the data lives](#where-the-data-lives).
 
+## Running it in separate steps
+
+**Development** is normally one command, but the two servers `npm start`
+bundles together can run in separate terminals — useful when you want the data
+server up on its own (to hit `/api/jobs` directly, say) without also launching
+the browser-facing app:
+
+```bash
+npm run dev-server    # terminal 1: just the data server, on :4000
+npx react-scripts start   # terminal 2: just CRA, on :3000
+```
+
+`npm start` in a second terminal also works instead of the second command —
+it notices port 4000 is already answering and only starts CRA.
+
+**Deploying** (`npm run build:pages`) is three steps chained by npm's
+automatic `postbuild:pages` hook, each independently runnable:
+
+```bash
+# 1. compile the app into ../docs
+REACT_APP_BUILD_DATE=$(date +%Y-%m-%d) BUILD_PATH=../docs npx react-scripts build
+touch ../docs/.nojekyll
+
+node scripts/sync-data.js ../docs    # 2. copy content/*.json + CSVs into it
+node scripts/seo-assets.js ../docs   # 3. write 404.html, sitemap.xml, robots.txt
+```
+
+Step 1 is the slow one. If you've only edited a file under `content/` and
+`../docs` already holds a build, steps 2 and 3 alone are enough to refresh the
+deployed data without rebuilding the app itself.
+
 ---
 
 ## Design

@@ -48,7 +48,7 @@ test('an irregular plural is used for the count button, not noun + "s"', () => {
 test('a parent re-render does not yank focus back to the dialog', () => {
   // The parent hands FiltersModal a fresh onClose every render. If the open
   // effect re-ran for that, it would call dialog.focus() and pull focus out of
-  // whatever control the reader is using — which closed the open dropdown.
+  // whatever control the reader is using - which closed the open dropdown.
   function Harness() {
     const [, force] = useState(0);
     return (

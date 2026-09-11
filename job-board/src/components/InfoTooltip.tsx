@@ -48,14 +48,14 @@ function boundsFor(button: HTMLElement) {
  * Small "i" affordance that reveals explanatory text on hover or keyboard focus.
  *
  * The bubble is centred on the button by default, which puts half of it past
- * the edge for anything near one — and the filters that most need explaining
+ * the edge for anything near one - and the filters that most need explaining
  * sit at the ends of the row. So the edge it anchors to is chosen when it
  * opens, the same way the filter panel picks its own side: measure once, then
  * hang the bubble from whichever side has room. What counts as the edge is
  * whatever would clip it, which is usually not the window: see boundsFor.
  *
  * The measurement runs on hover and focus rather than on mount because a filter
- * panel moves — it opens, the row wraps, the pane resizes — and where the
+ * panel moves - it opens, the row wraps, the pane resizes - and where the
  * button was at mount says nothing about where it is when someone reaches for
  * it.
  */

@@ -15,8 +15,12 @@ export function Footer() {
         International Student Job Board · Last updated {formatDate(LAST_UPDATED)}
       </p>
       <nav className="footer-links" aria-label="Footer">
-        <a href={FEEDBACK_URL} target="_blank" rel="noopener"
-            referrerPolicy="strict-origin-when-cross-origin">
+        <a
+          href={FEEDBACK_URL}
+          target="_blank"
+          rel="noopener"
+          referrerPolicy="strict-origin-when-cross-origin"
+        >
           Feedback &amp; feature requests
         </a>
         {CONTACT_MAILTO && <a href={CONTACT_MAILTO}>Contact us</a>}

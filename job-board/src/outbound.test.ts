@@ -1,10 +1,4 @@
-import {
-  OUTBOUND,
-  outboundHref,
-  OUTBOUND_ATTRS,
-  emailApplyHref,
-  safeHref,
-} from './outbound';
+import { OUTBOUND, outboundHref, OUTBOUND_ATTRS, emailApplyHref, safeHref } from './outbound';
 
 describe('the outbound link contract', () => {
   test('keeps noopener but never noreferrer', () => {
@@ -124,12 +118,14 @@ describe('safeHref', () => {
 
   test('refuses anything that can execute', () => {
     // Stored XSS if any of these reached an href: the data files are edited by hand and
-    // generated from third-party exports.
+    // generated from third-party exports. These are sanitizer inputs, never executed here.
+    /* eslint-disable no-script-url */
     expect(safeHref('javascript:alert(1)')).toBe('');
     expect(safeHref('JavaScript:alert(1)')).toBe('');
     expect(safeHref('  javascript:alert(1)  ')).toBe('');
     expect(safeHref('data:text/html,<script>alert(1)</script>')).toBe('');
     expect(safeHref('vbscript:msgbox(1)')).toBe('');
+    /* eslint-enable no-script-url */
   });
 
   test('an empty or unparseable value yields nothing to click', () => {
@@ -140,8 +136,10 @@ describe('safeHref', () => {
 });
 
 test('outbound links inherit the scheme allowlist', () => {
+  /* eslint-disable no-script-url -- sanitizer inputs, never executed here */
   expect(outboundHref('javascript:alert(1)', 'apply')).toBe('');
   expect(emailApplyHref('javascript:alert(1)', 'Role', 'Site', 'https://s.test')).toBe('');
+  /* eslint-enable no-script-url */
 });
 
 describe('destinations that are handed the URL untouched', () => {

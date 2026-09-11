@@ -11,20 +11,11 @@ import {
   searchCompanies,
   sortCompanies,
 } from '../companies';
-import {
-  companyViewFromParams,
-  companyViewToParams,
-  pruneCompanyFilters,
-} from '../filterParams';
+import { companyViewFromParams, companyViewToParams, pruneCompanyFilters } from '../filterParams';
 import { FilterSelect } from './FilterSelect';
 import { FiltersModal, FilterSection } from './FiltersModal';
 import { FiltersDisclosure } from './FiltersDisclosure';
-import {
-  RatingFilter,
-  RATING_RUNGS,
-  RATING_UNSPECIFIED,
-  ratingChipLabel,
-} from './RatingFilter';
+import { RatingFilter, RATING_RUNGS, RATING_UNSPECIFIED, ratingChipLabel } from './RatingFilter';
 import { GlassdoorRating } from './GlassdoorRating';
 import { NOT_SPECIFIED } from '../format';
 import { prettyLabel } from '../labels';
@@ -33,11 +24,9 @@ import { useIsMobile } from '../useMediaQuery';
 import { ActiveFilters, ActiveChip } from './ActiveFilters';
 import { outboundHref } from '../outbound';
 // Leaflet and its stylesheet are a big chunk of the site's weight, and only this page's map
-// view needs them — split out so they download when someone actually asks for a map, not on
+// view needs them - split out so they download when someone actually asks for a map, not on
 // every visit to the job board.
-const CompanyMap = lazy(() =>
-  import('./CompanyMap').then((m) => ({ default: m.CompanyMap }))
-);
+const CompanyMap = lazy(() => import('./CompanyMap').then((m) => ({ default: m.CompanyMap })));
 
 type View = 'cards' | 'split' | 'map';
 
@@ -105,11 +94,11 @@ const FIELDS: {
   },
 ];
 
-/** Filters that stay on the bar; the rest live in the "More filters" modal —
+/** Filters that stay on the bar; the rest live in the "More filters" modal -
  * the same split the job board uses. */
 const QUICK_KEYS: CompanyFilterKey[] = ['sponsor', 'students'];
 
-/** The modal's sections — the same headings the job board uses. */
+/** The modal's sections - the same headings the job board uses. */
 const MODAL_GROUPS: { title: string; keys: (CompanyFilterKey | 'rating')[] }[] = [
   { title: 'Where', keys: ['states', 'hqCities'] },
   {
@@ -122,7 +111,7 @@ const BY_KEY = new Map(FIELDS.map((f) => [f.key, f]));
 
 const base = process.env.PUBLIC_URL || '';
 
-/** The filters the address asks for on arrival — a shared or bookmarked view. */
+/** The filters the address asks for on arrival - a shared or bookmarked view. */
 const viewFromUrl = (): CompanyView =>
   companyViewFromParams(
     new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search),
@@ -133,7 +122,7 @@ const viewFromUrl = (): CompanyView =>
  * Cards per page.
  *
  * The list is 15,000 companies; rendering all of them is a browser laid out
- * flat before it can paint anything. The map is exempt — it draws one pin per
+ * flat before it can paint anything. The map is exempt - it draws one pin per
  * suburb, not one per company, and a map showing 25 of 15,000 would say
  * something false about where the companies are.
  */
@@ -170,7 +159,7 @@ export function Companies() {
       .catch(() => setStatus('error'));
   }, []);
 
-  // Reflect the view into the query string in place — no new history entry per
+  // Reflect the view into the query string in place - no new history entry per
   // keystroke, and the path (which is always /companies here) is left alone.
   useEffect(() => {
     const qs = companyViewToParams({ query, filters, minRating, sort }).toString();
@@ -193,7 +182,7 @@ export function Companies() {
   }, []);
 
   /**
-   * Every value each filter could take, read off the data — except where the options are
+   * Every value each filter could take, read off the data - except where the options are
    * fixed.
    */
   const options = useMemo(() => {
@@ -221,7 +210,7 @@ export function Companies() {
   }, [status]);
 
   // Values within a filter are OR'd and separate filters are AND'd, matching how the job
-  // board's filters behave — one rule to learn, not two.
+  // board's filters behave - one rule to learn, not two.
   const overlaps = (selected: string[], values: string[]) =>
     selected.length === 0 ||
     (values.filter(Boolean).length
@@ -263,7 +252,7 @@ export function Companies() {
 
   /**
    * How many companies each option would leave, counted with that filter's own selection
-   * lifted — otherwise every unpicked value in a filter you have already used reads as
+   * lifted - otherwise every unpicked value in a filter you have already used reads as
    * zero, because that filter has just excluded them.
    */
   const counts = useMemo(() => {
@@ -305,7 +294,7 @@ export function Companies() {
    * scrollIntoView rather than window.scrollTo, because on this page the window
    * isn't what scrolls: the content sits in .about-panel, which has its own
    * overflow. Asking the top of the list to come into view works whichever
-   * ancestor is doing the scrolling — the panel on a wide screen, the window
+   * ancestor is doing the scrolling - the panel on a wide screen, the window
    * once the panes stack. The window call stays for the stacked case, where
    * there is a page scroll to reset as well.
    */
@@ -642,7 +631,7 @@ function CompanyCard({
               href={outboundHref(company.linkedin, 'startups')}
               target="_blank"
               rel="noopener"
-            referrerPolicy="strict-origin-when-cross-origin"
+              referrerPolicy="strict-origin-when-cross-origin"
             >
               LinkedIn
             </a>

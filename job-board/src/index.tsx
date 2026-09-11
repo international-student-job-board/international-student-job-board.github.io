@@ -10,7 +10,7 @@ const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 
 /**
  * The occupation reference and the pick-lists are fetched before the first render, which is
- * what lets every caller stay synchronous — resolveOccupation is used inside filtering and
+ * what lets every caller stay synchronous - resolveOccupation is used inside filtering and
  * inside render, and threading a promise through all of that to save two small files at
  * boot would not be a trade worth making.
  */

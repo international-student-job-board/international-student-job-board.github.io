@@ -6,7 +6,7 @@
 //
 // The CRA dev server proxies /api/* here (see "proxy" in package.json), so the
 // app can POST to /api/jobs with no CORS setup. It is never part of the
-// production build — the admin panel only renders in development.
+// production build - the admin panel only renders in development.
 
 const http = require('http');
 const fs = require('fs');
@@ -24,7 +24,7 @@ const CONST_KEYS = ['jobLevel', 'type', 'arrangement', 'educationLevel', 'assess
  * Reads a file, creating it from `fallback` if it isn't there.
  *
  * A missing file used to surface as a bare ENOENT from inside a POST, which
- * says nothing about which file or why — and "why" is usually that these files
+ * says nothing about which file or why - and "why" is usually that these files
  * moved, or that this is a fresh clone. Creating it is the right answer either
  * way: an empty reference is a valid starting state.
  *
@@ -154,7 +154,7 @@ const server = http.createServer((req, res) => {
   // CRA's dev server has nothing to serve and forwards the request here (it
   // proxies any GET for a path that doesn't exist in public/ and doesn't ask
   // for HTML). The site therefore reads the same file the admin writes, live,
-  // with no reload — which is the entire point of them living in content/.
+  // with no reload - which is the entire point of them living in content/.
   if (req.method === 'GET') {
     const file = DATA_FILES.find((f) => f.url === req.url.split('?')[0]);
     if (file) {
@@ -280,7 +280,7 @@ const server = http.createServer((req, res) => {
 
 // Bound to the loopback address on purpose. This server writes to jobs.csv,
 // occupations.json and constants.json with no authentication, and it answers
-// any origin — which is fine for a tool only this machine can reach, and not
+// any origin - which is fine for a tool only this machine can reach, and not
 // fine on a shared network. Without the host argument Node listens on every
 // interface, so anyone on the same wifi could post a job into the repo.
 server.listen(PORT, '127.0.0.1', () => {

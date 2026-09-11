@@ -2,15 +2,35 @@ import { FEEDBACK_URL } from '../links';
 import { Resources } from './AboutSections';
 
 const HOW_STUDENTS = [
-  { n: 1, title: 'Checkout local startups', body: 'We have tagged jobs manually verified to accept international students and graduates.' },
-  { n: 2, title: 'Vibe check', body: 'See the visa you can apply on, where it can lead, and if the role actually matches your skills.' },
-  { n: 3, title: 'Apply on the employer’s site', body: 'We link you to the startup’s preferred hiring method.' },
+  {
+    n: 1,
+    title: 'Checkout local startups',
+    body: 'We have tagged jobs manually verified to accept international students and graduates.',
+  },
+  {
+    n: 2,
+    title: 'Vibe check',
+    body: 'See the visa you can apply on, where it can lead, and if the role actually matches your skills.',
+  },
+  {
+    n: 3,
+    title: 'Apply on the employer’s site',
+    body: 'We link you to the startup’s preferred hiring method.',
+  },
 ];
 
 const HOW_STARTUPS = [
   { n: 1, title: 'Tell us about the role', body: 'Email a PDF / link to the job advert.' },
-  { n: 2, title: 'We review it', body: 'We manually go through the jobs posted, match them with the visa requirements, and add it to the site.' },
-  { n: 3, title: 'Job gets posted', body: 'Your role appears on the board and links applicants to your preferred site for applications.' },
+  {
+    n: 2,
+    title: 'We review it',
+    body: 'We manually go through the jobs posted, match them with the visa requirements, and add it to the site.',
+  },
+  {
+    n: 3,
+    title: 'Job gets posted',
+    body: 'Your role appears on the board and links applicants to your preferred site for applications.',
+  },
 ];
 
 const NOW = [
@@ -26,7 +46,7 @@ const NOW = [
 const NEXT = [
   'Salary information for each role',
   'Newsletter of roles that match your visa and skills delivered to your inbox',
-  'A map view of jobs by location, coz that\'s easier to find where to work',
+  "A map view of jobs by location, coz that's easier to find where to work",
   'Create one resume and use that to apply to many job applications (bye bye bye to forms!)',
   'Track how your application is progressing',
   'Interview tips and reviews from international students who applied to these startups before',
@@ -42,11 +62,12 @@ export function About() {
         <p className="about-lede">
           We have created this website to connect international students and graduates with roles at
           startups and scaleups founded in Australia.
-          </p>
-          <br></br>
-          <p className="about-lede">
-          This way international students and graduates get a chance to build their career here in Australia, and local businesses gain
-          access to a diverse talent pool who are eager to learn, grow and contribute to their new community.
+        </p>
+        <br></br>
+        <p className="about-lede">
+          This way international students and graduates get a chance to build their career here in
+          Australia, and local businesses gain access to a diverse talent pool who are eager to
+          learn, grow and contribute to their new community.
         </p>
       </header>
 
@@ -107,19 +128,36 @@ export function About() {
       <section className="about-section" aria-labelledby="scope-heading">
         <h2 id="scope-heading">Where we start</h2>
         <p>
-          We are currently showing <strong>startups and scaleups across Australia</strong> sourced from each state's open-access database of jobs and businesses, and will expand to more countries over time.
+          We are currently showing <strong>startups and scaleups across Australia</strong> sourced
+          from each state's open-access database of jobs and businesses, and will expand to more
+          countries over time.
         </p>
         <p>
-         We are not migration lawyers, please work with registered migration agents or lawyers for any visa advice. Always check the <a href="https://immi.homeaffairs.gov.au/" target="_blank" rel="noopener"
-            referrerPolicy="strict-origin-when-cross-origin"> Department of Home Affairs</a> for the latest information on visa requirements and eligibility.
+          We are not migration lawyers, please work with registered migration agents or lawyers for
+          any visa advice. Always check the{' '}
+          <a
+            href="https://immi.homeaffairs.gov.au/"
+            target="_blank"
+            rel="noopener"
+            referrerPolicy="strict-origin-when-cross-origin"
+          >
+            {' '}
+            Department of Home Affairs
+          </a>{' '}
+          for the latest information on visa requirements and eligibility.
         </p>
         <p>
-          Plus, gotta get my s**t together to build a proper backend to this GitHub pages website. Just thought of getting it out there whilst fleshing it out.
+          Plus, gotta get my s**t together to build a proper backend to this GitHub pages website.
+          Just thought of getting it out there whilst fleshing it out.
         </p>
         <p>
-          Please submit a {' '}
-          <a href={FEEDBACK_URL} target="_blank" rel="noopener"
-            referrerPolicy="strict-origin-when-cross-origin">
+          Please submit a{' '}
+          <a
+            href={FEEDBACK_URL}
+            target="_blank"
+            rel="noopener"
+            referrerPolicy="strict-origin-when-cross-origin"
+          >
             feedback or feature request
           </a>{' '}
           if you'd like to suggest anything to add to the site!

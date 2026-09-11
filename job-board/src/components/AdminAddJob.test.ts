@@ -27,7 +27,7 @@ describe('a filled form becomes a CSV row', () => {
   });
 
   test('an untouched form claims nothing about the employer', () => {
-    // "Not checked yet" is the default, and it has to reach the file as blank — otherwise
+    // "Not checked yet" is the default, and it has to reach the file as blank - otherwise
     // every role saved without touching the field asserts something about someone else's
     // standing with the Department.
     const row = buildJobRow(draft(), []);
@@ -80,7 +80,7 @@ describe('the row lands in the right columns', () => {
   test('written out, each value sits under its own header', () => {
     const row = buildJobRow(draft({ 'Job title': 'Engineer', 'Company name': 'Acme, Inc' }), []);
     const cells = toCsvRow(row, [...COLUMNS]).split(',');
-    // "Acme, Inc" is quoted, so it is one cell containing a comma — splitting naively
+    // "Acme, Inc" is quoted, so it is one cell containing a comma - splitting naively
     // proves the quoting happened at all.
     expect(cells).toHaveLength(COLUMNS.length + 1);
     expect(toCsvRow(row, [...COLUMNS])).toContain('"Acme, Inc"');

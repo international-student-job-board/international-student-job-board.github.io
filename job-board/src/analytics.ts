@@ -1,7 +1,7 @@
 // Page views, sent by the app rather than by the tag.
 //
 // gtag('config') would send exactly one view, at load, and this is a single-page
-// app — so the landing page would be the only page anything was ever recorded
+// app - so the landing page would be the only page anything was ever recorded
 // for. Automatic collection is switched off in index.html and every view is sent
 // from here instead, on the same navigation that sets the title and canonical.
 

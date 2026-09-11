@@ -10,7 +10,7 @@
 //   <input id="ctl00_PlaceHolderMain_PageJSONDataHiddenField_Input"
 //          value="[{&quot;occupation&quot;:…}]" />
 //
-// So it is not scraping rendered markup — it is the same structured data the
+// So it is not scraping rendered markup - it is the same structured data the
 // page's own search is built on, which is why it survives a redesign of the
 // table. What it does not survive is Home Affairs changing the field name, and
 // that is why this fails loudly rather than writing a half-empty file.
@@ -60,13 +60,13 @@ function text(fragment) {
  *
  * Most rows carry two, because the visas do: subclasses 186 and 482 moved to
  * ANZSCO 2022 while everything else stayed on ANZSCO 2013. They agree for all
- * but a handful of occupations, so they are kept apart rather than merged —
+ * but a handful of occupations, so they are kept apart rather than merged -
  * picking one would silently give the wrong code to whichever visa lost.
  *
  * Each code is a link on the source page, and the two versions point at
  * different ABS sites: the 2022 codes at the current classification browser,
  * the 2013 ones at the archived ausstats lookup. Those links are taken from the
- * page rather than constructed, because only one of the two is constructible —
+ * page rather than constructed, because only one of the two is constructible -
  * the 2013 URLs end in an opaque document id.
  */
 function parseCodes(fragment) {
@@ -131,7 +131,7 @@ function rebuildFromDisk() {
     INDEX_OUT,
     JSON.stringify({ retrieved: payload.retrieved || '', occupations: index }) + '\n'
   );
-  console.log(`Rebuilt content/occupation-index.json — ${Object.keys(index).length} codes`);
+  console.log(`Rebuilt content/occupation-index.json - ${Object.keys(index).length} codes`);
 }
 
 /**
@@ -147,7 +147,7 @@ function buildIndex(occupations) {
     const entry = {
       name: o.occupation,
       // Both codes travel together so the admin can fill both CSV columns from
-      // one choice — the 2013 column is not guessable from the 2022 one.
+      // one choice - the 2013 column is not guessable from the 2022 one.
       codes: o.codes,
       urls: o.urls || {},
       lists: o.lists,
@@ -177,7 +177,7 @@ async function main() {
   if (!field) {
     throw new Error(
       'The occupation data field was not found in the page. Home Affairs has ' +
-        'likely changed how the list is published — this script needs updating.'
+        'likely changed how the list is published - this script needs updating.'
     );
   }
 

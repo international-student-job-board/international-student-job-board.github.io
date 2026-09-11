@@ -4,7 +4,7 @@ import { jobShareUrl, parsePath, pathFor, pathFromLegacyHash } from './routes';
 
 test('the board leads with exactly one top-level heading', () => {
   // Not the wording, which is marketing copy and changes often. What has to
-  // hold is that there is one h1 and it says something — an earlier edit left
+  // hold is that there is one h1 and it says something - an earlier edit left
   // two on the page, which this catches.
   render(<App />);
   const headings = screen.getAllByRole('heading', { level: 1 });
@@ -61,8 +61,8 @@ describe('reading the address', () => {
 
 describe('links shared before the move off hashes', () => {
   test('an old role link becomes its path', () => {
-    // #/jobs/7 is out in the world already — shared, bookmarked, sitting in someone's
-    // messages — so it has to keep landing on the right role.
+    // #/jobs/7 is out in the world already - shared, bookmarked, sitting in someone's
+    // messages - so it has to keep landing on the right role.
     expect(pathFromLegacyHash('#/jobs/7')).toBe(pathFor('jobs', '7'));
   });
 

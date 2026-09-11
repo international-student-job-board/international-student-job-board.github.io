@@ -1,4 +1,4 @@
-// `npm start` — runs the local data server and the CRA dev server together.
+// `npm start` - runs the local data server and the CRA dev server together.
 //
 // They are a pair now. The editable data lives in content/, which CRA cannot
 // serve (see scripts/data-files.js for why it is not in public/), so without
@@ -44,7 +44,7 @@ async function main() {
 
   if (await portInUse()) {
     if (await servesData()) {
-      console.log(`Data server already running on port ${PORT} — reusing it.`);
+      console.log(`Data server already running on port ${PORT} - reusing it.`);
     } else {
       console.warn(
         `\nSomething is listening on port ${PORT} but is not serving the data files.\n` +

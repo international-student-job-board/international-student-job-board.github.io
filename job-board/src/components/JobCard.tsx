@@ -17,7 +17,8 @@ export function JobCard({ job, selected, onSelect }: Props) {
     .filter(Boolean)
     .join(' · ');
   const hasFlags =
-    job.company.accreditedSponsor || job.company.hiresInternationalStudents ||
+    job.company.accreditedSponsor ||
+    job.company.hiresInternationalStudents ||
     job.invitedScore !== undefined;
   return (
     <li>

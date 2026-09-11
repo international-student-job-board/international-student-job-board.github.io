@@ -23,7 +23,7 @@ describe('a role start date has three possible answers', () => {
 
   test('as soon as possible reads as words, not as a date', () => {
     expect(formatStart(START_ASAP)).toBe('As soon as possible');
-    // Whatever case it was written in — the file is edited by hand.
+    // Whatever case it was written in - the file is edited by hand.
     expect(formatStart('ASAP')).toBe('As soon as possible');
     expect(formatStart('  Asap ')).toBe('As soon as possible');
   });
@@ -52,7 +52,7 @@ describe('salary figures', () => {
   });
 
   test('a range reads as a range, a single figure as one number', () => {
-    expect(formatSalary(142788, 160727)).toBe('A$143k–A$161k');
+    expect(formatSalary(142788, 160727)).toBe('A$143k-A$161k');
     expect(formatSalary(73320, 73320)).toBe('A$73k');
     expect(formatSalary(undefined, 90000)).toBe('A$90k');
   });
@@ -66,14 +66,18 @@ describe('salary figures', () => {
 describe('formatSalaryAud', () => {
   test('an advert-stated range is shown as-is, no "~"', () => {
     expect(
-      formatSalaryAud(salary({ base: { currency: 'AUD', minAud: 95000, maxAud: 110000 }, source: 'advert' }))
-    ).toBe('A$95k–A$110k');
+      formatSalaryAud(
+        salary({ base: { currency: 'AUD', minAud: 95000, maxAud: 110000 }, source: 'advert' })
+      )
+    ).toBe('A$95k-A$110k');
   });
 
   test('a Glassdoor / levels.fyi figure is prefixed "~"', () => {
     expect(
-      formatSalaryAud(salary({ base: { currency: 'AUD', minAud: 120000, maxAud: 158000 }, isEstimate: true }))
-    ).toBe('~A$120k–A$158k');
+      formatSalaryAud(
+        salary({ base: { currency: 'AUD', minAud: 120000, maxAud: 158000 }, isEstimate: true })
+      )
+    ).toBe('~A$120k-A$158k');
     expect(formatSalaryAud(salary({ estimateAud: 145000, isEstimate: true }))).toBe('~A$145k');
   });
 

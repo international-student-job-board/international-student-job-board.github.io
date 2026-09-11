@@ -4,7 +4,7 @@
 // deploy gives them new URLs and a browser can never serve a stale one. The data
 // files don't: /jobs.csv is /jobs.csv forever, and GitHub Pages sends
 // `cache-control: max-age=600` with it. Without a stamp, someone who visited in
-// the last ten minutes keeps the old board after a deploy — and there is no way
+// the last ten minutes keeps the old board after a deploy - and there is no way
 // for them to know, because the page looks fine.
 //
 // The stamp is set once per build, so the file is still cached between visits.

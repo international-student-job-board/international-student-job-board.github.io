@@ -20,9 +20,7 @@ export function OccupationPicker({
     return all
       .filter(
         (o) =>
-          o.name.toLowerCase().includes(q) ||
-          o.anzsco2022.includes(q) ||
-          o.anzsco2013.includes(q)
+          o.name.toLowerCase().includes(q) || o.anzsco2022.includes(q) || o.anzsco2013.includes(q)
       )
       .slice(0, 40);
   }, [all, query]);
@@ -38,8 +36,8 @@ export function OccupationPicker({
         {selected.length > 0 && <span className="picker-count">{selected.length}</span>}
       </span>
       <span className="field-hint">
-        A role can map to more than one. Each one you pick fills the occupation name and both
-        ANZSCO codes.
+        A role can map to more than one. Each one you pick fills the occupation name and both ANZSCO
+        codes.
       </span>
 
       {selected.length > 0 && (

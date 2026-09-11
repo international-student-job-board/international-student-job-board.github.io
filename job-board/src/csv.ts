@@ -68,7 +68,6 @@ export function toCsvRow(record: Record<string, string>, columns: string[]): str
   return columns.map((name) => escapeCell(record[name] ?? '')).join(',');
 }
 
-
 // ---- Reading one cell's value ---------------------------------------------
 
 const isTruthy = (value: string) =>
@@ -84,7 +83,7 @@ export function triState(value: string): boolean | undefined {
   return undefined;
 }
 
-/** A whole-number cell — "105300" -> 105300, blank or unparseable -> undefined. */
+/** A whole-number cell - "105300" -> 105300, blank or unparseable -> undefined. */
 export function int(value: string | undefined): number | undefined {
   const trimmed = (value ?? '').trim().replace(/[, ]/g, '');
   if (!trimmed) return undefined;
@@ -92,7 +91,7 @@ export function int(value: string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-/** A decimal cell — "3.2" -> 3.2, blank or unparseable -> undefined. */
+/** A decimal cell - "3.2" -> 3.2, blank or unparseable -> undefined. */
 export function dec(value: string | undefined): number | undefined {
   const trimmed = (value ?? '').trim();
   if (!trimmed) return undefined;
@@ -121,12 +120,11 @@ export const splitList = (value: string) =>
     .map((v) => v.trim())
     .filter(Boolean);
 
-/** The 6-digit codes in a cell, however they are separated. */
 /**
  * A cell holding several names.
  *
  * Only ";" and "|" separate, never a comma: an occupation title routinely
- * contains one — "Advertising, Public Relations and Sales Managers" — and
+ * contains one - "Advertising, Public Relations and Sales Managers" - and
  * splitting on it tears a single name into two.
  */
 export const splitNames = (value: string) =>
@@ -139,5 +137,6 @@ export const splitNames = (value: string) =>
 export const unitGroupCodes = (value: string) =>
   Array.from(new Set((value ?? '').match(/\b\d{4}\b/g) ?? []));
 
+/** The 6-digit ANZSCO codes in a cell, however they are separated. */
 export const anzscoCodes = (value: string) =>
   Array.from(new Set((value ?? '').match(/\b\d{6}\b/g) ?? []));

@@ -1,5 +1,8 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { InfoTooltip } from './InfoTooltip';
+
+/** Roughly the panel width, used to decide which edge to anchor it to. */
+const PANEL_WIDTH = 300;
 
 export interface RangeValue {
   /** Lower bound in AUD; 0 means "no minimum". */
@@ -19,7 +22,7 @@ interface Props {
 }
 
 /**
- * A two-ended numeric filter — pick a minimum, a maximum, or both.
+ * A two-ended numeric filter - pick a minimum, a maximum, or both.
  *
  * Built as a single popover to sit in the same filter row as the multi-selects,
  * and opened/closed the same way (outside click, Escape, focus-out) so it
@@ -27,9 +30,20 @@ interface Props {
  */
 export function RangeFilter({ label, value, onChange, steps, format, tooltip }: Props) {
   const [open, setOpen] = useState(false);
+  const [alignRight, setAlignRight] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
+
+  // Anchor to whichever edge keeps the panel on screen - the filter row wraps, so
+  // this control can end up anywhere across the width, including flush right.
+  useLayoutEffect(() => {
+    if (!open) return;
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const { left } = trigger.getBoundingClientRect();
+    setAlignRight(left + PANEL_WIDTH > window.innerWidth - 16);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -59,7 +73,7 @@ export function RangeFilter({ label, value, onChange, steps, format, tooltip }: 
 
   const active = value.min > 0 || value.max > 0;
   const summary = active
-    ? `${value.min > 0 ? format(value.min) : 'Any'} – ${value.max > 0 ? format(value.max) : 'Any'}`
+    ? `${value.min > 0 ? format(value.min) : 'Any'} - ${value.max > 0 ? format(value.max) : 'Any'}`
     : '';
 
   // The max can't sit below the chosen min, and vice versa.
@@ -85,7 +99,7 @@ export function RangeFilter({ label, value, onChange, steps, format, tooltip }: 
       </button>
 
       {open && (
-        <div className="fselect-panel" id={panelId} data-align="left">
+        <div className="fselect-panel" id={panelId} data-align={alignRight ? 'right' : 'left'}>
           <div className="range-row">
             <label className="range-field">
               <span>Min</span>

@@ -1,4 +1,4 @@
-import { loadCompanies, sortCompanies, searchCompanies, findCompany, Company } from './companies';
+import { sortCompanies, searchCompanies, findCompany, Company } from './companies';
 
 const HEADERS_OLD =
   'Company name,Segment,Type,Website,Growth stage,Launch year,Employees,Industries,HQ city,HQ address,Tagline,LinkedIn,Profile,Job openings,Total funding (AUD),Status,Sponsor visa available,Hires international students';
@@ -6,8 +6,7 @@ const HEADERS_OLD =
 const HEADERS_NEW =
   'Company name,Segment,Type,Website,Growth stage,Employees,Industries,HQ city,HQ address,Tagline,LinkedIn,Profile,Job openings,Accredited sponsor,Hires international students';
 
-const HEADERS_GLASSDOOR =
-  `${HEADERS_NEW},Glassdoor rating,Glassdoor reviews,Glassdoor URL`;
+const HEADERS_GLASSDOOR = `${HEADERS_NEW},Glassdoor rating,Glassdoor reviews,Glassdoor URL`;
 
 const stubCsv = (text: string) => {
   (global as unknown as { fetch: jest.Mock }).fetch = jest.fn().mockResolvedValue({
@@ -72,9 +71,7 @@ describe('reading the companies CSV', () => {
   });
 
   test('both spellings of the sponsor column are read, so either file works', async () => {
-    const old = await freshLoad(
-      `${HEADERS_OLD}\nAcme,,,,,,,,,,,,,,,,Yes,Yes`
-    );
+    const old = await freshLoad(`${HEADERS_OLD}\nAcme,,,,,,,,,,,,,,,,Yes,Yes`);
     expect(old[0].accreditedSponsor).toBe(true);
   });
 

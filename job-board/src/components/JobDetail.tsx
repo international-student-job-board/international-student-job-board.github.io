@@ -33,9 +33,7 @@ import { SITE_NAME, SITE_URL } from '../links';
 import { prettyLabels } from '../labels';
 
 /** Leaflet is the largest thing the site can load, so it waits to be asked. */
-const EmployerMap = lazy(() =>
-  import('./EmployerMap').then((m) => ({ default: m.EmployerMap }))
-);
+const EmployerMap = lazy(() => import('./EmployerMap').then((m) => ({ default: m.EmployerMap })));
 
 // The skilled-migration lists an occupation sits on.
 function OccupationLists({ lists }: { lists: string[] }) {
@@ -104,7 +102,11 @@ function Occupations({ occupations }: { occupations: ReturnType<typeof resolveOc
     <span className="fact-values">
       {occupations.map((occ) => (
         <span className="occupation" key={occ.name || occ.codes[0]?.code}>
-          {occ.name && <span className="occupation-name">{occ.codes[0]?.code} {occ.name}</span>}
+          {occ.name && (
+            <span className="occupation-name">
+              {occ.codes[0]?.code} {occ.name}
+            </span>
+          )}
           <span className="occupation-codes">
             {occ.name ? ' (' : ''}
             {occ.codes.map((c, i) => {
@@ -195,7 +197,7 @@ function Reference({ text, href }: { text: string; href?: string }) {
   );
 }
 
-/** yes / no / nobody has checked — said in words rather than left blank. */
+/** yes / no / nobody has checked - said in words rather than left blank. */
 function Answer({ value, yes, no }: { value: boolean | undefined; yes: string; no: string }) {
   if (value === true) return <>{yes}</>;
   if (value === false) return <>{no}</>;
@@ -203,13 +205,14 @@ function Answer({ value, yes, no }: { value: boolean | undefined; yes: string; n
 }
 
 /**
- * A role's pay, as a single AUD figure or range — the advertised base range if
- * we have one, otherwise the estimate, which is prefixed "~" and whose figure
- * links to its source (Glassdoor / levels.fyi); the "i" by the label names it.
+ * A role's pay, as a single AUD figure or range - the advertised base range
+ * if we have one, otherwise the estimate. An estimated figure is prefixed "~"
+ * and links to its source (Glassdoor / levels.fyi); the "i" by the label
+ * names the source.
  */
 function SalaryFact({ salary }: { salary: Salary }) {
-  const aud = formatSalaryAud(salary);
-  if (!aud) return <dd className="fact-value">{NOT_SPECIFIED}</dd>;
+  const figure = formatSalaryAud(salary);
+  if (!figure) return <dd className="fact-value">{NOT_SPECIFIED}</dd>;
 
   const source = salary.isEstimate ? salarySourceUrl(salary.sourceUrl) : undefined;
   const href = source ? outboundHref(source, 'salary') : undefined;
@@ -220,13 +223,13 @@ function SalaryFact({ salary }: { salary: Salary }) {
         <a
           className="reference-link"
           href={href}
-          title={`Salary estimate — ${salarySourceLabel(salary.source)}`}
+          title={`Salary estimate - ${salarySourceLabel(salary.source)}`}
           {...OUTBOUND}
         >
-          {aud}
+          {figure}
         </a>
       ) : (
-        aud
+        figure
       )}
     </dd>
   );
@@ -239,7 +242,7 @@ function ApplyButton({ url, jobTitle }: { url: string; jobTitle: string }) {
     ? emailApplyHref(url, jobTitle, SITE_NAME, SITE_URL)
     : outboundHref(url, 'apply');
 
-  // A link we can't safely build is no link at all — an empty href would just reload the
+  // A link we can't safely build is no link at all - an empty href would just reload the
   // page and look like the button is broken.
   if (!href) {
     return <p className="apply-note">This role has no working application link yet.</p>;
@@ -283,6 +286,7 @@ export function JobDetail({ job }: { job: Job }) {
   // row that adds nothing.
   const unitGroups = unitGroupsFor(job);
   const companyHref = outboundHref(company.website, 'employer');
+  const salaryNote = salarySourceNote(job.salary.source);
 
   return (
     <article className="job-detail" aria-labelledby="job-detail-title">
@@ -347,12 +351,8 @@ export function JobDetail({ job }: { job: Job }) {
             <div className="fact">
               <dt className="fact-label">
                 Salary{' '}
-                {hasSalary(job.salary) && job.salary.isEstimate && (
-                  <InfoTooltip
-                    text={salarySourceNote(job.salary.source)}
-                    label="Salary source"
-                    placement="bottom"
-                  />
+                {hasSalary(job.salary) && salaryNote && (
+                  <InfoTooltip text={salaryNote} label="Salary source" placement="bottom" />
                 )}
               </dt>
               {hasSalary(job.salary) ? (
@@ -397,11 +397,7 @@ export function JobDetail({ job }: { job: Job }) {
             <div className="fact">
               <dt className="fact-label">
                 In the latest invitation round{' '}
-                <InfoTooltip
-                  text={INVITED_ROUND_NOTE}
-                  label="What this means"
-                  placement="bottom"
-                />
+                <InfoTooltip text={INVITED_ROUND_NOTE} label="What this means" placement="bottom" />
               </dt>
               <dd className="fact-value">
                 {job.invitedScore !== undefined ? (
@@ -418,7 +414,7 @@ export function JobDetail({ job }: { job: Job }) {
                   </a>
                 ) : occupations.length > 0 ? (
                   // An occupation was matched but carries no score, which is the round
-                  // saying so rather than us not having checked — unlike the sponsor and
+                  // saying so rather than us not having checked - unlike the sponsor and
                   // student columns, this isn't a "nobody's looked yet" gap.
                   `Not invited in the latest round${invitedRound ? ` (${invitedRound})` : ''}`
                 ) : (
@@ -429,11 +425,7 @@ export function JobDetail({ job }: { job: Job }) {
             <div className="fact">
               <dt className="fact-label">
                 ANZSCO Occupation{occupations.length > 1 ? 's' : ''}{' '}
-                <InfoTooltip
-                  text={ANZSCO_NOTE}
-                  label="What ANZSCO stands for"
-                  placement="bottom"
-                />
+                <InfoTooltip text={ANZSCO_NOTE} label="What ANZSCO stands for" placement="bottom" />
               </dt>
               <dd className="fact-value">
                 <Occupations occupations={occupations} />
@@ -469,11 +461,7 @@ export function JobDetail({ job }: { job: Job }) {
             <div className="fact">
               <dt className="fact-label">
                 OSCA occupation{osca.length > 1 ? 's' : ''}{' '}
-                <InfoTooltip
-                  text={OSCA_NOTE}
-                  label="What OSCA stands for"
-                  placement="bottom"
-                />
+                <InfoTooltip text={OSCA_NOTE} label="What OSCA stands for" placement="bottom" />
               </dt>
               <dd className="fact-value">
                 {osca.length === 0 ? (
@@ -505,7 +493,9 @@ export function JobDetail({ job }: { job: Job }) {
                 <InfoTooltip
                   placement="bottom"
                   label="What the occupation lists mean"
-                  text={lists.length ? lists.map(occupationListLabel).join('\n') : OCCUPATION_LIST_NOTE}
+                  text={
+                    lists.length ? lists.map(occupationListLabel).join('\n') : OCCUPATION_LIST_NOTE
+                  }
                 />
               </dt>
               <dd className="fact-value">
@@ -513,9 +503,7 @@ export function JobDetail({ job }: { job: Job }) {
               </dd>
             </div>
             <div className="fact">
-              <dt className="fact-label">
-                Skills assessment{assessors.length > 1 ? 's' : ''}
-              </dt>
+              <dt className="fact-label">Skills assessment{assessors.length > 1 ? 's' : ''}</dt>
               <dd className="fact-value">
                 {assessors.length === 0 ? (
                   'Not specified'

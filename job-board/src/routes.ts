@@ -5,7 +5,7 @@ export type Route = 'jobs' | 'companies' | 'post' | 'about' | 'admin';
 /** The admin route exists only in a local dev build. */
 export const IS_LOCAL = process.env.NODE_ENV === 'development';
 
-/** Where the site is served from — "/" for a user site, "/repo/" otherwise. */
+/** Where the site is served from - "/" for a user site, "/repo/" otherwise. */
 export const BASE = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
 
 export interface Location {

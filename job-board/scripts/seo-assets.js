@@ -3,12 +3,12 @@
 //
 //   node scripts/seo-assets.js <build-dir> [site-url]
 //
-// 1. 404.html — a copy of index.html. GitHub Pages has no server to route
+// 1. 404.html - a copy of index.html. GitHub Pages has no server to route
 //    /jobs/7 to the app, so it serves 404.html; making that the app is what
 //    turns a fragment-based board into one with an address per role.
-// 2. sitemap.xml — every role and page, so a crawler doesn't have to discover
+// 2. sitemap.xml - every role and page, so a crawler doesn't have to discover
 //    1,000 URLs by following links from one page.
-// 3. robots.txt — pointing at the sitemap, which is how a crawler finds it
+// 3. robots.txt - pointing at the sitemap, which is how a crawler finds it
 //    without being told in Search Console.
 //
 // Roles older than the board's listing window are left out: a sitemap is a
@@ -69,7 +69,7 @@ const esc = (value) =>
  * A real page for one address.
  *
  * GitHub Pages has no rewrites, so anything without a file of its own falls
- * through to 404.html — which is the app, so a person sees the site, but the
+ * through to 404.html - which is the app, so a person sees the site, but the
  * response carries a 404 and Google will not index a page that says "not
  * found". Every route therefore gets a file, and every file gets the title,
  * description, canonical and structured data for what is actually on it.
@@ -100,8 +100,11 @@ function writePage(template, { path: urlPath, title, description, schema, body }
       )
     : head;
 
+  // .preboot is styled inline in the template's <head> - see public/index.html -
+  // so this reads as a lightweight version of the page rather than raw HTML for
+  // the moment before React mounts and replaces it.
   const html = body
-    ? withSchema.replace('<div id="root"></div>', `<div id="root">${body}</div>`)
+    ? withSchema.replace('<div id="root"></div>', `<div id="root"><div class="preboot">${body}</div></div>`)
     : withSchema;
 
   const dir = path.join(outDir, urlPath.replace(/^\//, ''));
@@ -117,7 +120,7 @@ function lapses(posted) {
   return date.toISOString().slice(0, 10);
 }
 
-/** "120000" / "158000" -> "A$120k–A$158k"; a single figure, or blank. */
+/** "120000" / "158000" -> "A$120k-A$158k"; a single figure, or blank. */
 function moneyAud(min, max, estimate) {
   const k = (n) => {
     const v = Math.round(Number(n));
@@ -126,7 +129,7 @@ function moneyAud(min, max, estimate) {
   };
   const lo = k(min);
   const hi = k(max);
-  if (lo && hi) return lo === hi ? lo : `${lo}–${hi}`;
+  if (lo && hi) return lo === hi ? lo : `${lo}-${hi}`;
   return lo || hi || k(estimate);
 }
 
@@ -205,12 +208,12 @@ const escape = (value) =>
 
 function main() {
   if (!fs.existsSync(outDir)) {
-    console.error(`seo-assets: ${outDir} does not exist — run the build first`);
+    console.error(`seo-assets: ${outDir} does not exist - run the build first`);
     process.exit(1);
   }
 
   // 1. The single-page fallback, for anything we haven't written a file for.
-  //    The template is the app shell with an empty #root — normalised here so a
+  //    The template is the app shell with an empty #root - normalised here so a
   //    re-run (which rewrites index.html with the landing content) still starts
   //    from a blank body rather than baking one page's content into the rest.
   const indexHtml = path.join(outDir, 'index.html');
@@ -237,7 +240,7 @@ function main() {
   ];
 
   // 2a. A real file per address, so each answers 200 with its own title,
-  //     description and structured data instead of falling through to 404 — and
+  //     description and structured data instead of falling through to 404 - and
   //     with real, linked content in the body, because a crawler (and some never
   //     run the app) has to be able to read the page and walk from it to every
   //     role without JavaScript. The app replaces all of this on mount.
@@ -250,11 +253,11 @@ function main() {
     '<a href="/about">About &amp; visa resources</a> · ' +
     '<a href="/post">Post a job</a></nav>';
 
-  /** One role as a list item — the same shape everywhere it is linked. */
+  /** One role as a list item - the same shape everywhere it is linked. */
   const jobLink = (job) => {
     const bits = [job.company, job.city, job.type, job.salary].filter(Boolean).join(' · ');
     return `<li><a href="/jobs/${esc(job.id)}">${esc(job.title)}</a>${
-      bits ? ` — ${esc(bits)}` : ''
+      bits ? ` - ${esc(bits)}` : ''
     }</li>`;
   };
 
@@ -281,7 +284,7 @@ function main() {
         .map(
           (c) =>
             `<li>${esc(c.name)}${
-              c.state ? ` — ${esc(c.state)}` : ''
+              c.state ? ` - ${esc(c.state)}` : ''
             }${c.industries ? ` · ${esc(c.industries.split(';')[0].trim())}` : ''} · ${
               c.openings
             } open ${c.openings === 1 ? 'role' : 'roles'}</li>`
@@ -362,6 +365,10 @@ function main() {
         ...(EMPLOYMENT_SCHEMA[job.employmentType]
           ? { employmentType: EMPLOYMENT_SCHEMA[job.employmentType] }
           : {}),
+        // Google's job search only surfaces "work from home" results for roles marked
+        // this way - a hybrid role still requires attending the jobLocation, so it's
+        // left as a normal on-site posting.
+        ...(job.arrangement === 'Remote' ? { jobLocationType: 'TELECOMMUTE' } : {}),
         ...(job.salaryMinAud || job.salaryMaxAud
           ? {
               baseSalary: {
@@ -392,7 +399,7 @@ function main() {
       body: [
         '<article>',
         `<h1>${esc(job.title)}</h1>`,
-        `<p>${esc(job.company)}${job.tagline ? ` — ${esc(job.tagline)}` : ''}</p>`,
+        `<p>${esc(job.company)}${job.tagline ? ` - ${esc(job.tagline)}` : ''}</p>`,
         '<dl>',
         ...facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`),
         '</dl>',
@@ -410,14 +417,13 @@ function main() {
     });
   });
 
-  // 2b. The landing page itself — the most linked page on the site and, until
+  // 2b. The landing page itself - the most linked page on the site and, until
   //     now, an empty <div>. Give it the headline, a description and a walkable
   //     list of the most recent roles.
   const recent = jobs.slice(0, 200);
   writePage(template, {
     path: '/',
-    title:
-      'International Student Job Board - Curated startup and scaleup jobs in Australia for international students and graduates, with migration pathways and visa info!',
+    title: 'International Student Job Board | Australian Startup Jobs',
     description:
       'Curated startup and scaleup jobs in Australia for international students and graduates, with migration pathways and visa info!',
     body: [

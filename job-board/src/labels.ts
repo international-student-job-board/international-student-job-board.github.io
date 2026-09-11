@@ -24,7 +24,7 @@ const OVERRIDES: Record<string, string> = {
   ios: 'iOS',
 };
 
-/** One word, capitalised — unless it already carries a capital of its own. */
+/** One word, capitalised - unless it already carries a capital of its own. */
 const capitalise = (word: string) =>
   /[A-Z]/.test(word) ? word : word.charAt(0).toUpperCase() + word.slice(1);
 

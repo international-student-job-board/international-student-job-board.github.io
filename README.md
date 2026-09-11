@@ -14,14 +14,15 @@ npm start                   # app on :3000, local data server on :4000
 ```
 
 ```bash
-npm test                    # 188 tests
+npm test                    # 233 tests
 npm run build:pages         # build into ../docs, which GitHub Pages serves
 npm run fetch-occupations   # refresh the occupation reference from Home Affairs
 ```
 
 Deploying is `npm run build:pages`, then commit and push. It rebuilds `docs/`
 from scratch, so anything hand-added there is lost — put static files in
-`job-board/public/` instead.
+`job-board/public/` instead. For the dev servers and the build broken into
+their individual steps, see [job-board/README.md](job-board/README.md#running-it-in-separate-steps).
 
 ## Credits
 

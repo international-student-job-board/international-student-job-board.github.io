@@ -32,7 +32,7 @@ export function GlassdoorRating({
 }: {
   company: Company;
   className?: string;
-  /** Append " on Glassdoor" — off where a label ("Employer rating") already says so. */
+  /** Append " on Glassdoor" - off where a label ("Employer rating") already says so. */
   showSource?: boolean;
 }) {
   const rating = company.glassdoorRating;
@@ -48,8 +48,7 @@ export function GlassdoorRating({
   const cls = `glassdoor-rating${className ? ` ${className}` : ''}`;
   const body: ReactNode = (
     <>
-      {STAR}{' '}
-      {rating.toFixed(1)}
+      {STAR} {rating.toFixed(1)}
       {reviewsText}
       {showSource ? ' on Glassdoor' : ''}
     </>

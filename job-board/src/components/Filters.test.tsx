@@ -108,8 +108,12 @@ describe('the filter bar', () => {
 
     expect(screen.getByRole('button', { name: /More filters/ })).toBeInTheDocument();
     // The rest are not on the bar.
-    expect(screen.queryByRole('button', { name: /^Company$/, expanded: false })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Work arrangement/, expanded: false })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /^Company$/, expanded: false })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Work arrangement/, expanded: false })
+    ).not.toBeInTheDocument();
   });
 
   test('a bar filter narrows and chips', () => {
@@ -150,8 +154,10 @@ describe('the More filters modal', () => {
   test('a modal filter takes several picks without reopening, then chips each', () => {
     render(<Harness />);
     openModal();
-    fireEvent.click(within(modal()).getByRole('button', { name: /Work arrangement/, expanded: false }));
-    // Both ticks land from the one open panel — it must not close after the first —
+    fireEvent.click(
+      within(modal()).getByRole('button', { name: /Work arrangement/, expanded: false })
+    );
+    // Both ticks land from the one open panel - it must not close after the first -
     // and the second is a click on the option's text label, not the box itself.
     fireEvent.click(screen.getByRole('checkbox', { name: /^Remote/ }));
     fireEvent.click(screen.getByText('On-site'));
@@ -169,13 +175,19 @@ describe('the More filters modal', () => {
     closeTrigger(/Accredited sponsor/);
 
     openModal();
-    fireEvent.click(within(modal()).getByRole('button', { name: /Employer rating/, expanded: false }));
+    fireEvent.click(
+      within(modal()).getByRole('button', { name: /Employer rating/, expanded: false })
+    );
     fireEvent.click(screen.getByRole('radio', { name: /4\.0 and up/ }));
     fireEvent.click(within(modal()).getByRole('button', { name: /Clear all/ }));
 
-    expect(screen.queryByRole('button', { name: /Accredited sponsor.*Yes/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Employer rating/, expanded: false })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /Employer rating.*and up/ })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Accredited sponsor.*Yes/ })
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Employer rating/, expanded: false })).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: /Employer rating.*and up/ })
+    ).not.toBeInTheDocument();
   });
 });
 
@@ -198,7 +210,10 @@ describe('the employer rating filter', () => {
   test('each rung shows how many employers it would leave, and "Not specified" is an option', () => {
     render(<Harness />);
     openRating();
+    // No Testing Library query reaches the count text beside a radio without walking to its
+    // enclosing label.
     const optionRow = (name: RegExp) =>
+      // eslint-disable-next-line testing-library/no-node-access
       screen.getByRole('radio', { name }).closest('label') as HTMLElement;
     expect(optionRow(/3\.0 and up/)).toHaveTextContent('12');
     expect(optionRow(/4\.0 and up/)).toHaveTextContent('3');
@@ -223,9 +238,11 @@ describe('the salary range on the bar', () => {
   test('min is chosen with a plain select and it chips', () => {
     render(<Harness />);
     openTrigger(/^Salary/);
-    fireEvent.change(screen.getByRole('combobox', { name: /min/i }), { target: { value: '100000' } });
+    fireEvent.change(screen.getByRole('combobox', { name: /min/i }), {
+      target: { value: '100000' },
+    });
     closeTrigger(/^Salary/);
     // The chip below the bar carries the chosen range.
-    expect(screen.getByTitle('Salary: A$100k – Any')).toBeInTheDocument();
+    expect(screen.getByTitle('Salary: A$100k - Any')).toBeInTheDocument();
   });
 });

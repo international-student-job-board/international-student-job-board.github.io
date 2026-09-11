@@ -19,7 +19,6 @@ import {
 
 const byKey = new Map(FIELDS.map((f) => [f.key, f]));
 
-/** A draft becomes a CSV row. */
 export function buildJobRow(draft: Draft, occupations: OccupationChoice[]): Record<string, string> {
   const row: Record<string, string> = {};
   for (const field of FIELDS) {
@@ -35,8 +34,14 @@ export function buildJobRow(draft: Draft, occupations: OccupationChoice[]): Reco
   // Semicolons, because a comma inside a cell only survives quoting and these are read by
   // eye as often as by code.
   row['ANZSCO occupation'] = occupations.map((o) => o.name).join('; ');
-  row['ANZSCO 2022'] = occupations.map((o) => o.anzsco2022).filter(Boolean).join('; ');
-  row['ANZSCO 2013'] = occupations.map((o) => o.anzsco2013).filter(Boolean).join('; ');
+  row['ANZSCO 2022'] = occupations
+    .map((o) => o.anzsco2022)
+    .filter(Boolean)
+    .join('; ');
+  row['ANZSCO 2013'] = occupations
+    .map((o) => o.anzsco2013)
+    .filter(Boolean)
+    .join('; ');
   // The first four digits of an ANZSCO code are its unit group, so the picker
   // fills that column too rather than asking for it again.
   row['ANZSCO unit group'] = Array.from(
@@ -54,8 +59,7 @@ export function AdminAddJob() {
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [message, setMessage] = useState('');
 
-  const setField = (key: string, value: string) =>
-    setDraft((prev) => ({ ...prev, [key]: value }));
+  const setField = (key: string, value: string) => setDraft((prev) => ({ ...prev, [key]: value }));
 
   /** Everything the company list already knows, so it isn't retyped per role. */
   const fillFromCompany = (company: Company | undefined) => {
@@ -195,7 +199,7 @@ export function AdminAddJob() {
       <header className="about-intro">
         <h1>Add a job</h1>
         <p>
-          Local only. Saving appends one row to <code>content/jobs.csv</code> — the same file the
+          Local only. Saving appends one row to <code>content/jobs.csv</code> - the same file the
           board reads, in the same shape as an imported row, so a role added here is
           indistinguishable from one that arrived in the CSV.
         </p>

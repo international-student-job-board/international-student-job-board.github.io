@@ -2,12 +2,7 @@
 // level, skills and skills-assessing authority.
 
 export type ConstantKey =
-  | 'jobLevel'
-  | 'type'
-  | 'arrangement'
-  | 'educationLevel'
-  | 'assessment'
-  | 'skills';
+  'jobLevel' | 'type' | 'arrangement' | 'educationLevel' | 'assessment' | 'skills';
 
 const EMPTY: Record<ConstantKey, string[]> = {
   jobLevel: [],

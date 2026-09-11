@@ -8,11 +8,8 @@ export const RATING_UNSPECIFIED = -1;
 /** The minimum-rating rungs offered, out of 5. */
 export const RATING_RUNGS = [3, 3.5, 4, 4.5];
 
-/** The option values the filter can hold, as strings — the rungs plus "not rated". */
-export const RATING_VALUES = [
-  ...RATING_RUNGS.map(String),
-  String(RATING_UNSPECIFIED),
-];
+/** The option values the filter can hold, as strings - the rungs plus "not rated". */
+export const RATING_VALUES = [...RATING_RUNGS.map(String), String(RATING_UNSPECIFIED)];
 
 interface Props {
   /** 0 = any, -1 = only unrated, otherwise the minimum rating. */
@@ -25,7 +22,7 @@ interface Props {
 }
 
 /**
- * "Employer rating" — a single-choice filter: a minimum star rating, or the
+ * "Employer rating" - a single-choice filter: a minimum star rating, or the
  * employers with no Glassdoor match at all. Each choice shows how many results
  * it would leave, like every other filter.
  */

@@ -5,12 +5,12 @@
 // force-reloads the browser whenever anything under it changes:
 //
 //   static: { directory: paths.appPublic, watch: { ignored: … } }
-//   — react-scripts/config/webpackDevServer.config.js
+//   - react-scripts/config/webpackDevServer.config.js
 //
 // So while these files sat in public/, saving a new skill wrote the file, the
 // watcher saw the write, and the page reloaded out from under the half-filled
 // form that had just added it. (They were moved out of src/ for the same
-// reason once already — webpack watched them there. Two watchers, one bug.)
+// reason once already - webpack watched them there. Two watchers, one bug.)
 //
 // Nothing watches content/. In development the files are served by
 // scripts/dev-server.js, which CRA's proxy forwards to automatically: a GET for
@@ -21,7 +21,7 @@
 
 const path = require('path');
 
-// The CSV's columns, in file order. The app has its own copy in src/jobs.ts —
+// The CSV's columns, in file order. The app has its own copy in src/jobs.ts -
 // these two must agree, and the header line in the file is what proves it.
 const JOB_COLUMNS = [
   'Company name', 'State', 'Segment', 'Type', 'Website', 'Growth stage', 'Employees',

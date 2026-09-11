@@ -22,7 +22,7 @@ if (!target) {
 
 const outDir = path.resolve(__dirname, '..', target);
 if (!fs.existsSync(outDir)) {
-  console.error(`sync-data: ${outDir} does not exist — run the build first`);
+  console.error(`sync-data: ${outDir} does not exist - run the build first`);
   process.exit(1);
 }
 

@@ -1,4 +1,4 @@
-// The employers behind the "startups currently hiring" page, from content/companies.csv —
+// The employers behind the "startups currently hiring" page, from content/companies.csv -
 // its own file, separate from the jobs CSV. The two overlap: every row of jobs.csv also
 // carries its employer's columns, and the jobs page reads those (see jobs.ts).
 
@@ -84,7 +84,7 @@ export const NO_COMPANY_FILTERS: CompanyFilters = {
   students: [],
 };
 
-/** Everything the companies page reads from — and writes to — the URL. */
+/** Everything the companies page reads from - and writes to - the URL. */
 export interface CompanyView {
   query: string;
   filters: CompanyFilters;

@@ -50,7 +50,7 @@ describe('OSCA codes', () => {
   });
 
   test('the ABS page is built from the code, not stored', () => {
-    // 223233 sits under 2 / 22 / 223 / 2232 — so 1,156 long URLs stay out of
+    // 223233 sits under 2 / 22 / 223 / 2232 - so 1,156 long URLs stay out of
     // the file the browser downloads.
     expect(oscaUrl('223233')).toMatch(/\/2\/22\/223\/2232\/223233$/);
   });
@@ -95,7 +95,7 @@ describe('the ANZSCO unit group', () => {
 
 describe('how a code reads in a filter', () => {
   test('a unit-group title is registered from the jobs file and read back', () => {
-    // Neither reference file carries four-digit titles — only the CSV does.
+    // Neither reference file carries four-digit titles - only the CSV does.
     setUnitGroupTitles({ '2613': 'Software and Applications Programmers' });
     expect(unitGroupTitle('2613')).toBe('Software and Applications Programmers');
     expect(unitGroupTitle('9999')).toBe('');
@@ -105,7 +105,7 @@ describe('how a code reads in a filter', () => {
 describe('a role in more than one unit group', () => {
   test('codes and titles pair by position, not by joining into one string', () => {
     // The CSV writes these as "1311;2251" and "Advertising, Public Relations and
-    // Sales Managers;Advertising and Marketing Professionals" — rendered as one
+    // Sales Managers;Advertising and Marketing Professionals" - rendered as one
     // value it read as a run-on with no space at the join.
     const groups = unitGroupsFor(
       job({
@@ -133,6 +133,9 @@ describe('a role in more than one unit group', () => {
   });
 
   test('every group a role sits in is filterable', () => {
-    expect(unitGroupCodesFor(job({ anzscoUnitGroups: ['1311', '2251'] }))).toEqual(['1311', '2251']);
+    expect(unitGroupCodesFor(job({ anzscoUnitGroups: ['1311', '2251'] }))).toEqual([
+      '1311',
+      '2251',
+    ]);
   });
 });

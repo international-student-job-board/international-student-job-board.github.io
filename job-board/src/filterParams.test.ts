@@ -1,4 +1,9 @@
-import { filtersToParams, filtersFromParams, hasFilterParams, pruneToOptions } from './filterParams';
+import {
+  filtersToParams,
+  filtersFromParams,
+  hasFilterParams,
+  pruneToOptions,
+} from './filterParams';
 import { FilterState } from './components/Filters';
 
 const EMPTY: FilterState = {
@@ -80,9 +85,7 @@ test('the "only unrated" rating choice round-trips', () => {
 });
 
 test('junk and out-of-range params are dropped, not honoured', () => {
-  const params = new URLSearchParams(
-    'state=Victoria&nonsense=1&posted=999&rating=7&salarymin=-5'
-  );
+  const params = new URLSearchParams('state=Victoria&nonsense=1&posted=999&rating=7&salarymin=-5');
   const out = filtersFromParams(params, EMPTY);
   expect(out.states).toEqual(['Victoria']);
   expect(out.postedWithinDays).toBe(0);

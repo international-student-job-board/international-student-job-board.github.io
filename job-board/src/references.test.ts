@@ -32,7 +32,9 @@ const SOFTWARE = {
 const ANALYST = {
   name: 'Data Analyst',
   codes: { anzsco2022: '224114', anzsco2013: '224999' },
-  urls: { anzsco2022: 'https://www.abs.gov.au/statistics/classifications/2022/browse/2/22/224/2241' },
+  urls: {
+    anzsco2022: 'https://www.abs.gov.au/statistics/classifications/2022/browse/2/22/224/2241',
+  },
   lists: ['CSOL'],
   visas: ['482'],
   assessors: [{ name: 'VETASSESS', url: 'https://www.vetassess.com.au/' }],
@@ -73,7 +75,7 @@ describe('resolving a role’s occupations', () => {
   });
 
   test('codes that differ between versions still resolve to one occupation', () => {
-    // Data Analyst is 224114 in ANZSCO 2022 and 224999 in 2013 — the case the two columns
+    // Data Analyst is 224114 in ANZSCO 2022 and 224999 in 2013 - the case the two columns
     // exist for.
     const occupations = resolveOccupations(job({ anzsco2022: ['224114'], anzsco2013: ['224999'] }));
     expect(occupations).toHaveLength(1);
@@ -87,7 +89,7 @@ describe('resolving a role’s occupations', () => {
 
   test('each version links to its own ABS page, not to the other one\u2019s', () => {
     // The two classifications live on different ABS sites, and for some occupations the
-    // codes differ — so borrowing one link for both would send a reader to a code their
+    // codes differ - so borrowing one link for both would send a reader to a code their
     // visa does not use.
     const [occ] = resolveOccupations(job({ anzsco2022: ['261313'], anzsco2013: ['261313'] }));
     expect(occ.codes.find((c) => c.version === '2022')?.href).toBe(SOFTWARE.urls.anzsco2022);
