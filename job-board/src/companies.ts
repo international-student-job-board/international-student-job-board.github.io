@@ -29,6 +29,7 @@ function toCompany(row: Record<string, string>): Company {
     tagline: pick(row, 'Tagline').trim(),
     linkedin: pick(row, 'LinkedIn').trim(),
     openings: Number.parseInt(pick(row, 'Job openings'), 10) || 0,
+    boardRoles: Number.parseInt(pick(row, 'Board roles'), 10) || 0,
     accreditedSponsor: triState(pick(row, 'Accredited sponsor', 'Sponsor visa available')),
     hiresInternationalStudents: triState(pick(row, 'Hires international students')),
     ...glassdoorFields(row),
@@ -100,12 +101,16 @@ export const DEFAULT_COMPANY_VIEW: CompanyView = {
   sort: 'openings',
 };
 
-/** Sorted for display: most roles first, or alphabetically. */
+/**
+ * Sorted for display: most roles first, or alphabetically. "Most roles" is `boardRoles` - roles
+ * actually listed on our board - not the CSV's separate `openings` (Dealroom's own careers-page
+ * count), which doesn't shrink as roles age off the board.
+ */
 export function sortCompanies(companies: Company[], sort: CompanySort): Company[] {
   const sorted = [...companies];
   if (sort === 'name') return sorted.sort((a, b) => a.name.localeCompare(b.name));
   // Ties fall back to the name, so equal counts don't shuffle between renders.
-  return sorted.sort((a, b) => b.openings - a.openings || a.name.localeCompare(b.name));
+  return sorted.sort((a, b) => b.boardRoles - a.boardRoles || a.name.localeCompare(b.name));
 }
 
 /** Companies matching a query on name, industry or what they build. */

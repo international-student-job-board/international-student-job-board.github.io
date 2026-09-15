@@ -22,7 +22,7 @@ interface Props {
 }
 
 /**
- * "Employer rating" - a single-choice filter: a minimum star rating, or the
+ * "Glassdoor rating" - a single-choice filter: a minimum star rating, or the
  * employers with no Glassdoor match at all. Each choice shows how many results
  * it would leave, like every other filter.
  */
@@ -42,7 +42,7 @@ export function RatingFilter({ value, onChange, counts, overlay }: Props) {
 
   return (
     <FilterSelect
-      label="Employer rating"
+      label="Glassdoor rating"
       multiple={false}
       searchable={false}
       overlay={overlay}

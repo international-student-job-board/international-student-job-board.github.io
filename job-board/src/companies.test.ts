@@ -8,6 +8,8 @@ const HEADERS_NEW =
 
 const HEADERS_GLASSDOOR = `${HEADERS_NEW},Glassdoor rating,Glassdoor reviews,Glassdoor URL`;
 
+const HEADERS_BOARD_ROLES = `${HEADERS_NEW},Board roles`;
+
 const stubCsv = (text: string) => {
   (global as unknown as { fetch: jest.Mock }).fetch = jest.fn().mockResolvedValue({
     ok: true,
@@ -38,6 +40,7 @@ const company = (over: Partial<Company> = {}): Company =>
     linkedin: '',
     profile: '',
     openings: 0,
+    boardRoles: 0,
     accreditedSponsor: undefined,
     hiresInternationalStudents: undefined,
     ...over,
@@ -70,6 +73,14 @@ describe('reading the companies CSV', () => {
     expect(plain.glassdoorUrl).toBeUndefined();
   });
 
+  test('"Board roles" is read when present, and defaults to 0 for a file written before it existed', async () => {
+    const [withBoardRoles] = await freshLoad(`${HEADERS_BOARD_ROLES}\nAcme,,,,,,,,,,,,,,,3`);
+    expect(withBoardRoles.boardRoles).toBe(3);
+
+    const [older] = await freshLoad(`${HEADERS_NEW}\nAcme,,,,,,,,,,,,,,`);
+    expect(older.boardRoles).toBe(0);
+  });
+
   test('both spellings of the sponsor column are read, so either file works', async () => {
     const old = await freshLoad(`${HEADERS_OLD}\nAcme,,,,,,,,,,,,,,,,Yes,Yes`);
     expect(old[0].accreditedSponsor).toBe(true);
@@ -98,13 +109,16 @@ describe('reading the companies CSV', () => {
 
 describe('ordering and searching', () => {
   const list = [
-    company({ name: 'Zeta', openings: 2 }),
-    company({ name: 'Acme', openings: 2, industries: ['fintech'] }),
-    company({ name: 'Beta', openings: 9 }),
+    // openings (Dealroom's own count) deliberately disagrees with boardRoles (what's actually
+    // listed) here, so the "most roles" sort test below only passes if it's reading the right
+    // one.
+    company({ name: 'Zeta', openings: 2, boardRoles: 1 }),
+    company({ name: 'Acme', openings: 2, boardRoles: 5, industries: ['fintech'] }),
+    company({ name: 'Beta', openings: 9, boardRoles: 0 }),
   ];
 
-  test('most roles first, ties broken by name so the order never shuffles', () => {
-    expect(sortCompanies(list, 'openings').map((c) => c.name)).toEqual(['Beta', 'Acme', 'Zeta']);
+  test("most roles first (roles actually on the board, not the CSV's own count), ties broken by name", () => {
+    expect(sortCompanies(list, 'openings').map((c) => c.name)).toEqual(['Acme', 'Zeta', 'Beta']);
   });
 
   test('alphabetically when asked', () => {

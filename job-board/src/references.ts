@@ -502,6 +502,21 @@ export const MANUAL_REVIEW_NOTE =
   'visas and which hire international students and graduates.\n\n' +
   "A company without those tags hasn't been checked yet!";
 
+// Home Affairs' FOI-released register of accredited work sponsors, published 2025.
+export const SPONSOR_REGISTER_URL =
+  'https://www.homeaffairs.gov.au/foi/files/2025/fa-250101229-document-released.PDF';
+
+/** What "Accredited sponsor" is checked against, wherever the tag or filter is shown. */
+export const SPONSOR_NOTE =
+  "We check each company against the Department of Home Affairs' published register of " +
+  'accredited sponsors.\n\n' +
+  "Where a company isn't on that register, we've verified its sponsorship by hand instead.";
+
+/** What the visas under "Leads to visa" are based on, wherever the filter or fact is shown. */
+export const LEADS_TO_VISA_NOTE =
+  'The visas a role can lead to, based on matching its ANZSCO occupation against the ' +
+  "Department of Home Affairs' skill occupation list.";
+
 /** What a unit group is, for the roles that can only be placed that far. */
 export const UNIT_GROUP_NOTE =
   'The four-digit ANZSCO group an occupation belongs to. Roles we cannot match ' +
@@ -544,10 +559,21 @@ export function salarySourceUrl(url: string): string | undefined {
 /** Beside the employer-rating filter and fact. */
 export const RATING_NOTE = 'Employer ratings are from Glassdoor, out of 5.';
 
-/** A Glassdoor company Overview URL, for the rating link. */
+/**
+ * The Salary page's own address - "Glassdoor URL" carries this for some rows rather than the
+ * Reviews page, because the pipeline reads the rating off the Salary page's JSON-LD block and
+ * older rows kept that page's own URL as the rating link. Rewritten below rather than fixed at
+ * the source everywhere, so a row keeps working the moment the data pipeline back-fills it.
+ */
+const SALARY_PAGE =
+  /^(https:\/\/(?:www\.)?glassdoor\.[a-z.]+)\/Salary\/(.+)-Salaries-E(\d+)\.htm$/i;
+
+/** A Glassdoor company Reviews URL, for the rating link. */
 export function glassdoorUrl(url: string | undefined): string | undefined {
   const trimmed = (url ?? '').trim();
-  return /^https:\/\/(www\.)?glassdoor\.[a-z.]+\//.test(trimmed) ? trimmed : undefined;
+  if (!/^https:\/\/(www\.)?glassdoor\.[a-z.]+\//.test(trimmed)) return undefined;
+  const salary = trimmed.match(SALARY_PAGE);
+  return salary ? `${salary[1]}/Reviews/${salary[2]}-Reviews-E${salary[3]}.htm` : trimmed;
 }
 
 export const VISA_DISCLAIMER =

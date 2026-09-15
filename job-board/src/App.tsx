@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef } from 'react';
+import { lazy, Suspense, useDeferredValue, useEffect, useMemo, useRef } from 'react';
 import './App.css';
 import { useJobsData, useCompanyCount } from './useJobsData';
 import { useAppNavigation } from './useAppNavigation';
@@ -65,7 +65,16 @@ function App() {
   const syncedFromData = useRef(false);
 
   const openJobs = useMemo(() => filterOpenJobs(jobs), [jobs]);
-  const counts = useMemo(() => computeFacetCounts(openJobs, filters), [openJobs, filters]);
+  // Recomputing the facet counts and the visible list means walking every open role against
+  // every filter (see computeFacetCounts) - too heavy to redo synchronously on every keystroke
+  // of the search box without the input itself lagging behind what was typed. Deferring the
+  // filters that feed them lets React keep the input snappy and catch the list up a moment
+  // later, rather than the whole state update trailing what the reader actually typed.
+  const deferredFilters = useDeferredValue(filters);
+  const counts = useMemo(
+    () => computeFacetCounts(openJobs, deferredFilters),
+    [openJobs, deferredFilters]
+  );
   const options = useMemo(() => computeFilterOptions(openJobs), [openJobs]);
 
   /**
@@ -97,9 +106,9 @@ function App() {
   const companyCount = useCompanyCount(status === 'ready' && openJobs.length === 0);
 
   const visible = useMemo(() => {
-    const postedAfter = cutoff(filters);
-    return openJobs.filter((job) => matches(job, filters, postedAfter));
-  }, [openJobs, filters]);
+    const postedAfter = cutoff(deferredFilters);
+    return openJobs.filter((job) => matches(job, deferredFilters, postedAfter));
+  }, [openJobs, deferredFilters]);
 
   const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);

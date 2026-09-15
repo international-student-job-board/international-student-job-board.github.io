@@ -1,6 +1,7 @@
 import { Job, hasSalary, salaryRangeAud, jobLocation } from './types';
 import { isRecent } from './jobs';
 import { dateValue, todayISO } from './format';
+import { getConstant } from './constants';
 import {
   pathwayVisasFor,
   occupationCodesFor,
@@ -66,6 +67,18 @@ const answer = (value: boolean | undefined): string[] => [
 ];
 
 const uniqueSorted = (values: string[]) => Array.from(new Set(values)).sort();
+
+/**
+ * Orders values by rank in a hierarchy (e.g. "Internship" before "Senior"), rather than
+ * alphabetically - for job level and education, where A-to-Z would scatter the natural
+ * progression a reader expects to scan top to bottom. A value the hierarchy doesn't name
+ * (a typo, or one not yet added to content/constants.json) sorts after every known rung
+ * rather than disappearing, and ties among unknown values keep their relative order.
+ */
+const byHierarchy = (order: string[]) => {
+  const rank = new Map(order.map((value, i) => [value, i]));
+  return (a: string, b: string) => (rank.get(a) ?? order.length) - (rank.get(b) ?? order.length);
+};
 
 /** Stale roles are dropped here rather than inside the filtering, so they are gone from
  * everything downstream: the count, the default selection, and the filter dropdowns - which
@@ -227,8 +240,8 @@ export function computeFilterOptions(openJobs: Job[]): FilterOptions {
   // Every distinct value, plus the "not specified" marker when at least one role is missing
   // that field - offered only where it would actually match something, so the dropdowns
   // don't grow an option that finds nothing.
-  const from = (pick: (job: Job) => string[]) => {
-    const values = uniqueSorted(openJobs.flatMap(pick).filter(Boolean));
+  const from = (pick: (job: Job) => string[], compare?: (a: string, b: string) => number) => {
+    const values = Array.from(new Set(openJobs.flatMap(pick).filter(Boolean))).sort(compare);
     const anyBlank = openJobs.some((job) => pick(job).filter(Boolean).length === 0);
     return anyBlank ? [...values, UNSPECIFIED] : values;
   };
@@ -238,9 +251,12 @@ export function computeFilterOptions(openJobs: Job[]): FilterOptions {
     states: from(FACET_PICKERS.states),
     types: from(FACET_PICKERS.types),
     employmentTypes: from(FACET_PICKERS.employmentTypes),
-    jobLevels: from(FACET_PICKERS.jobLevels),
+    jobLevels: from(FACET_PICKERS.jobLevels, byHierarchy(getConstant('jobLevel'))),
     workArrangements: from(FACET_PICKERS.workArrangements),
-    educationLevels: from(FACET_PICKERS.educationLevels),
+    educationLevels: from(
+      FACET_PICKERS.educationLevels,
+      byHierarchy(getConstant('educationLevel'))
+    ),
     cities: from(FACET_PICKERS.cities),
     industries: from(FACET_PICKERS.industries),
     companyTypes: from(FACET_PICKERS.companyTypes),

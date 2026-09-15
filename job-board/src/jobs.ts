@@ -94,6 +94,7 @@ function toCompany(row: Record<string, string>): Company {
     tagline: (row['Tagline'] ?? '').trim(),
     linkedin: (row['LinkedIn'] ?? '').trim(),
     openings: Number.parseInt(row['Job openings'] ?? '', 10) || 0,
+    boardRoles: Number.parseInt(row['Board roles'] ?? '', 10) || 0,
     accreditedSponsor: triState(row['Accredited sponsor']),
     hiresInternationalStudents: triState(row['Hires international students']),
     ...glassdoorFields(row),

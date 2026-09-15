@@ -20,6 +20,8 @@ interface Props {
    * What the filter means, on an "i" in the open panel's footer.
    */
   tooltip?: string;
+  /** A source the tooltip points to, as a clickable line inside the bubble itself. */
+  tooltipLink?: { label: string; href: string };
   /** A source link, in that same footer beside the tooltip. */
   footerLink?: { label: string; href: string };
   /** Show the type-to-filter box for long lists. Off on touch, where it only
@@ -46,6 +48,7 @@ export function FilterSelect({
   onChange,
   multiple = true,
   tooltip,
+  tooltipLink,
   footerLink,
   searchable = true,
   overlay = false,
@@ -234,7 +237,9 @@ export function FilterSelect({
 
           <div className="fselect-foot">
             <span className="fselect-foot-info">
-              {tooltip && <InfoTooltip text={tooltip} label={`What "${label}" means`} />}
+              {tooltip && (
+                <InfoTooltip text={tooltip} link={tooltipLink} label={`What "${label}" means`} />
+              )}
               {footerLink && (
                 <a
                   className="fselect-foot-link"

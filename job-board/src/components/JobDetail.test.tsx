@@ -74,7 +74,7 @@ test('the working-conditions facts show what a role carries and "Not specified" 
   expect(screen.queryByText('Posted')).not.toBeInTheDocument();
 });
 
-test('the Glassdoor rating shows only as an "Employer rating" fact, not by the company name', () => {
+test('the Glassdoor rating shows only as a "Glassdoor rating" fact, not by the company name', () => {
   const j = job();
   (j.company as { glassdoorRating?: number }).glassdoorRating = 4;
   (j.company as { glassdoorReviews?: number }).glassdoorReviews = 36;
@@ -87,15 +87,15 @@ test('the Glassdoor rating shows only as an "Employer rating" fact, not by the c
   expect(screen.queryByText(/based on 36 reviews/)?.closest('.detail-head')).toBeFalsy();
 
   // The employer section has a labelled fact, its value linked, without "on Glassdoor".
-  const fact = factFor('Employer rating');
+  const fact = factFor('Glassdoor rating');
   const factLink = within(fact).getByRole('link', { name: '4.0 based on 36 reviews' });
   expect(factLink).toHaveAttribute('href', expect.stringContaining('glassdoor'));
   expect(factLink).not.toHaveTextContent('on Glassdoor');
 });
 
-test('the Employer rating fact still shows, as "Not specified", when the company is not on Glassdoor', () => {
+test('the Glassdoor rating fact still shows, as "Not specified", when the company is not on Glassdoor', () => {
   render(<JobDetail job={job()} />);
-  const fact = factFor('Employer rating');
+  const fact = factFor('Glassdoor rating');
   expect(fact).toHaveTextContent('Not specified');
   expect(within(fact).queryByRole('link')).not.toBeInTheDocument();
 });

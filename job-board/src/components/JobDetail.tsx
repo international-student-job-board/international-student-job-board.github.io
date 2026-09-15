@@ -19,8 +19,12 @@ import {
   ANZSCO_NOTE,
   INVITED_ROUND_NOTE,
   invitationRoundLabel,
+  LEADS_TO_VISA_NOTE,
   OSCA_NOTE,
+  SKILL_OCCUPATION_LIST_URL,
   SKILLSELECT_INVITATION_ROUNDS_URL,
+  SPONSOR_NOTE,
+  SPONSOR_REGISTER_URL,
   UNIT_GROUP_NOTE,
   VISA_DISCLAIMER,
 } from '../references';
@@ -397,7 +401,15 @@ export function JobDetail({ job }: { job: Job }) {
             <div className="fact">
               <dt className="fact-label">
                 In the latest invitation round{' '}
-                <InfoTooltip text={INVITED_ROUND_NOTE} label="What this means" placement="bottom" />
+                <InfoTooltip
+                  text={INVITED_ROUND_NOTE}
+                  link={{
+                    label: 'SkillSelect invitation rounds (Home Affairs)',
+                    href: SKILLSELECT_INVITATION_ROUNDS_URL,
+                  }}
+                  label="What this means"
+                  placement="bottom"
+                />
               </dt>
               <dd className="fact-value">
                 {job.invitedScore !== undefined ? (
@@ -482,7 +494,18 @@ export function JobDetail({ job }: { job: Job }) {
               </dd>
             </div>
             <div className="fact">
-              <dt className="fact-label">Can lead to</dt>
+              <dt className="fact-label">
+                Can lead to{' '}
+                <InfoTooltip
+                  text={LEADS_TO_VISA_NOTE}
+                  link={{
+                    label: 'Skill occupation list (Home Affairs)',
+                    href: SKILL_OCCUPATION_LIST_URL,
+                  }}
+                  label="What this means"
+                  placement="bottom"
+                />
+              </dt>
               <dd className="fact-value">
                 <Pills items={pathwayVisas} />
               </dd>
@@ -517,7 +540,18 @@ export function JobDetail({ job }: { job: Job }) {
               </dd>
             </div>
             <div className="fact">
-              <dt className="fact-label">Accredited sponsor</dt>
+              <dt className="fact-label">
+                Accredited sponsor{' '}
+                <InfoTooltip
+                  text={SPONSOR_NOTE}
+                  link={{
+                    label: 'Home Affairs sponsor register (PDF)',
+                    href: SPONSOR_REGISTER_URL,
+                  }}
+                  label="What this means"
+                  placement="bottom"
+                />
+              </dt>
               <dd className="fact-value">
                 <Answer value={company.accreditedSponsor} yes="Yes" no="No" />
               </dd>
@@ -560,7 +594,7 @@ export function JobDetail({ job }: { job: Job }) {
               </div>
             )}
             <div className="fact">
-              <dt className="fact-label">Employer rating</dt>
+              <dt className="fact-label">Glassdoor rating</dt>
               <dd className="fact-value">
                 {company.glassdoorRating ? (
                   <GlassdoorRating company={company} showSource={false} />

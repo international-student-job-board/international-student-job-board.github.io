@@ -21,6 +21,12 @@ export interface Company {
   tagline: string;
   linkedin: string;
   openings: number;
+  /** How many of this company's roles are actually listed on our board right now (the
+   * find-startups pipeline computes this from the same jobs it writes out, filtered the same
+   * way the board itself hides stale ones) - distinct from `openings`, which is Dealroom's own
+   * count of the company's careers page and neither shrinks as roles age off the board nor
+   * only counts roles that made it onto the board at all. */
+  boardRoles: number;
   /**
    * The two migration answers, and both are three-valued on purpose: yes, no, or nobody has
    * checked yet.

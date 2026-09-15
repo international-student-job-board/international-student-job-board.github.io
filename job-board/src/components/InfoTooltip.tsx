@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /** As wide as the bubble ever gets, matching the max-width the stylesheet sets. */
 const BUBBLE_WIDTH = 320;
@@ -45,7 +45,7 @@ function boundsFor(button: HTMLElement) {
 }
 
 /**
- * Small "i" affordance that reveals explanatory text on hover or keyboard focus.
+ * Small "i" affordance that reveals explanatory text on hover, keyboard focus, or a tap.
  *
  * The bubble is centred on the button by default, which puts half of it past
  * the edge for anything near one - and the filters that most need explaining
@@ -58,13 +58,24 @@ function boundsFor(button: HTMLElement) {
  * panel moves - it opens, the row wraps, the pane resizes - and where the
  * button was at mount says nothing about where it is when someone reaches for
  * it.
+ *
+ * Opening is CSS-driven (hover / focus-within) for a mouse or keyboard, which
+ * costs nothing in script - but there is no hover on a touch screen, so the
+ * button also tracks its own open state and toggles it on tap. That state is
+ * what makes a link inside the bubble reachable on mobile: without it, a tap
+ * opens the bubble via focus but the very next tap (on the link) moves focus
+ * onto the link and away from the button, which would close the bubble before
+ * the tap on the link is even processed.
  */
 export function InfoTooltip({
   text,
+  link,
   label,
   placement = 'top',
 }: {
   text: string;
+  /** A source the note points to, rendered as a clickable line under the text. */
+  link?: { label: string; href: string };
   label?: string;
   /**
    * Which way the bubble opens. Near the top of the page there is nothing above
@@ -72,8 +83,10 @@ export function InfoTooltip({
    */
   placement?: 'top' | 'bottom';
 }) {
+  const rootRef = useRef<HTMLSpanElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [placed, setPlaced] = useState<Placed>({ align: 'center' });
+  const [open, setOpen] = useState(false);
 
   const place = useCallback(() => {
     const button = buttonRef.current;
@@ -106,15 +119,38 @@ export function InfoTooltip({
     setPlaced({ align, maxWidth: width > 0 ? Math.round(width) : undefined });
   }, []);
 
+  // A tapped-open bubble closes on a tap outside it or Escape - it has no other way out, since
+  // there's no hover to lose on a touch screen.
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
   return (
-    <span className={`info-tip info-tip-${placement}`}>
+    <span className={`info-tip info-tip-${placement}`} ref={rootRef} data-open={open || undefined}>
       <button
         type="button"
         ref={buttonRef}
         className="info-tip-btn"
         aria-label={label || 'More information'}
+        aria-expanded={open}
         onMouseEnter={place}
         onFocus={place}
+        onClick={() => {
+          place();
+          setOpen((was) => !was);
+        }}
       >
         i
       </button>
@@ -125,6 +161,17 @@ export function InfoTooltip({
         style={placed.maxWidth ? { maxWidth: placed.maxWidth } : undefined}
       >
         {text}
+        {link && (
+          <a
+            className="info-tip-link"
+            href={link.href}
+            target="_blank"
+            rel="noopener"
+            referrerPolicy="strict-origin-when-cross-origin"
+          >
+            {link.label}
+          </a>
+        )}
       </span>
     </span>
   );

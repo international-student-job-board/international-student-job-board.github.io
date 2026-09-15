@@ -7,9 +7,14 @@ import {
   invitedScoreFor,
   ANZSCO_NOTE,
   INVITED_ROUND_NOTE,
+  LEADS_TO_VISA_NOTE,
   MANUAL_REVIEW_NOTE,
   OCCUPATION_LIST_NOTE,
   OSCA_NOTE,
+  SKILL_OCCUPATION_LIST_URL,
+  SKILLSELECT_INVITATION_ROUNDS_URL,
+  SPONSOR_NOTE,
+  SPONSOR_REGISTER_URL,
   UNIT_GROUP_NOTE,
   VISA_NAMES,
 } from '../references';
@@ -129,8 +134,23 @@ interface FieldMeta {
   label: string;
   format?: (value: string) => string;
   tooltip?: string;
+  /** A source the tooltip points to, as a clickable line inside the bubble. */
+  tooltipLink?: { label: string; href: string };
   accent?: boolean;
 }
+
+const INVITATION_ROUND_LINK = {
+  label: 'SkillSelect invitation rounds (Home Affairs)',
+  href: SKILLSELECT_INVITATION_ROUNDS_URL,
+};
+const SPONSOR_REGISTER_LINK = {
+  label: 'Home Affairs sponsor register (PDF)',
+  href: SPONSOR_REGISTER_URL,
+};
+const OCCUPATION_LIST_LINK = {
+  label: 'Skill occupation list (Home Affairs)',
+  href: SKILL_OCCUPATION_LIST_URL,
+};
 
 const FIELDS: FieldMeta[] = [
   { key: 'companies', label: 'Company' },
@@ -151,6 +171,7 @@ const FIELDS: FieldMeta[] = [
     label: 'In the latest invitation round',
     format: invitedOccupationLabel,
     tooltip: INVITED_ROUND_NOTE,
+    tooltipLink: INVITATION_ROUND_LINK,
     accent: true,
   },
   {
@@ -166,12 +187,19 @@ const FIELDS: FieldMeta[] = [
     format: occupationListLabel,
     tooltip: OCCUPATION_LIST_NOTE,
   },
-  { key: 'pathwayVisas', label: 'Leads to visa', format: visaLabel },
+  {
+    key: 'pathwayVisas',
+    label: 'Leads to visa',
+    format: visaLabel,
+    tooltip: LEADS_TO_VISA_NOTE,
+    tooltipLink: OCCUPATION_LIST_LINK,
+  },
   {
     key: 'sponsor',
     label: 'Accredited sponsor',
     format: answerLabel,
-    tooltip: MANUAL_REVIEW_NOTE,
+    tooltip: SPONSOR_NOTE,
+    tooltipLink: SPONSOR_REGISTER_LINK,
     accent: true,
   },
   {
@@ -262,6 +290,7 @@ export function Filters({ filters, options, counts, resultCount, onChange, onCle
       <FilterSelect
         label={field.label}
         tooltip={field.tooltip}
+        tooltipLink={field.tooltipLink}
         searchable={!isMobile}
         overlay={overlay}
         options={toOptions(key, field.format)}
@@ -312,7 +341,7 @@ export function Filters({ filters, options, counts, resultCount, onChange, onCle
   if (filters.minRating !== 0) {
     chips.push({
       id: 'rating',
-      field: 'Employer rating',
+      field: 'Glassdoor rating',
       value: ratingChipLabel(filters.minRating),
       remove: () => set({ minRating: 0 }),
     });

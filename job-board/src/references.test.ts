@@ -203,9 +203,15 @@ describe('government links', () => {
     expect(salarySourceUrl('https://evil.example/glassdoor.com')).toBeUndefined();
   });
 
-  test('a Glassdoor Overview URL is validated by host', () => {
+  test('a Glassdoor URL is validated by host', () => {
     expect(glassdoorUrl('https://www.glassdoor.com.au/Overview/x.htm')).toContain('glassdoor');
     expect(glassdoorUrl('https://phish.test/glassdoor')).toBeUndefined();
     expect(glassdoorUrl(undefined)).toBeUndefined();
+  });
+
+  test('a Salary-page URL is rewritten to the matching Reviews page', () => {
+    expect(
+      glassdoorUrl('https://www.glassdoor.com.au/Salary/DataAnnotation-Salaries-E8605843.htm')
+    ).toBe('https://www.glassdoor.com.au/Reviews/DataAnnotation-Reviews-E8605843.htm');
   });
 });

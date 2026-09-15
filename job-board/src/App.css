@@ -860,20 +860,29 @@ optgroup {
 
 /* Glassdoor rating - "★ 4.0 based on 36 reviews", one line, one link. The same
    type as the rest of the body text (buttons and cards don't inherit it, hence
-   the explicit values), muted grey, star in the usual ink. */
+   the explicit values), muted grey, star in the usual ink. Renders as a plain
+   span when there's no usable link (see GlassdoorRating.tsx), so the underline
+   below is scoped to the anchor only - a span never claims to be clickable. */
 .glassdoor-rating {
   font-family: inherit;
   font-size: var(--fs-sm);
   font-weight: 400;
   line-height: var(--lh-body);
   color: var(--muted);
-  text-decoration: none;
 }
 
-.glassdoor-rating:hover,
-.glassdoor-rating:focus-visible {
+/* Same underline convention as every other inline text link on the site (see
+   .reference-link): on by default rather than appearing only on hover, and
+   thickening on hover/focus instead of toggling on and off. */
+a.glassdoor-rating {
   text-decoration: underline;
   text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+
+a.glassdoor-rating:hover,
+a.glassdoor-rating:focus-visible {
+  text-decoration-thickness: 2px;
 }
 
 /* As the value of an "Employer rating" fact it is one row among many, so it
@@ -891,7 +900,11 @@ optgroup {
   vertical-align: -2px;
 }
 
+/* Lifted above the stretched company-site link so it stays clickable in its own right - see
+   .company-linkedin, the other card link with the same problem to solve. */
 .company-card-glassdoor {
+  position: relative;
+  z-index: 1;
   margin-top: 6px;
 }
 
@@ -2238,20 +2251,62 @@ optgroup {
   border-bottom-color: var(--ink);
 }
 
-.info-tip-btn:hover + .info-tip-bubble,
-.info-tip-btn:focus-visible + .info-tip-bubble {
+/*
+ * Three independent ways in: hovering the tip (button or bubble both count,
+ * since the bubble is a child of .info-tip rather than the button's sibling -
+ * that's what keeps it open while the pointer crosses into it to reach a
+ * link), keyboard focus landing anywhere inside, and a tap toggling
+ * data-open. pointer-events turns on only here, never on the closed bubble -
+ * see the base rule above for why that matters for scroll width.
+ */
+.info-tip:hover .info-tip-bubble,
+.info-tip:focus-within .info-tip-bubble,
+.info-tip[data-open] .info-tip-bubble {
   display: block;
   opacity: 1;
+  pointer-events: auto;
 }
 
 /* The fade needs a value to start from, because the bubble is coming back from
    display:none rather than from an existing box. Without this it appears at
    full opacity, which is what a browser too old for the rule does anyway. */
 @starting-style {
-  .info-tip-btn:hover + .info-tip-bubble,
-  .info-tip-btn:focus-visible + .info-tip-bubble {
+  .info-tip:hover .info-tip-bubble,
+  .info-tip:focus-within .info-tip-bubble,
+  .info-tip[data-open] .info-tip-bubble {
     opacity: 0;
   }
+}
+
+/* The source link a tooltip can carry, on its own line under the text. */
+.info-tip-link {
+  display: block;
+  margin-top: 8px;
+  color: var(--white);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.info-tip-link:hover,
+.info-tip-link:focus-visible {
+  text-decoration-thickness: 2px;
+}
+
+/* On the companies page, .about-section a:not(.btn) sets every link's colour to var(--ink) -
+   right for prose on the page's own white background, wrong for a link inside the dark
+   tooltip bubble, where it read as dark text on a dark bubble. Its :hover form goes further,
+   setting the underline itself to var(--ink) - invisible against a bubble that's the same
+   colour, which is why the underline vanished on hover once the text colour above was fixed.
+   Both need enough specificity to win back their own colour here; nothing else about that
+   rule needs repeating. */
+.info-tip .info-tip-bubble a.info-tip-link {
+  color: var(--white);
+  text-decoration-color: var(--white);
+}
+
+.info-tip .info-tip-bubble a.info-tip-link:hover,
+.info-tip .info-tip-bubble a.info-tip-link:focus-visible {
+  text-decoration-color: var(--white);
 }
 
 /* Occupation → eligible visas (collapsible). */
@@ -3465,6 +3520,22 @@ a.occ-visa-code:focus-visible {
   color: var(--ink);
 }
 
+/* The Glassdoor rating is the exception: it reads as a line of text rather
+   than an affordance-carrying card element, so it keeps the site's ordinary
+   inline-link underline (see a.glassdoor-rating) instead of inheriting the
+   card-wide "no underline" rule above - this just needs to out-specificity
+   that rule, not repeat its declarations. */
+.about-section .company-card a.glassdoor-rating {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+
+.about-section .company-card a.glassdoor-rating:hover,
+.about-section .company-card a.glassdoor-rating:focus-visible {
+  text-decoration-thickness: 2px;
+}
+
 .company-card-head {
   display: flex;
   align-items: baseline;
@@ -3487,11 +3558,17 @@ a.occ-visa-code:focus-visible {
   border-radius: var(--radius);
 }
 
-/* Says what it counts rather than leaving a bare number to be guessed at.
-   Not the accent colour, which means visa sponsorship everywhere else on the
-   site, and not a solid fill either: beside the company name a filled pill
-   covers more ground than the name does and would lead the card. */
+/* A link to this company's roles on our own job board, counted off "Board roles" (roles
+   actually listed here) rather than the CSV's separate "Job openings" (Dealroom's own
+   careers-page count) - see the note by Company.boardRoles in types.ts for why those two
+   numbers can differ. Not the accent colour, which means visa sponsorship everywhere else on
+   the site, and not a solid fill either: beside the company name a filled pill covers more
+   ground than the name does and would lead the card. */
 .company-card-openings {
+  /* Lifted above the stretched company-site link, same as .company-linkedin - it's now a
+     link of its own (to our job board, filtered to this company) rather than plain text. */
+  position: relative;
+  z-index: 1;
   flex-shrink: 0;
   padding: 2px var(--s2);
   border-radius: 999px;
@@ -3500,6 +3577,18 @@ a.occ-visa-code:focus-visible {
   font-size: var(--fs-xs);
   font-weight: var(--fw-strong);
   white-space: nowrap;
+  text-decoration: none;
+  /* Same hover as every other filled pill on the site (see .pill-link) - brightens and
+     lifts slightly, rather than inventing a one-off treatment just for this card. */
+  transition:
+    filter 0.15s ease,
+    transform 0.15s ease;
+}
+
+.company-card-openings:hover,
+.company-card-openings:focus-visible {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
 }
 
 /* The hand-checked visa flags. Only sponsorship carries the accent; "hires

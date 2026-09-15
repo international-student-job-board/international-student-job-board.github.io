@@ -41,7 +41,7 @@ test('an untouched filter writes no query at all', () => {
   expect(filtersToParams(EMPTY).toString()).toBe('');
 });
 
-test('a filtered view round-trips through the query string', () => {
+test('a filtered, searched view round-trips', () => {
   const f: FilterState = {
     ...EMPTY,
     query: 'react',

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Company,
   CompanyFilterKey,
@@ -19,10 +19,11 @@ import { RatingFilter, RATING_RUNGS, RATING_UNSPECIFIED, ratingChipLabel } from 
 import { GlassdoorRating } from './GlassdoorRating';
 import { NOT_SPECIFIED } from '../format';
 import { prettyLabel } from '../labels';
-import { MANUAL_REVIEW_NOTE } from '../references';
+import { MANUAL_REVIEW_NOTE, SPONSOR_NOTE, SPONSOR_REGISTER_URL } from '../references';
 import { useIsMobile } from '../useMediaQuery';
 import { ActiveFilters, ActiveChip } from './ActiveFilters';
 import { outboundHref } from '../outbound';
+import { pathFor } from '../routes';
 // Leaflet and its stylesheet are a big chunk of the site's weight, and only this page's map
 // view needs them - split out so they download when someone actually asks for a map, not on
 // every visit to the job board.
@@ -37,7 +38,7 @@ const VIEWS: { key: View; label: string }[] = [
 ];
 
 const SORTS: { value: CompanySort; label: string }[] = [
-  { value: 'openings', label: 'Most roles open' },
+  { value: 'openings', label: 'Number of roles open' },
   { value: 'name', label: 'A to Z' },
 ];
 
@@ -59,6 +60,8 @@ const FIELDS: {
   values?: string[];
   /** Shown on an "i" in the open panel, beside the count. */
   tooltip?: string;
+  /** A source the tooltip points to, as a clickable line inside the bubble. */
+  tooltipLink?: { label: string; href: string };
   /** Given the accent, because they are what this audience came for. */
   accent?: boolean;
 }[] = [
@@ -70,9 +73,10 @@ const FIELDS: {
   {
     key: 'openRoles',
     label: 'Open roles',
-    // Whether, not how many: the count comes from the source file and is a claim about the
-    // company's own careers page, not about roles on this board.
-    pick: (c) => [c.openings > 0 ? 'yes' : 'no'],
+    // Whether, not how many - and off "Board roles" (roles actually listed on our board),
+    // not "Job openings" (Dealroom's own careers-page count, which doesn't shrink as roles
+    // age off the board and includes roles never matched onto it at all).
+    pick: (c) => [c.boardRoles > 0 ? 'yes' : 'no'],
     values: ['yes', 'no'],
     format: (v) => (v === 'yes' ? 'Has open roles' : 'None listed'),
   },
@@ -81,7 +85,8 @@ const FIELDS: {
     label: 'Accredited sponsor',
     pick: (c) => [answerOf(c.accreditedSponsor)],
     format: answerLabel,
-    tooltip: MANUAL_REVIEW_NOTE,
+    tooltip: SPONSOR_NOTE,
+    tooltipLink: { label: 'Home Affairs sponsor register (PDF)', href: SPONSOR_REGISTER_URL },
     accent: true,
   },
   {
@@ -98,13 +103,11 @@ const FIELDS: {
  * the same split the job board uses. */
 const QUICK_KEYS: CompanyFilterKey[] = ['sponsor', 'students'];
 
-/** The modal's sections - the same headings the job board uses. */
-const MODAL_GROUPS: { title: string; keys: (CompanyFilterKey | 'rating')[] }[] = [
+/** The modal's sections - the same headings the job board uses. Glassdoor rating lives on
+ * the bar itself instead (see the RatingFilter beside the quick filters below), not in here. */
+const MODAL_GROUPS: { title: string; keys: CompanyFilterKey[] }[] = [
   { title: 'Where', keys: ['states', 'hqCities'] },
-  {
-    title: 'The company',
-    keys: ['industries', 'companyTypes', 'growthStages', 'openRoles', 'rating'],
-  },
+  { title: 'The company', keys: ['industries', 'companyTypes', 'growthStages', 'openRoles'] },
 ];
 
 const BY_KEY = new Map(FIELDS.map((f) => [f.key, f]));
@@ -159,8 +162,8 @@ export function Companies() {
       .catch(() => setStatus('error'));
   }, []);
 
-  // Reflect the view into the query string in place - no new history entry per
-  // keystroke, and the path (which is always /companies here) is left alone.
+  // Reflect the view into the query string in place - no new history entry per change, and
+  // the path (which is always /companies here) is left alone.
   useEffect(() => {
     const qs = companyViewToParams({ query, filters, minRating, sort }).toString();
     const search = qs ? `?${qs}` : '';
@@ -227,17 +230,24 @@ export function Companies() {
       ? !c.glassdoorRating
       : !!c.glassdoorRating && c.glassdoorRating >= minRating);
 
+  // shown/ratingCounts/counts each walk the whole company list (counts does it once per
+  // filter), too heavy to redo synchronously on every keystroke of the search box without the
+  // input itself lagging behind what was typed - see the identical fix, and the explanation,
+  // on the job board's own search (App.tsx). Deferring the query lets React keep the input
+  // snappy and catch these up a moment later instead.
+  const deferredQuery = useDeferredValue(query);
+
   const shown = useMemo(() => {
-    const filtered = searchCompanies(companies, query).filter(
+    const filtered = searchCompanies(companies, deferredQuery).filter(
       (c) => matches(c, filters) && passesRating(c)
     );
     return sortCompanies(filtered, sort);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companies, query, filters, sort, minRating]);
+  }, [companies, deferredQuery, filters, sort, minRating]);
 
   /** How many companies each rating option would leave, the other filters held. */
   const ratingCounts = useMemo(() => {
-    const pool = searchCompanies(companies, query).filter((c) => matches(c, filters));
+    const pool = searchCompanies(companies, deferredQuery).filter((c) => matches(c, filters));
     const counted = new Map<string, number>();
     RATING_RUNGS.forEach((rung) =>
       counted.set(
@@ -248,7 +258,7 @@ export function Companies() {
     counted.set(String(RATING_UNSPECIFIED), pool.filter((c) => !c.glassdoorRating).length);
     return counted;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companies, query, filters]);
+  }, [companies, deferredQuery, filters]);
 
   /**
    * How many companies each option would leave, counted with that filter's own selection
@@ -256,7 +266,7 @@ export function Companies() {
    * zero, because that filter has just excluded them.
    */
   const counts = useMemo(() => {
-    const pool = searchCompanies(companies, query);
+    const pool = searchCompanies(companies, deferredQuery);
     const built = {} as Record<CompanyFilterKey, Map<string, number>>;
 
     for (const field of FIELDS) {
@@ -271,7 +281,7 @@ export function Companies() {
     }
     return built;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companies, query, filters]);
+  }, [companies, deferredQuery, filters]);
 
   // Back to the first page whenever the list underneath changes, so you are
   // never left on page 40 of a set that now has three.
@@ -325,22 +335,16 @@ export function Companies() {
   if (minRating !== 0) {
     chips.push({
       id: 'rating',
-      field: 'Employer rating',
+      field: 'Glassdoor rating',
       value: ratingChipLabel(minRating),
       remove: () => setMinRating(0),
     });
   }
 
-  const modalCount =
-    MODAL_GROUPS.reduce(
-      (total, group) =>
-        total +
-        group.keys.reduce(
-          (n, key) => n + (key === 'rating' ? 0 : filters[key as CompanyFilterKey].length),
-          0
-        ),
-      0
-    ) + (minRating !== 0 ? 1 : 0);
+  const modalCount = MODAL_GROUPS.reduce(
+    (total, group) => total + group.keys.reduce((n, key) => n + filters[key].length, 0),
+    0
+  );
 
   const selectFor = (key: CompanyFilterKey, overlay: boolean) => {
     const field = BY_KEY.get(key);
@@ -349,6 +353,7 @@ export function Companies() {
       <FilterSelect
         label={field.label}
         tooltip={field.tooltip}
+        tooltipLink={field.tooltipLink}
         searchable={!isMobile}
         overlay={overlay}
         options={options[key].map((v) => ({
@@ -403,6 +408,8 @@ export function Companies() {
                   <span key={key}>{selectFor(key, false)}</span>
                 ))}
 
+                <RatingFilter value={minRating} onChange={setMinRating} counts={ratingCounts} />
+
                 <FilterSelect
                   label="Sort"
                   multiple={false}
@@ -436,16 +443,7 @@ export function Companies() {
                   <FilterSection title={group.title} key={group.title}>
                     {group.keys.map((key) => (
                       <div className="fmodal-control" key={key}>
-                        {key === 'rating' ? (
-                          <RatingFilter
-                            value={minRating}
-                            onChange={setMinRating}
-                            counts={ratingCounts}
-                            overlay
-                          />
-                        ) : (
-                          selectFor(key as CompanyFilterKey, true)
-                        )}
+                        {selectFor(key, true)}
                       </div>
                     ))}
                   </FilterSection>
@@ -583,10 +581,18 @@ function CompanyCard({
         ) : (
           <span className="company-card-name">{company.name}</span>
         )}
-        {company.openings > 0 && (
-          <span className="company-card-openings">
-            {company.openings} open {company.openings === 1 ? 'role' : 'roles'}
-          </span>
+        {company.boardRoles > 0 && (
+          <a
+            className="company-card-openings"
+            href={`${pathFor('jobs')}?company=${encodeURIComponent(company.name)}`}
+            // Stops the SPA's document-level link handler from taking over: that handler
+            // strips off the query string when it pushes state, which would drop the
+            // company filter this link exists to carry. A plain full-page navigation still
+            // lands on our own job board, just without that shortcut.
+            onClick={(e) => e.stopPropagation()}
+          >
+            View {company.boardRoles} open {company.boardRoles === 1 ? 'role' : 'roles'}
+          </a>
         )}
       </div>
 

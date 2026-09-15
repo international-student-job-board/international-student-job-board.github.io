@@ -176,7 +176,7 @@ describe('the More filters modal', () => {
 
     openModal();
     fireEvent.click(
-      within(modal()).getByRole('button', { name: /Employer rating/, expanded: false })
+      within(modal()).getByRole('button', { name: /Glassdoor rating/, expanded: false })
     );
     fireEvent.click(screen.getByRole('radio', { name: /4\.0 and up/ }));
     fireEvent.click(within(modal()).getByRole('button', { name: /Clear all/ }));
@@ -184,9 +184,9 @@ describe('the More filters modal', () => {
     expect(
       screen.queryByRole('button', { name: /Accredited sponsor.*Yes/ })
     ).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Employer rating/, expanded: false })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Glassdoor rating/, expanded: false })).toBeTruthy();
     expect(
-      screen.queryByRole('button', { name: /Employer rating.*and up/ })
+      screen.queryByRole('button', { name: /Glassdoor rating.*and up/ })
     ).not.toBeInTheDocument();
   });
 });
@@ -195,7 +195,7 @@ describe('the employer rating filter', () => {
   const openRating = () => {
     openModal();
     fireEvent.click(
-      within(modal()).getByRole('button', { name: /Employer rating/, expanded: false })
+      within(modal()).getByRole('button', { name: /Glassdoor rating/, expanded: false })
     );
   };
 
@@ -204,7 +204,9 @@ describe('the employer rating filter', () => {
     openRating();
     fireEvent.click(screen.getByRole('radio', { name: /3\.5 and up/ }));
     done();
-    expect(screen.getByRole('button', { name: /Employer rating.*3.5 and up/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Glassdoor rating.*3.5 and up/ })
+    ).toBeInTheDocument();
   });
 
   test('each rung shows how many employers it would leave, and "Not specified" is an option', () => {
@@ -225,11 +227,11 @@ describe('the employer rating filter', () => {
     openRating();
     fireEvent.click(screen.getByRole('radio', { name: /Not specified/ }));
     done();
-    const chip = screen.getByRole('button', { name: /Employer rating.*Not specified/ });
+    const chip = screen.getByRole('button', { name: /Glassdoor rating.*Not specified/ });
     expect(chip).toBeInTheDocument();
     fireEvent.click(chip);
     expect(
-      screen.queryByRole('button', { name: /Employer rating.*Not specified/ })
+      screen.queryByRole('button', { name: /Glassdoor rating.*Not specified/ })
     ).not.toBeInTheDocument();
   });
 });
