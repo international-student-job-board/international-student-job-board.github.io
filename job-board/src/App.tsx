@@ -93,6 +93,10 @@ function App() {
     setFilters((current) => {
       if (arrivedWithFilters.current) return pruneToOptions(current, options);
       if (countActiveFilters(current) > 0) return current;
+      // A direct link to one job, with no filters of its own, should open
+      // exactly that job - not silently gain a state filter the sharer never
+      // added, which would leave a reader elsewhere with a dead-looking link.
+      if (selectedId) return current;
       // A visitor outside Australia gets every state - narrowing to "wherever
       // Australia's time zone last resolved to" would be a guess, not a default.
       const home = isLikelyAustralia() ? inferAustralianState() : '';
