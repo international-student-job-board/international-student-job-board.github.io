@@ -44,3 +44,22 @@ export function prettyLabel(value: string): string {
 
 /** The same, for a list of tags. */
 export const prettyLabels = (values: string[]): string[] => values.map(prettyLabel);
+
+const STATE_ABBREVIATIONS: Record<string, string> = {
+  'New South Wales': 'NSW',
+  Victoria: 'VIC',
+  Queensland: 'QLD',
+  'South Australia': 'SA',
+  'Western Australia': 'WA',
+  Tasmania: 'TAS',
+  'Northern Territory': 'NT',
+  'Australian Capital Territory': 'ACT',
+};
+
+/** "Melbourne, Victoria" as it reads in a list or a chip: "Melbourne, VIC". */
+export function locationLabel(value: string): string {
+  const at = value.lastIndexOf(', ');
+  if (at === -1) return value;
+  const state = value.slice(at + 2);
+  return `${value.slice(0, at)}, ${STATE_ABBREVIATIONS[state] ?? state}`;
+}

@@ -15,13 +15,13 @@ export interface Location {
 }
 
 /** The path with the base stripped, so the parser sees "/jobs/7" either way. */
-function relative(pathname: string): string {
+export function relativePath(pathname: string): string {
   const path = pathname.startsWith(BASE) ? pathname.slice(BASE.length) : pathname;
   return path.startsWith('/') ? path : `/${path}`;
 }
 
 export function parsePath(pathname: string): Location {
-  const path = relative(pathname).replace(/\/+$/, '') || '/';
+  const path = relativePath(pathname).replace(/\/+$/, '') || '/';
   const [, first, second] = path.split('/');
 
   if (first === 'about') return { route: 'about', jobId: null };

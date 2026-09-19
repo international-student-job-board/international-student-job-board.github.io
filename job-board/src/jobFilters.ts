@@ -19,17 +19,16 @@ export const UNSPECIFIED = '';
 export const EMPTY_FILTERS: FilterState = {
   query: '',
   companies: [],
-  states: [],
+  jobLocations: [],
   types: [],
   employmentTypes: [],
   jobLevels: [],
   workArrangements: [],
   educationLevels: [],
-  cities: [],
   industries: [],
   companyTypes: [],
   growthStages: [],
-  hqCities: [],
+  hqLocations: [],
   anzscos: [],
   invitedOccupations: [],
   unitGroups: [],
@@ -101,17 +100,16 @@ export function filterOpenJobs(jobs: Job[]): Job[] {
  */
 export function matches(job: Job, filters: FilterState, postedAfter: number): boolean {
   if (!allows(filters.companies, job.company.name)) return false;
-  if (!allows(filters.states, job.state)) return false;
+  if (!allows(filters.jobLocations, job.location)) return false;
   if (!allows(filters.types, job.type)) return false;
   if (!allows(filters.employmentTypes, job.employmentType)) return false;
   if (!overlaps(filters.jobLevels, job.jobLevels)) return false;
   if (!overlaps(filters.workArrangements, job.workArrangements)) return false;
   if (!overlaps(filters.educationLevels, job.educationLevels)) return false;
-  if (!allows(filters.cities, job.city)) return false;
   if (!overlaps(filters.industries, job.company.industries)) return false;
   if (!overlaps(filters.companyTypes, job.company.types)) return false;
   if (!allows(filters.growthStages, job.company.growthStage)) return false;
-  if (!allows(filters.hqCities, job.company.hqCity)) return false;
+  if (!allows(filters.hqLocations, job.company.location)) return false;
   // Empty unless the role was in the latest SkillSelect round, so an unselected filter
   // still narrows nothing while a selected one only ever matches invited roles.
   if (!overlaps(filters.invitedOccupations, invitedOccupationCodesFor(job))) return false;
@@ -171,17 +169,16 @@ export function matches(job: Job, filters: FilterState, postedAfter: number): bo
  * per-option counts and the dropdown contents, so the two can never drift apart. */
 const FACET_PICKERS: Record<FilterListKey, (job: Job) => string[]> = {
   companies: (j) => [j.company.name],
-  states: (j) => [j.state],
+  jobLocations: (j) => [j.location],
   types: (j) => [j.type],
   employmentTypes: (j) => [j.employmentType],
   jobLevels: (j) => j.jobLevels,
   workArrangements: (j) => j.workArrangements,
   educationLevels: (j) => j.educationLevels,
-  cities: (j) => [j.city],
   industries: (j) => j.company.industries,
   companyTypes: (j) => j.company.types,
   growthStages: (j) => [j.company.growthStage],
-  hqCities: (j) => [j.company.hqCity],
+  hqLocations: (j) => [j.company.location],
   anzscos: occupationCodesFor,
   invitedOccupations: invitedOccupationCodesFor,
   unitGroups: unitGroupCodesFor,
@@ -255,7 +252,7 @@ export function computeFilterOptions(openJobs: Job[]): FilterOptions {
 
   return {
     companies: from(FACET_PICKERS.companies),
-    states: from(FACET_PICKERS.states),
+    jobLocations: from(FACET_PICKERS.jobLocations),
     types: from(FACET_PICKERS.types),
     employmentTypes: from(FACET_PICKERS.employmentTypes),
     jobLevels: from(FACET_PICKERS.jobLevels, byHierarchy(getConstant('jobLevel'))),
@@ -264,11 +261,10 @@ export function computeFilterOptions(openJobs: Job[]): FilterOptions {
       FACET_PICKERS.educationLevels,
       byHierarchy(getConstant('educationLevel'))
     ),
-    cities: from(FACET_PICKERS.cities),
     industries: from(FACET_PICKERS.industries),
     companyTypes: from(FACET_PICKERS.companyTypes),
     growthStages: from(FACET_PICKERS.growthStages),
-    hqCities: from(FACET_PICKERS.hqCities),
+    hqLocations: from(FACET_PICKERS.hqLocations),
     invitedOccupations: uniqueSorted(openJobs.flatMap(invitedOccupationCodesFor)),
     anzscos: from(occupationCodesFor),
     unitGroups: from(unitGroupCodesFor),

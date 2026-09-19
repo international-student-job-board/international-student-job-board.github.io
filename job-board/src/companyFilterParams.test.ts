@@ -27,7 +27,7 @@ test('the default view writes no query', () => {
 test('a filtered, searched, sorted view round-trips', () => {
   const v = view({
     query: 'health',
-    filters: { states: ['Victoria'], industries: ['fintech'], sponsor: ['yes'] },
+    filters: { hqLocations: ['Melbourne, Victoria'], industries: ['fintech'], sponsor: ['yes'] },
     minRating: 4,
     sort: 'name',
   });
@@ -36,9 +36,12 @@ test('a filtered, searched, sorted view round-trips', () => {
 
 test('readable parameter names, shared with the jobs board where they match', () => {
   const qs = companyViewToParams(
-    view({ filters: { states: ['Victoria'], industries: ['fintech'] }, sort: 'name' })
+    view({
+      filters: { hqLocations: ['Melbourne, Victoria'], industries: ['fintech'] },
+      sort: 'name',
+    })
   ).toString();
-  expect(qs).toContain('state=Victoria');
+  expect(qs).toContain('hq=Melbourne%2C+Victoria');
   expect(qs).toContain('industry=fintech');
   expect(qs).toContain('sort=name');
 });
@@ -68,9 +71,13 @@ test('hasCompanyFilterParams tells a shared link from a bare visit', () => {
 
 test('pruneCompanyFilters keeps only values the data offers', () => {
   const pruned = pruneCompanyFilters(
-    { ...NO_COMPANY_FILTERS, states: ['Victoria', 'Nowhere'], industries: ['fintech'] },
-    { states: ['Victoria', 'Queensland'], industries: ['fintech'] }
+    {
+      ...NO_COMPANY_FILTERS,
+      hqLocations: ['Melbourne, Victoria', 'Nowhere'],
+      industries: ['fintech'],
+    },
+    { hqLocations: ['Melbourne, Victoria', 'Brisbane, Queensland'], industries: ['fintech'] }
   );
-  expect(pruned.states).toEqual(['Victoria']);
+  expect(pruned.hqLocations).toEqual(['Melbourne, Victoria']);
   expect(pruned.industries).toEqual(['fintech']);
 });

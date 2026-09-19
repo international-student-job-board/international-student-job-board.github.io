@@ -1,7 +1,7 @@
 import { lazy, Suspense, useDeferredValue, useEffect, useMemo, useRef } from 'react';
 import './App.css';
 import { useJobsData, useCompanyCount } from './useJobsData';
-import { useAppNavigation } from './useAppNavigation';
+import { useAppNavigation, overlayView } from './useAppNavigation';
 import { useIsMobile } from './useMediaQuery';
 import {
   EMPTY_FILTERS,
@@ -12,7 +12,7 @@ import {
   computeFilterOptions,
 } from './jobFilters';
 import { Header } from './components/Header';
-import { inferAustralianState, isLikelyAustralia } from './geo';
+import { CAPITAL_LOCATIONS, inferAustralianState, isLikelyAustralia } from './geo';
 import { pruneToOptions, filtersToParams, withPage } from './filterParams';
 import { pathFor, parsePath } from './routes';
 import {
@@ -21,9 +21,22 @@ import {
   metaFor,
   jobPostingSchema,
   websiteSchema,
+  landingSchema,
   validThroughFor,
 } from './seo';
-import { trackPageView } from './analytics';
+import {
+  filtersForPath,
+  pathForView,
+  rememberViewOptions,
+  viewHeading,
+  viewLead,
+  viewOf,
+  viewPath,
+} from './landing';
+import { BrowseLinks } from './components/BrowseLinks';
+import { Freshness } from './components/Freshness';
+import { WhatsNew } from './components/WhatsNew';
+import { trackEvent, trackFilterChange, trackPageView, trackRoleOpen } from './analytics';
 import { Filters, countActiveFilters, SALARY_STEPS } from './components/Filters';
 import { FiltersDisclosure } from './components/FiltersDisclosure';
 import { JobCard } from './components/JobCard';
@@ -44,13 +57,6 @@ const AdminAddJob = lazy(() =>
 
 const PAGE_SIZE = 10;
 
-/**
- * The one line in the "New" banner above the job list - edited by hand on
- * each notable release. Kept to a single feature, not a running changelog, so
- * it stays honestly the *latest* thing rather than a list nobody reads.
- */
-const WHATS_NEW = 'Salary ranges and Glassdoor employer ratings now show on every listing.';
-
 export { IS_LOCAL, jobShareUrl } from './routes';
 
 function App() {
@@ -64,6 +70,7 @@ function App() {
     filters,
     setFilters,
     page,
+    settleLanding,
     arrivedWithFilters,
     detailRef,
     listRef,
@@ -112,6 +119,8 @@ function App() {
     [openJobs, deferredFilters]
   );
   const options = useMemo(() => computeFilterOptions(openJobs), [openJobs]);
+  // Kept where an address can be read into filters from anywhere - the back button included.
+  useEffect(() => rememberViewOptions(options), [options]);
 
   /**
    * Once the data is in, settle the filters against it - one time.
@@ -129,24 +138,30 @@ function App() {
     if (status !== 'ready' || syncedFromData.current) return;
     syncedFromData.current = true;
 
+    // An address like /jobs-in/melbourne is a set of filters, and needs the board's options to
+    // say which ("Melbourne, Victoria"). Read here, once they exist.
+    const fromPath = filtersForPath(window.location.pathname, options);
     setFilters((current) => {
+      if (fromPath) return overlayView(pruneToOptions(current, options), fromPath);
       if (arrivedWithFilters.current) return pruneToOptions(current, options);
       if (countActiveFilters(current) > 0) return current;
       // A direct link to one job, with no filters of its own, should open
       // exactly that job - not silently gain default filters the sharer never
       // added, which would leave a reader elsewhere with a dead-looking link.
       if (selectedId) return current;
-      // A visitor outside Australia gets every state - narrowing to "wherever
+      // A visitor outside Australia gets every place - narrowing to "wherever
       // Australia's time zone last resolved to" would be a guess, not a default.
-      const home = isLikelyAustralia() ? inferAustralianState() : '';
+      // The time zone names a state; its capital is where most of that state's roles are.
+      const home = isLikelyAustralia() ? (CAPITAL_LOCATIONS[inferAustralianState()] ?? '') : '';
       return {
         ...current,
-        ...(home && options.states.includes(home) ? { states: [home] } : {}),
+        ...(home && options.jobLocations.includes(home) ? { jobLocations: [home] } : {}),
         ...(options.sponsor.includes('yes') ? { sponsor: ['yes'] } : {}),
         ...(options.students.includes('yes') ? { students: ['yes'] } : {}),
         salaryMin: SALARY_STEPS[0],
       };
     });
+    settleLanding();
     // options is derived from the loaded jobs and stable by the time status flips.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
@@ -165,25 +180,64 @@ function App() {
 
   const selected = visible.find((j) => j.id === selectedId) ?? visible[0] ?? null;
 
+  /** "N new roles in the last 24 hours" clicked: the board narrowed to just those. */
+  const showRecent = (days: number) => {
+    setFilters({ ...EMPTY_FILTERS, postedWithinDays: days });
+    listRef.current?.scrollIntoView?.({ block: 'start' });
+  };
+
   /** The address of a page of this same list - same filters, same role open, the page swapped. */
   const hrefForPage = (n: number) => {
-    const query = withPage(filtersToParams(filters), n).toString();
-    return `${window.location.pathname}${query ? `?${query}` : ''}`;
+    // On a landing page the path already says every filter, so only the page goes in the query.
+    const landing = roleId ? null : viewOf(filters);
+    const target = landing ? pathForView(landing) : null;
+    const query = withPage(target ? new URLSearchParams() : filtersToParams(filters), n).toString();
+    return `${target ?? window.location.pathname}${query ? `?${query}` : ''}`;
   };
 
   /** The address bar, the tab title and the structured data all describe the same thing. */
   const reading = showDetail && route === 'jobs' ? selected : null;
+  // A string, not the view: the view is rebuilt on every render, and this is an effect's dependency.
+  const view = route === 'jobs' && !roleId ? viewOf(filters) : null;
+  const landingPath = view ? viewPath(view) : null;
+  const landingHeading = view ? viewHeading(view) : '';
   useEffect(() => {
     const origin = window.location.origin;
-    const meta = metaFor(route, reading, origin);
+    const meta = metaFor(
+      route,
+      reading,
+      origin,
+      landingPath ? { path: landingPath, heading: landingHeading } : null
+    );
     applyMeta(meta);
     trackPageView(meta);
     applySchema(
       reading
         ? jobPostingSchema(reading, meta.url, validThroughFor(reading))
-        : websiteSchema(origin)
+        : landingPath
+          ? landingSchema(meta, landingHeading, origin)
+          : websiteSchema(origin)
     );
-  }, [route, reading]);
+  }, [route, reading, landingPath, landingHeading]);
+
+  // What people search for, reported once they stop typing rather than on every keystroke.
+  // Whether it found anything is what makes the log useful: a term with no results is a role or
+  // employer people wanted and the board doesn't have.
+  const searched = filters.query.trim();
+  const found = useRef(0);
+  found.current = visible.length;
+  useEffect(() => {
+    if (!searched) return;
+    const timer = window.setTimeout(
+      () =>
+        trackEvent('search', {
+          search_term: searched.slice(0, 80),
+          has_results: found.current > 0 ? 'yes' : 'no',
+        }),
+      1200
+    );
+    return () => window.clearTimeout(timer);
+  }, [searched]);
 
   // Scroll the (sticky) detail panel back to the top when a different job is shown.
   useEffect(() => {
@@ -230,24 +284,31 @@ function App() {
     <div className={`app${showDetail ? ' detail-open' : ''}`} id="top">
       <Header route={route} />
 
-      <header className="page-intro page-intro-home">
-        {/* One <h1> per page. On a role's own address the role's title is it, so the
-            board's headline steps down to a paragraph that looks the same. */}
-        {roleId ? (
-          <p className="page-intro-title">Startup jobs in Australia for international students</p>
-        ) : (
-          <h1 className="page-intro-title">Startup jobs in Australia for international students</h1>
-        )}
-        <p className="page-lead">
-          Jobs sourced from each state's open-sourced database of startups and scaleups, mapped with
-          visa pathways, occupation types and skill assessments.
-        </p>
-        {WHATS_NEW && (
-          <p className="panel-banner">
-            <strong>New: </strong> {WHATS_NEW}
+      {/* The board's headline, its one-line description and what's new belong to the board. On a
+          role's own address the role is the page - its title is the <h1> - so none of it is
+          shown above it. */}
+      {!roleId && (
+        <header className="page-intro page-intro-home">
+          <h1 className="page-intro-title">
+            {view ? landingHeading : 'Startup jobs in Australia for international students'}
+          </h1>
+          {/* On a landing page the lead says what this view holds, in real numbers - the same
+              sentence the page's static HTML opens with. */}
+          <p className="page-lead">
+            {view && status === 'ready'
+              ? viewLead(view, visible.length, new Set(visible.map((job) => job.company.name)).size)
+              : "Jobs sourced from each state's open-sourced database of startups and scaleups, mapped with visa pathways, occupation types and skill assessments."}
           </p>
-        )}
-      </header>
+          {/* That the board is live, and whether anything changed since the reader was last here.
+              Not on a landing page, where the heading is already about something specific. */}
+          {!view && (
+            <div className="intro-status">
+              {status === 'ready' && <Freshness jobs={openJobs} onShow={showRecent} />}
+              <WhatsNew />
+            </div>
+          )}
+        </header>
+      )}
 
       <div className="filters-region" hidden={status === 'ready' && openJobs.length === 0}>
         {/* Open where there is room for it beside the list. On a phone it is closed: open, the
@@ -259,8 +320,14 @@ function App() {
             options={options}
             counts={counts}
             resultCount={visible.length}
-            onChange={setFilters}
-            onClear={() => setFilters(EMPTY_FILTERS)}
+            onChange={(next) => {
+              trackFilterChange(filters, next);
+              setFilters(next);
+            }}
+            onClear={() => {
+              trackEvent('filter_clear', { active: countActiveFilters(filters) });
+              setFilters(EMPTY_FILTERS);
+            }}
           />
         </FiltersDisclosure>
       </div>
@@ -332,7 +399,11 @@ function App() {
                       key={job.id}
                       job={job}
                       selected={selected?.id === job.id}
-                      onSelect={openJob}
+                      onSelect={(id) => {
+                        const job = visible.find((j) => j.id === id);
+                        if (job) trackRoleOpen(job);
+                        openJob(id);
+                      }}
                     />
                   ))}
                 </ul>
@@ -348,23 +419,27 @@ function App() {
             ))}
         </section>
 
-        <main className="detail-panel" ref={detailRef}>
-          <button type="button" className="detail-back" onClick={() => setShowDetail(false)}>
-            ← Back to jobs
-          </button>
-          {selected ? (
-            <JobDetail job={selected} titleLevel={roleId ? 1 : 2} />
-          ) : (
-            listReady &&
-            listJobs.length > 0 && (
-              <div className="detail-empty">
-                <h2>Find work at an Australian startup</h2>
-                <p>Select a role to see the details . . .</p>
-              </div>
-            )
-          )}
+        <main className="detail-panel">
+          <div className="detail-scroll" ref={detailRef}>
+            <button type="button" className="detail-back" onClick={() => setShowDetail(false)}>
+              ← Back to jobs
+            </button>
+            {selected ? (
+              <JobDetail job={selected} titleLevel={roleId ? 1 : 2} />
+            ) : (
+              listReady &&
+              listJobs.length > 0 && (
+                <div className="detail-empty">
+                  <h2>Find work at an Australian startup</h2>
+                  <p>Select a role to see the details . . .</p>
+                </div>
+              )
+            )}
+          </div>
         </main>
       </div>
+
+      {status === 'ready' && <BrowseLinks jobs={openJobs} />}
 
       <Footer />
     </div>

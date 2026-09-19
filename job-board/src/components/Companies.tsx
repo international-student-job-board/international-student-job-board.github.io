@@ -25,7 +25,7 @@ import { FiltersDisclosure } from './FiltersDisclosure';
 import { RatingFilter, RATING_RUNGS, RATING_UNSPECIFIED, ratingChipLabel } from './RatingFilter';
 import { GlassdoorRating } from './GlassdoorRating';
 import { NOT_SPECIFIED } from '../format';
-import { prettyLabel } from '../labels';
+import { prettyLabel, locationLabel } from '../labels';
 import { MANUAL_REVIEW_NOTE, SPONSOR_NOTE, SPONSOR_REGISTER_URL } from '../references';
 import { useIsMobile } from '../useMediaQuery';
 import { ActiveFilters, ActiveChip } from './ActiveFilters';
@@ -72,11 +72,10 @@ const FIELDS: {
   /** Given the accent, because they are what this audience came for. */
   accent?: boolean;
 }[] = [
-  { key: 'states', label: 'State', pick: (c) => [c.state] },
+  { key: 'hqLocations', label: 'HQ location', pick: (c) => [c.location], format: locationLabel },
   { key: 'industries', label: 'Industry', pick: (c) => c.industries, format: prettyLabel },
   { key: 'companyTypes', label: 'Model & tech', pick: (c) => c.types, format: prettyLabel },
   { key: 'growthStages', label: 'Stage', pick: (c) => [c.growthStage], format: prettyLabel },
-  { key: 'hqCities', label: 'Head office', pick: (c) => [c.hqCity], format: prettyLabel },
   {
     key: 'openRoles',
     label: 'Open roles',
@@ -113,7 +112,7 @@ const QUICK_KEYS: CompanyFilterKey[] = ['sponsor', 'students'];
 /** The modal's sections - the same headings the job board uses. Glassdoor rating lives on
  * the bar itself instead (see the RatingFilter beside the quick filters below), not in here. */
 const MODAL_GROUPS: { title: string; keys: CompanyFilterKey[] }[] = [
-  { title: 'Where', keys: ['states', 'hqCities'] },
+  { title: 'Where', keys: ['hqLocations'] },
   { title: 'The company', keys: ['industries', 'companyTypes', 'growthStages', 'openRoles'] },
 ];
 

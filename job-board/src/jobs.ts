@@ -1,7 +1,7 @@
 // content/jobs.csv is the board: one row per open role, with the employer's columns
 // repeated on each of its roles.
 
-import { Job, Company, Salary, SalarySource, SalaryScope } from './types';
+import { Job, Company, Salary, SalarySource, SalaryScope, placeKey } from './types';
 import {
   parseCsv,
   splitList,
@@ -40,6 +40,8 @@ export const COLUMNS = [
   'Industries',
   'HQ city',
   'HQ address',
+  'Company city',
+  'Company state',
   'Tagline',
   'LinkedIn',
   'Job openings',
@@ -58,6 +60,8 @@ export const COLUMNS = [
   'OSCA occupation',
   'OSCA code',
   'Job city',
+  'Job location city',
+  'Job location state',
   'Job country',
   'Date posted',
   'Job URL',
@@ -92,6 +96,7 @@ function toCompany(row: Record<string, string>): Company {
     employees: (row['Employees'] ?? '').trim(),
     hqCity: (row['HQ city'] ?? '').trim(),
     hqAddress: (row['HQ address'] ?? '').trim(),
+    location: placeKey(row['Company city'], row['Company state']),
     tagline: (row['Tagline'] ?? '').trim(),
     linkedin: (row['LinkedIn'] ?? '').trim(),
     openings: Number.parseInt(row['Job openings'] ?? '', 10) || 0,
@@ -167,6 +172,7 @@ function toJob(row: Record<string, string>, company: Company): Job {
     oscaNames: splitNames(row['OSCA occupation']),
     invitedScore: invitedScore(row['Invited Score']),
     city: (row['Job city'] ?? '').trim(),
+    location: placeKey(row['Job location city'], row['Job location state']),
     state: (row['State'] ?? '').trim(),
     country: (row['Job country'] ?? '').trim(),
     posted: (row['Advert posted'] || row['Date posted'] || '').trim(),

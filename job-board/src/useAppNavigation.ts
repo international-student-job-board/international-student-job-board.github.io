@@ -10,6 +10,7 @@ import {
 } from './filterParams';
 import { Route, parsePath, pathFor, pathFromLegacyHash } from './routes';
 import { FilterState } from './components/Filters';
+import { filtersForPath, isLandingPath, pathForView, viewOf } from './landing';
 
 /** The page the address asks for on arrival. */
 const pageFromUrl = (): number =>
@@ -20,11 +21,28 @@ const isStacked = (): boolean =>
   typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 900px)').matches;
 
 /** The filters the address asks for on arrival - a shared or bookmarked view. */
-const filtersFromUrl = (): FilterState =>
-  filtersFromParams(
+const filtersFromUrl = (): FilterState => {
+  const fromQuery = filtersFromParams(
     new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search),
     EMPTY_FILTERS
   );
+  // A landing address (/jobs-in/melbourne) is filters too, written as a path. Known only once the
+  // board has loaded; until then App reads it once the options exist.
+  const fromPath = typeof window === 'undefined' ? null : filtersForPath(window.location.pathname);
+  return fromPath ? overlayView(fromQuery, fromPath) : fromQuery;
+};
+
+/** `filters` with the three a landing address sets - place, kind of work, sponsors - taken from
+ * `view` wherever it names one; everything else the query asked for stays. */
+export function overlayView(filters: FilterState, view: FilterState): FilterState {
+  return {
+    ...filters,
+    jobLocations: view.jobLocations.length ? view.jobLocations : filters.jobLocations,
+    types: view.types.length ? view.types : filters.types,
+    sponsor: view.sponsor.length ? view.sponsor : filters.sponsor,
+    jobLevels: view.jobLevels.length ? view.jobLevels : filters.jobLevels,
+  };
+}
 
 export interface AppNavigation {
   route: Route;
@@ -35,11 +53,16 @@ export interface AppNavigation {
   setFilters: (update: FilterState | ((current: FilterState) => FilterState)) => void;
   page: number;
   setPage: (page: number) => void;
+  /** Whether the address is a landing page's and its filters are still to be read from it - true
+   * until App has the board's options to resolve it with, so the address isn't rewritten to
+   * something else in the meantime. */
+  landingPending: boolean;
+  settleLanding: () => void;
   /** Whether the reader arrived on a link that already carried filters: if so the board
    * leaves them be rather than layering an inferred home state on top. Read once, after the
    * data has loaded, to settle the initial filters - see App's own effect for that. */
   arrivedWithFilters: RefObject<boolean>;
-  detailRef: RefObject<HTMLElement | null>;
+  detailRef: RefObject<HTMLDivElement | null>;
   listRef: RefObject<HTMLElement | null>;
   openJob: (id: string) => void;
   goToPage: (next: number) => void;
@@ -58,7 +81,11 @@ export function useAppNavigation(): AppNavigation {
   const arrivedWithFilters = useRef(
     typeof window !== 'undefined' &&
       (hasFilterParams(new URLSearchParams(window.location.search)) ||
-        new URLSearchParams(window.location.search).has(PAGE_PARAM))
+        new URLSearchParams(window.location.search).has(PAGE_PARAM) ||
+        isLandingPath(window.location.pathname))
+  );
+  const [landingPending, setLandingPending] = useState(
+    () => typeof window !== 'undefined' && isLandingPath(window.location.pathname)
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // On mobile the list and detail are separate "pages"; this flips to the detail page when a
@@ -66,7 +93,7 @@ export function useAppNavigation(): AppNavigation {
   const [showDetail, setShowDetail] = useState(false);
   const [route, setRoute] = useState<Route>(() => parsePath(window.location.pathname).route);
   const [page, setPage] = useState(pageFromUrl);
-  const detailRef = useRef<HTMLElement>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLElement>(null);
 
   /**
@@ -113,8 +140,20 @@ export function useAppNavigation(): AppNavigation {
 
       event.preventDefault();
       if (url.pathname !== window.location.pathname) {
+        const leavingLanding = isLandingPath(window.location.pathname);
         window.history.pushState(null, '', url.pathname);
         window.scrollTo({ top: 0 });
+        // A link to a landing page is a link to a set of filters, so following one sets them
+        // (and starts at page 1); any other link keeps the filters the reader has.
+        const view = filtersForPath(url.pathname);
+        if (view) {
+          setFilters(view);
+          setPage(1);
+        } else if (leavingLanding && url.pathname === pathFor('jobs')) {
+          // "All roles" from a landing page means all of them, not the city it was showing.
+          setFilters(EMPTY_FILTERS);
+          setPage(1);
+        }
       }
       read();
     };
@@ -134,12 +173,23 @@ export function useAppNavigation(): AppNavigation {
    * - which role is open - is left untouched.
    */
   useEffect(() => {
-    if (route !== 'jobs') return;
-    const qs = withPage(filtersToParams(filters), page).toString();
+    if (route !== 'jobs' || landingPending) return;
+    // The address says everything the filters do, so it is written as the shortest thing that
+    // does. A role open: its own path, the filters in the query. No role, and the filters are
+    // exactly a landing view (one city, one kind of work, sponsors): that view's own path, and
+    // nothing in the query but the page. Anything else: the board, the filters in the query.
+    const { jobId } = parsePath(window.location.pathname);
+    const view = jobId ? null : viewOf(filters);
+    const landingPath = view ? pathForView(view) : null;
+    const pathname = jobId ? window.location.pathname : (landingPath ?? pathFor('jobs'));
+    const qs = withPage(
+      landingPath ? new URLSearchParams() : filtersToParams(filters),
+      page
+    ).toString();
     const search = qs ? `?${qs}` : '';
-    if (search === window.location.search) return;
-    window.history.replaceState(window.history.state, '', `${window.location.pathname}${search}`);
-  }, [filters, page, route, selectedId]);
+    if (search === window.location.search && pathname === window.location.pathname) return;
+    window.history.replaceState(window.history.state, '', `${pathname}${search}`);
+  }, [filters, page, route, selectedId, landingPending]);
 
   // Back to page 1 whenever the filters change. Compared by what they say, not by identity: the
   // board rebuilds the filter object when it settles them against the data, and a link to page
@@ -177,6 +227,8 @@ export function useAppNavigation(): AppNavigation {
   return {
     route,
     selectedId,
+    landingPending,
+    settleLanding: () => setLandingPending(false),
     showDetail,
     setShowDetail,
     filters,

@@ -143,8 +143,8 @@ export function About() {
           for the latest information on visa requirements and eligibility.
         </p>
         <p>
-          This board runs on GitHub Pages today, with a proper backend on the way - we wanted it
-          live and useful for job hunting sooner rather than later, and are building the rest of it
+          This board is hosted on GitHub Pages currently, a proper backend is on the way, we wanted it
+          out there for job hunting students and grads sooner rather than later, and are building the rest of it
           in the open.
         </p>
         <p>

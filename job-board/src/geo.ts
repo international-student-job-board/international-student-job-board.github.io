@@ -181,6 +181,19 @@ const TIME_ZONE_STATES: Record<string, string> = {
   'Australia/ACT': 'Australian Capital Territory',
 };
 
+/** Where a state's roles mostly are, as the location filters spell it - what a reader whose time
+ * zone says Victoria starts on, now that a state is no longer something to filter by. */
+export const CAPITAL_LOCATIONS: Record<string, string> = {
+  'New South Wales': 'Sydney, New South Wales',
+  Victoria: 'Melbourne, Victoria',
+  Queensland: 'Brisbane, Queensland',
+  'Western Australia': 'Perth, Western Australia',
+  'South Australia': 'Adelaide, South Australia',
+  Tasmania: 'Hobart, Tasmania',
+  'Northern Territory': 'Darwin, Northern Territory',
+  'Australian Capital Territory': 'Canberra, Australian Capital Territory',
+};
+
 export function inferAustralianState(): string {
   try {
     const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;

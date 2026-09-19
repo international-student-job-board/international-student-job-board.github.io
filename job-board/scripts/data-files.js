@@ -25,12 +25,14 @@ const path = require('path');
 // these two must agree, and the header line in the file is what proves it.
 const JOB_COLUMNS = [
   'Company name', 'State', 'Segment', 'Type', 'Website', 'Growth stage', 'Employees',
-  'Industries', 'HQ city', 'HQ address', 'Tagline', 'LinkedIn',
+  'Industries', 'HQ city', 'HQ address', 'Company city', 'Company state',
+  'Tagline', 'LinkedIn',
   'Job openings', 'Accredited sponsor', 'Hires international students',
   'Glassdoor rating', 'Glassdoor reviews', 'Glassdoor URL',
   'Job title', 'Job type', 'ANZSCO occupation', 'ANZSCO 2022', 'ANZSCO 2013',
   'ANZSCO unit group', 'ANZSCO unit group title', 'OSCA occupation', 'OSCA code',
-  'Job city', 'Job country', 'Date posted', 'Job URL', 'Job ID', 'Invited Score',
+  'Job city', 'Job location city', 'Job location state', 'Job country',
+  'Date posted', 'Job URL', 'Job ID', 'Invited Score',
   // Enriched from levels.fyi by find-startups/enrich.py.
   'Employment type', 'Job level', 'Work arrangement', 'Education level',
   'Base salary min', 'Base salary max', 'Base salary currency',

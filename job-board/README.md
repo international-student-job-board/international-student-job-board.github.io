@@ -88,6 +88,30 @@ Two rules worth knowing when touching the page structure:
   board, the headline is the `<h1>` and the role beside the list is an `<h2>`. They
   look identical either way - size comes from the class, not the tag (*"separate
   visual hierarchy from document hierarchy"*).
+- **The page scrolls; the top bar and the open role stay.** On the board and the
+  companies page alike, the intro, filters and list move up together as you read, the
+  top bar is sticky, and on the board the role beside the list is pinned
+  (`.detail-panel`, `position: sticky`). The role can be longer than the window, so what
+  scrolls inside the pane is `.detail-scroll` - and only once the pane is *pinned*
+  (`@container scroll-state(stuck: top)`). Before that the wheel belongs to the page:
+  scrolling the pane while its bottom edge was still below the fold ran the role out of
+  sight and jammed a few lines short of the end. Browsers without scroll-state queries
+  (Firefox, Safari so far) scroll the pane throughout and hand the wheel to the page at
+  its ends. An edge shadow (`background-attachment: local`) shows there is more. Anything
+  that scrolls to an element must clear the bar with `scroll-margin-top: var(--topbar-h)`.
+- **The companies page uses the board's frame.** Both are: intro on white, the filter
+  band full width, then results on the tinted surface, all on `--gutter` so the
+  headline, filters and first card share a left edge. Don't give one page its own
+  padding - change the frame and both move.
+- **Pagination is links, and the page is in the address.** `<Pagination>` renders
+  `‹ Prev  3 4 5  Next ›` (`1 2 3 Next ›` on the first page, `‹ Prev 9 10` on the last),
+  each control a real `<a href="…?page=N">` so it can be opened in a new tab or followed
+  by a crawler. `?page=N` counts as a view, like filters: arriving on one does not swap
+  the default filters in underneath it. The page resets only when the filters *say*
+  something different, not when the object is rebuilt.
+- **"Last 24 hours" is calendar days.** Roles carry a date, not a time, so `cutoff` in
+  `jobFilters.ts` counts days back from today; a rolling `now - 24h` was empty by
+  mid-morning even on fresh data. With no time to go on, it means today and yesterday.
 - **A role's state is not known.** The CSV's `State` column is the employer's, so
   pairing it with a role's city prints "Melbourne, New South Wales" on ~15% of roles.
   Nothing outside the employer's own card shows it, and structured data omits
@@ -316,3 +340,62 @@ is what goes live.
   the server that backs it binds to loopback.
 - **Design.** The UI follows *Refactoring UI*; the reasoning behind specific
   choices is in comments in `src/App.css` next to the rules they explain.
+
+## Where a role is: two location filters, and the pages built on them
+
+The old State / Location / Head office filters are gone. The pipeline (`find-startups`,
+`python3 build.py locate`) works out a **city and state** for each company and each role from
+the free text Dealroom gives - a suburb, a council, "Sunshine Coast Regional" - so the filters
+list one thing per place, "Melbourne, Victoria", not 100 spellings. The four columns are
+`Company city`, `Company state`, `Job location city`, `Job location state`; `Job city` and
+`HQ city` stay as the advert wrote them. The app folds each pair into one value
+(`placeKey`), and the two filters are **Job location** and **Employer HQ location** (the
+companies page has the second only). A role whose place is a name in several states
+("Ashfield") is left blank rather than guessed - blank simply isn't in the filter. The row's
+own `State` is the employer's, so it is never used for the role's place.
+
+### Landing pages: the board with filters on
+
+`/jobs-in/melbourne`, `/roles/sales`, `/jobs-in/sydney/backend-development`,
+`/visa-sponsorship`, `/visa-sponsorship/in/perth`, `/visa-sponsorship/roles/legal` - each is
+the board with those filters switched on, and the address is the filters written as a path:
+
+- **Same address either way.** The app reads a landing address back into filters
+  (`src/landing.ts`), and whenever the filters are *exactly* one of those views - one place,
+  one kind of work, sponsors only, nothing else on - the address bar shows that path. Add any
+  other filter and it becomes `/?...` with the query. Open a role and it is
+  `/jobs/ID?location=...`, so the view rides along.
+- **A page needs ten roles** (`MIN_ROLES`). `scripts/landing-pages.js` decides which exist and
+  writes what each says from its own roles - heading, count, employers, sponsor share, the pay
+  range (only if five or more roles state one). `seo-assets.js` writes each as a real file with
+  `CollectionPage` + `BreadcrumbList` data, links onward to its neighbours, and lists it in the
+  sitemap. The home, role and landing pages link to the pages that apply, and the board has a
+  "Browse jobs" band (`BrowseLinks`) with the same links.
+- **Two implementations, one contract.** The generator (Node) and `src/landing.ts` (the app)
+  each write slugs, headings and addresses; `src/landing.test.ts` runs both on the same input.
+  Change one and that test tells you about the other.
+- A reader who lands on an address the board has no such place for (`/jobs-in/atlantis`) gets
+  the whole board at `/`.
+
+### "Updated every day", and what's new
+
+`Freshness` says the board is updated daily and shows how many roles arrived in the last 24
+hours - but only while the newest role is at most two days old (`freshness.ts`); after a missed
+refresh it says "Last updated <date>" instead, so it never claims what the data contradicts.
+`WhatsNew` shows the newest entry of `src/whatsNew.ts`, dated, dismissible (remembered per
+entry, and it works with storage blocked), retiring after 21 days, with earlier entries behind
+"Earlier updates". Add an entry there when something notable ships.
+
+### Events
+
+Besides page views, `src/analytics.ts` sends: `filter_change` (which filter, which value,
+added/removed), `filter_clear`, `search` (after typing stops, with `has_results`), `role_open`, `apply_click`,
+`browse_link`, `freshness_click`, `whats_new`. Role events carry job type, location and whether
+the employer sponsors - nothing about the person. All are no-ops without the tag.
+
+### Static pages are checked at build
+
+`seo-assets.js` fails the build if a page's description was written wrongly. It used to pass
+descriptions through `String.replace` with a replacement *string*, where `$1` is a
+back-reference - so "Pay around A$104k" spliced a fragment of the page's own `<meta>` into the
+description of every role paid over A$100k.

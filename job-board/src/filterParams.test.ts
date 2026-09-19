@@ -9,17 +9,16 @@ import { FilterState } from './components/Filters';
 const EMPTY: FilterState = {
   query: '',
   companies: [],
-  states: [],
+  jobLocations: [],
   types: [],
   employmentTypes: [],
   jobLevels: [],
   workArrangements: [],
   educationLevels: [],
-  cities: [],
   industries: [],
   companyTypes: [],
   growthStages: [],
-  hqCities: [],
+  hqLocations: [],
   anzscos: [],
   invitedOccupations: [],
   unitGroups: [],
@@ -45,7 +44,7 @@ test('a filtered, searched view round-trips', () => {
   const f: FilterState = {
     ...EMPTY,
     query: 'react',
-    states: ['Victoria', 'New South Wales'],
+    jobLocations: ['Melbourne, Victoria', 'Sydney, New South Wales'],
     jobLevels: ['Senior'],
     workArrangements: ['Remote'],
     anzscos: ['261313'],
@@ -61,12 +60,12 @@ test('a filtered, searched view round-trips', () => {
 test('readable parameter names', () => {
   const qs = filtersToParams({
     ...EMPTY,
-    states: ['Victoria'],
+    jobLocations: ['Melbourne, Victoria'],
     jobLevels: ['Senior'],
     salaryMin: 90000,
     minRating: 3.5,
   }).toString();
-  expect(qs).toContain('state=Victoria');
+  expect(qs).toContain('location=Melbourne%2C+Victoria');
   expect(qs).toContain('level=Senior');
   expect(qs).toContain('salarymin=90000');
   expect(qs).toContain('rating=3.5');
@@ -85,9 +84,11 @@ test('the "only unrated" rating choice round-trips', () => {
 });
 
 test('junk and out-of-range params are dropped, not honoured', () => {
-  const params = new URLSearchParams('state=Victoria&nonsense=1&posted=999&rating=7&salarymin=-5');
+  const params = new URLSearchParams(
+    'location=Melbourne%2C+Victoria&nonsense=1&posted=999&rating=7&salarymin=-5'
+  );
   const out = filtersFromParams(params, EMPTY);
-  expect(out.states).toEqual(['Victoria']);
+  expect(out.jobLocations).toEqual(['Melbourne, Victoria']);
   expect(out.postedWithinDays).toBe(0);
   expect(out.minRating).toBe(0);
   expect(out.salaryMin).toBe(0);
@@ -102,23 +103,25 @@ test('a min above the max is dropped so the range still makes sense', () => {
 test('hasFilterParams tells a shared link from a bare visit', () => {
   expect(hasFilterParams(new URLSearchParams(''))).toBe(false);
   expect(hasFilterParams(new URLSearchParams('ref=twitter'))).toBe(false);
-  expect(hasFilterParams(new URLSearchParams('state=Victoria'))).toBe(true);
+  expect(hasFilterParams(new URLSearchParams('location=Melbourne%2C+Victoria'))).toBe(true);
   expect(hasFilterParams(new URLSearchParams('q=react'))).toBe(true);
 });
 
 test('pruneToOptions keeps only values the data can offer', () => {
-  const f = { ...EMPTY, companies: ['Acme', 'Ghost Co'], states: ['Victoria'] };
+  const f = { ...EMPTY, companies: ['Acme', 'Ghost Co'], jobLocations: ['Melbourne, Victoria'] };
   const pruned = pruneToOptions(f, {
     ...({} as Record<string, string[]>),
     companies: ['Acme'],
-    states: ['Victoria', 'Queensland'],
+    jobLocations: ['Melbourne, Victoria', 'Brisbane, Queensland'],
   } as never);
   expect(pruned.companies).toEqual(['Acme']);
-  expect(pruned.states).toEqual(['Victoria']);
+  expect(pruned.jobLocations).toEqual(['Melbourne, Victoria']);
 });
 
 test('pruneToOptions returns the same object when nothing needs dropping', () => {
-  const f = { ...EMPTY, states: ['Victoria'] };
-  const same = pruneToOptions(f, { states: ['Victoria', 'Queensland'] } as never);
+  const f = { ...EMPTY, jobLocations: ['Melbourne, Victoria'] };
+  const same = pruneToOptions(f, {
+    jobLocations: ['Melbourne, Victoria', 'Brisbane, Queensland'],
+  } as never);
   expect(same).toBe(f);
 });

@@ -19,17 +19,16 @@ import {
 /** The list-valued filters, and the short query name each one uses. */
 const LIST_PARAM: Record<FilterListKey, string> = {
   companies: 'company',
-  states: 'state',
+  jobLocations: 'location',
   types: 'type',
   employmentTypes: 'employment',
   jobLevels: 'level',
   workArrangements: 'arrangement',
   educationLevels: 'education',
-  cities: 'city',
   industries: 'industry',
   companyTypes: 'model',
   growthStages: 'stage',
-  hqCities: 'hq',
+  hqLocations: 'hq',
   anzscos: 'anzsco',
   invitedOccupations: 'invited',
   unitGroups: 'unitgroup',
@@ -78,7 +77,7 @@ export function filtersToParams(filters: FilterState): URLSearchParams {
   return params;
 }
 
-/** `?state=Victoria&level=Senior` as a whole filter state, merged onto `base`. */
+/** `?location=Melbourne%2C+Victoria&level=Senior` as a whole filter state, merged onto `base`. */
 export function filtersFromParams(params: URLSearchParams, base: FilterState): FilterState {
   const next: FilterState = { ...base };
 
@@ -157,11 +156,10 @@ export function pruneToOptions(
  * ------------------------------------------------------------------ */
 
 const COMPANY_LIST_PARAM: Record<CompanyFilterKey, string> = {
-  states: 'state',
+  hqLocations: 'hq',
   industries: 'industry',
   companyTypes: 'model',
   growthStages: 'stage',
-  hqCities: 'hq',
   openRoles: 'openroles',
   sponsor: 'sponsor',
   students: 'students',

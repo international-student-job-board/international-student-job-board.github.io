@@ -19,7 +19,7 @@ import {
   VISA_NAMES,
 } from '../references';
 import { NOT_SPECIFIED, formatMoney } from '../format';
-import { prettyLabel } from '../labels';
+import { prettyLabel, locationLabel } from '../labels';
 import { useIsMobile } from '../useMediaQuery';
 import { ActiveFilters, ActiveChip } from './ActiveFilters';
 import { FilterSelect, SelectOption } from './FilterSelect';
@@ -33,7 +33,8 @@ const base = process.env.PUBLIC_URL || '';
 export interface FilterState {
   query: string;
   companies: string[];
-  states: string[];
+  /** Where the role is - "Melbourne, Victoria". */
+  jobLocations: string[];
   types: string[];
   /** Full-time / Part-time / … - a different question from `types`, which is the
    * Dealroom role category ("Backend development"). */
@@ -41,12 +42,12 @@ export interface FilterState {
   jobLevels: string[];
   workArrangements: string[];
   educationLevels: string[];
-  cities: string[];
   industries: string[];
   /** The company's own tags - what it makes and how it makes money. */
   companyTypes: string[];
   growthStages: string[];
-  hqCities: string[];
+  /** Where the employer is headquartered, in the same form. */
+  hqLocations: string[];
   anzscos: string[];
   invitedOccupations: string[];
   unitGroups: string[];
@@ -68,17 +69,16 @@ export interface FilterState {
 /** The list-valued keys, which are exactly the keys of FilterOptions. */
 export type FilterListKey =
   | 'companies'
-  | 'states'
+  | 'jobLocations'
   | 'types'
   | 'employmentTypes'
   | 'jobLevels'
   | 'workArrangements'
   | 'educationLevels'
-  | 'cities'
   | 'industries'
   | 'companyTypes'
   | 'growthStages'
-  | 'hqCities'
+  | 'hqLocations'
   | 'anzscos'
   | 'invitedOccupations'
   | 'unitGroups'
@@ -154,17 +154,16 @@ const OCCUPATION_LIST_LINK = {
 
 const FIELDS: FieldMeta[] = [
   { key: 'companies', label: 'Company' },
-  { key: 'states', label: 'State' },
+  { key: 'jobLocations', label: 'Job location', format: locationLabel },
   { key: 'types', label: 'Job type', format: prettyLabel },
   { key: 'employmentTypes', label: 'Employment type' },
   { key: 'jobLevels', label: 'Job level' },
   { key: 'workArrangements', label: 'Work arrangement' },
   { key: 'educationLevels', label: 'Education' },
-  { key: 'cities', label: 'Location', format: prettyLabel },
   { key: 'industries', label: 'Industry', format: prettyLabel },
   { key: 'companyTypes', label: 'Model & tech', format: prettyLabel },
   { key: 'growthStages', label: 'Stage', format: prettyLabel },
-  { key: 'hqCities', label: 'Head office', format: prettyLabel },
+  { key: 'hqLocations', label: 'Employer HQ location', format: locationLabel },
   { key: 'anzscos', label: 'ANZSCO occupations', format: anzscoLabel, tooltip: ANZSCO_NOTE },
   {
     key: 'invitedOccupations',
@@ -224,7 +223,7 @@ const QUICK_KEYS: FilterListKey[] = [
 
 /** The modal's filters, in sections - the same headings the companies page uses. */
 const MODAL_GROUPS: { title: string; keys: (FilterListKey | 'rating')[] }[] = [
-  { title: 'Where', keys: ['states', 'cities', 'hqCities'] },
+  { title: 'Where', keys: ['jobLocations', 'hqLocations'] },
   {
     title: 'The role',
     keys: ['types', 'employmentTypes', 'jobLevels', 'workArrangements', 'educationLevels'],

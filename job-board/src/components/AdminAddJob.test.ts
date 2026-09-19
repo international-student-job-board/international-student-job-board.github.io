@@ -88,13 +88,18 @@ describe('the row lands in the right columns', () => {
 
   test('the form knows every column except the ones the pipeline derives', () => {
     // 'Job ID' is assigned by the server; the rest are filled by the data pipeline -
-    // the SkillSelect round, the advert's own date, the Glassdoor scrape - never typed.
+    // the SkillSelect round, the advert's own date, the Glassdoor scrape, the city and state
+    // worked out from the free-text places - never typed.
     const known = new Set(FIELDS.map((f) => f.key));
     const missing = COLUMNS.filter((c) => !known.has(c));
     expect(missing).toEqual([
+      'Company city',
+      'Company state',
       'Glassdoor rating',
       'Glassdoor reviews',
       'Glassdoor URL',
+      'Job location city',
+      'Job location state',
       'Job ID',
       'Invited Score',
       'Advert posted',

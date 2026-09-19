@@ -22,6 +22,15 @@
 
 const fs = require('fs');
 const path = require('path');
+const {
+  landingPages,
+  pathFor: landingPathFor,
+  splitLocation,
+  splitLevels,
+  LEVEL_ORDER,
+  typeLabel,
+  STATE_ABBREVIATIONS,
+} = require('./landing-pages');
 const { contentPath, DATA_FILES } = require('./data-files');
 const { recentWindow, RECENT_DAYS } = require('./recent-window');
 
@@ -86,19 +95,25 @@ const esc = (value) =>
  */
 function writePage(template, { path: urlPath, title, description, schema, body }) {
   const url = siteUrl + urlPath;
-  const head = template
-    .replace(/<title>[\s\S]*?<\/title>/, `<title>${esc(title)}</title>`)
-    .replace(
-      /(<meta name="description" content=")[^"]*(")/,
-      `$1${esc(description)}$2`
-    )
-    .replace(/(<link rel="canonical" href=")[^"]*(")/, `$1${esc(url)}$2`)
-    .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${esc(title)}$2`)
-    .replace(
-      /(<meta property="og:description" content=")[^"]*(")/,
-      `$1${esc(description)}$2`
-    )
-    .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${esc(url)}$2`);
+  // Every replacement is a function, never a string. A replacement string is read for `$1`, `$&`
+  // and the like, and a role's description says "Pay around A$104k": the `$1` in it was replaced
+  // with the text the pattern had just captured, splicing a fragment of the page's own <meta>
+  // into the description of every role paid over A$100k.
+  const attr = (pattern, value) => (text) => text.replace(pattern, (_, open, close) => `${open}${esc(value)}${close}`);
+  const head = [
+    (text) => text.replace(/<title>[\s\S]*?<\/title>/, () => `<title>${esc(title)}</title>`),
+    attr(/(<meta name="description" content=")[^"]*(")/, description),
+    attr(/(<link rel="canonical" href=")[^"]*(")/, url),
+    attr(/(<meta property="og:title" content=")[^"]*(")/, title),
+    attr(/(<meta property="og:description" content=")[^"]*(")/, description),
+    attr(/(<meta property="og:url" content=")[^"]*(")/, url),
+  ].reduce((text, apply) => apply(text), template);
+
+  // A replacement that went wrong shows up as a second copy of the tag it was meant to fill in.
+  // Fail the build rather than publish a page with its own <meta> inside its description.
+  if ((head.match(/<meta name="description"/g) || []).length !== 1) {
+    throw new Error(`seo-assets: the description on ${urlPath} was written into the page wrongly`);
+  }
 
   const withSchema = schema
     ? head.replace(
@@ -106,7 +121,7 @@ function writePage(template, { path: urlPath, title, description, schema, body }
         // The id is the one src/seo.ts's applySchema looks for. Without it the app,
         // once mounted, adds a second JobPosting block beside this one instead of
         // replacing it - and two blocks for one role can disagree.
-        `<script type="application/ld+json" id="page-schema">${JSON.stringify(schema)}</script></head>`
+        () => `<script type="application/ld+json" id="page-schema">${JSON.stringify(schema)}</script></head>`
       )
     : head;
 
@@ -114,7 +129,10 @@ function writePage(template, { path: urlPath, title, description, schema, body }
   // so this reads as a lightweight version of the page rather than raw HTML for
   // the moment before React mounts and replaces it.
   const html = body
-    ? withSchema.replace('<div id="root"></div>', `<div id="root"><div class="preboot">${body}</div></div>`)
+    ? withSchema.replace(
+        '<div id="root"></div>',
+        () => `<div id="root"><div class="preboot">${body}</div></div>`
+      )
     : withSchema;
 
   const dir = path.join(outDir, urlPath.replace(/^\//, ''));
@@ -141,6 +159,22 @@ function moneyAud(min, max, estimate) {
   const hi = k(max);
   if (lo && hi) return lo === hi ? lo : `${lo}-${hi}`;
   return lo || hi || k(estimate);
+}
+
+/** "Melbourne" + "Victoria" -> "Melbourne, Victoria"; no city, no place. */
+function placeKey(city, state) {
+  const name = String(city || '').trim();
+  if (!name) return '';
+  const region = String(state || '').trim();
+  return region ? `${name}, ${region}` : name;
+}
+
+/** The middle of a pay range, else the estimate, else 0. */
+function midpoint(min, max, estimate) {
+  const [lo, hi] = [min, max].map((n) => (Number.isFinite(n) && n > 0 ? n : 0));
+  if (lo && hi) return Math.round((lo + hi) / 2);
+  if (lo || hi) return lo || hi;
+  return Number.isFinite(estimate) && estimate > 0 ? Math.round(estimate) : 0;
 }
 
 /** The numeric id in a LinkedIn job URL, or 0. LinkedIn allocates them roughly in time order. */
@@ -179,16 +213,28 @@ function readJobs() {
         type: at(cells, 'Job type').trim(),
         occupation: at(cells, 'ANZSCO occupation').trim(),
         city: at(cells, 'Job city').trim(),
-        // No state: the column tracks the employer, not the role (see jobLocation in
-        // src/types.ts), so beside a role's city it prints "Melbourne, New South Wales".
+        // The role's own city and state, worked out by the pipeline from where the advert
+        // says it is. The row's `State` column is the employer's, which is why it isn't
+        // used: beside a role's city it printed "Melbourne, New South Wales".
+        locationCity: at(cells, 'Job location city').trim(),
+        locationState: at(cells, 'Job location state').trim(),
+        location: placeKey(at(cells, 'Job location city'), at(cells, 'Job location state')),
         country: at(cells, 'Job country').trim(),
         posted: advertPosted || datePosted,
         employmentType: at(cells, 'Employment type').trim(),
         level: at(cells, 'Job level').trim(),
+        levels: splitLevels(at(cells, 'Job level')),
         arrangement: at(cells, 'Work arrangement').trim(),
         education: at(cells, 'Education level').trim(),
         salaryMinAud: Math.round(Number(at(cells, 'Base salary min AUD'))) || 0,
         salaryMaxAud: Math.round(Number(at(cells, 'Base salary max AUD'))) || 0,
+        // One figure for the role, for summarising a page of them: the middle of its range,
+        // or the company's estimate when there is no range.
+        salaryMid: midpoint(
+          Number(at(cells, 'Base salary min AUD')),
+          Number(at(cells, 'Base salary max AUD')),
+          Number(at(cells, 'Company salary estimate AUD'))
+        ),
         salary: moneyAud(
           at(cells, 'Base salary min AUD'),
           at(cells, 'Base salary max AUD'),
@@ -263,11 +309,16 @@ function main() {
   //    role only when it is re-listed, which is what changefreq says here.
   const { headerLine, jobs } = readJobs();
   const today = new Date().toISOString().slice(0, 10);
+  // The views with enough roles to be a page of their own - see scripts/landing-pages.js.
+  const landing = landingPages(jobs);
+  const landingByPath = new Map(landing.map((page) => [page.path, page]));
   const urls = [
     { loc: '/', priority: '1.0', changefreq: 'daily' },
     { loc: '/companies', priority: '0.8', changefreq: 'weekly' },
     { loc: '/about', priority: '0.5', changefreq: 'monthly' },
     { loc: '/post', priority: '0.5', changefreq: 'monthly' },
+    // Between the pages and the roles: the views people search for, refreshed with the board.
+    ...landing.map((page) => ({ loc: page.path, priority: '0.8', changefreq: 'daily' })),
     ...jobs.map((job) => ({
       loc: `/jobs/${encodeURIComponent(job.id)}`,
       lastmod: job.posted || today,
@@ -297,6 +348,51 @@ function main() {
       bits ? ` - ${esc(bits)}` : ''
     }</li>`;
   };
+
+  /** A link to a landing page, or nothing when that view has too few roles to be one. */
+  const landingLink = (view, text) => {
+    const target = landingPathFor(view);
+    const page = target && landingByPath.get(target);
+    return page ? `<a href="${esc(page.path)}">${esc(text || page.heading)}</a>` : '';
+  };
+
+  const pageList = (pages, limit) =>
+    pages.length
+      ? '<ul>' +
+        pages
+          .slice(0, limit)
+          .map(
+            (page) =>
+              `<li><a href="${esc(page.path)}">${esc(page.heading)}</a> ` +
+              `(${page.stats.count.toLocaleString('en-AU')} roles)</li>`
+          )
+          .join('') +
+        '</ul>'
+      : '';
+
+  const cityPages = landing.filter(
+    (page) => page.location && !page.type && !page.sponsor && !page.level
+  );
+  const typePages = landing.filter((page) => page.type && !page.location && !page.sponsor);
+  const levelPages = landing.filter((page) => page.level && !page.location);
+  const sponsorPages = landing.filter((page) => page.sponsor && !(page.location && page.type));
+
+  /** Every way into the board a person might search for, as links a crawler can follow. */
+  const browse = () =>
+    [
+      cityPages.length
+        ? `<section aria-labelledby="browse-cities"><h2 id="browse-cities">Jobs by city</h2>${pageList(cityPages, 12)}</section>`
+        : '',
+      typePages.length
+        ? `<section aria-labelledby="browse-types"><h2 id="browse-types">Jobs by kind of work</h2>${pageList(typePages, 12)}</section>`
+        : '',
+      levelPages.length
+        ? `<section aria-labelledby="browse-levels"><h2 id="browse-levels">Jobs by level</h2>${pageList(levelPages, 12)}</section>`
+        : '',
+      sponsorPages.length
+        ? `<section aria-labelledby="browse-sponsors"><h2 id="browse-sponsors">Visa sponsorship</h2>${pageList(sponsorPages, 12)}</section>`
+        : '',
+    ].join('');
 
   writePage(template, {
     path: '/companies',
@@ -425,10 +521,16 @@ function main() {
           '@type': 'Place',
           address: {
             '@type': 'PostalAddress',
-            ...(job.city ? { addressLocality: job.city } : {}),
-            // No addressRegion. The state on a row is the employer's, and pairing it with
-            // the role's city was wrong for 15% of roles; it is optional, and a wrong value
-            // in structured data is worse than a missing one.
+            ...(job.city || job.locationCity
+              ? { addressLocality: job.city || job.locationCity }
+              : {}),
+            // The state of the place the advert names, not the employer's - the row's own
+            // `State` was wrong for 15% of roles, which is why this was left out until the
+            // pipeline could place the role itself. Absent when it couldn't (a name that is
+            // in several states): a wrong value in structured data is worse than a missing one.
+            ...(job.locationState
+              ? { addressRegion: STATE_ABBREVIATIONS[job.locationState] || job.locationState }
+              : {}),
             addressCountry: 'AU',
           },
         },
@@ -448,6 +550,20 @@ function main() {
             `plus whether ${job.company} is an accredited sponsor.`
         )}</p>`,
         '</article>',
+        (() => {
+          // The views this role belongs to, when they are pages: how a crawler gets from one
+          // role to the rest of its city, its kind of work and the sponsors.
+          const views = [
+            landingLink({ location: job.location, type: job.type }),
+            landingLink({ location: job.location }),
+            landingLink({ type: job.type }),
+            ...job.levels.map((level) => landingLink({ level })),
+            job.sponsor ? landingLink({ sponsor: true }) : '',
+          ].filter(Boolean);
+          return views.length
+            ? `<p class="pj-lede">More like this: ${views.join(' · ')}</p>`
+            : '';
+        })(),
         '<section aria-label="More roles"><h2>More roles at Australian startups</h2><ul>',
         ...related.map(jobLink),
         '</ul></section>',
@@ -569,8 +685,160 @@ function main() {
             '</section>',
           ].join('')
         : '',
+      browse(),
       '</main>',
     ].join(''),
+  });
+
+  // 2c. The landing pages: the board with a view switched on, written out in full. Each
+  //     leads with what is true of that view - how many roles, how many employers, how many
+  //     sponsor, what they pay - and the newest of its roles, then links onward: to the same
+  //     kind of work in other cities, the same city in other kinds of work, and the sponsors.
+  const LISTED = 30;
+  landing.forEach((page) => {
+    const parent = page.level && page.location
+      ? { level: page.level }
+      : page.location && (page.type || page.sponsor)
+      ? { location: page.location }
+      : page.sponsor && page.type
+        ? { sponsor: true }
+        : null;
+    const parentPage = parent && landingByPath.get(landingPathFor(parent));
+
+    // Where to go from here, by what kind of page this is: the neighbours a person searching
+    // for this would also want, and always a way up to the wider view.
+    const others = (test) => landing.filter((other) => other !== page && test(other));
+    const plain = (other) => !other.sponsor && !other.level;
+    const levelsHere = page.location
+      ? others((o) => o.level && o.location === page.location)
+      : [];
+    const sections = (
+      page.level
+        ? page.location
+          ? [
+              [`${typeLabel(page.level)} jobs in other cities`, others((o) => o.level === page.level && o.location)],
+              [`Other levels in ${splitLocation(page.location).city}`, others((o) => o.level && o.location === page.location)],
+            ]
+          : [
+              [`${typeLabel(page.level)} jobs by city`, others((o) => o.level === page.level && o.location)],
+              ['Other levels', others((o) => o.level && !o.location)],
+            ]
+        : page.sponsor
+        ? [
+            [
+              page.location && !page.type ? 'Visa sponsorship in other cities' : 'Visa sponsorship by city',
+              others((o) => o.sponsor && o.location && !o.type),
+            ],
+            [
+              page.type ? 'Visa sponsorship in other kinds of work' : 'Visa sponsorship by kind of work',
+              others((o) => o.sponsor && o.type && !o.location),
+            ],
+          ]
+        : page.location && page.type
+          ? [
+              [`${typeLabel(page.type)} jobs in other cities`, others((o) => plain(o) && o.type === page.type && o.location)],
+              [`Other kinds of work in ${splitLocation(page.location).city}`, others((o) => plain(o) && o.location === page.location && o.type)],
+            ]
+          : page.location
+            ? [
+                [`${splitLocation(page.location).city} by kind of work`, others((o) => plain(o) && o.location === page.location && o.type)],
+                ['Other cities', others((o) => plain(o) && o.location && !o.type && !o.level)],
+                ...(levelsHere.length ? [[`${splitLocation(page.location).city} by level`, levelsHere]] : []),
+              ]
+            : [
+                [`${typeLabel(page.type)} jobs by city`, others((o) => plain(o) && o.type === page.type && o.location)],
+                ['Other kinds of work', others((o) => plain(o) && o.type && !o.location)],
+              ]
+    ).filter(([, pages]) => pages.length);
+
+    // The same view with sponsorship switched on - or, from a sponsorship page, off. A level
+    // has no sponsor version.
+    const sponsorSwitch = page.level
+      ? ''
+      : page.sponsor
+      ? landingLink(
+          { ...(page.location ? { location: page.location } : {}), ...(page.type ? { type: page.type } : {}) },
+          'See all roles, not only sponsors'
+        )
+      : landingLink(
+          { ...(page.location ? { location: page.location } : {}), ...(page.type ? { type: page.type } : {}), sponsor: true },
+          'Only employers that sponsor visas'
+        );
+
+    const related = [
+      ...sections.map(([heading, pages]) => `<h2>${esc(heading)}</h2>${pageList(pages, 12)}`),
+      sponsorSwitch ? `<p>${sponsorSwitch}</p>` : '',
+    ].join('');
+
+    const url = siteUrl + page.path;
+    const crumbs = [
+      { name: 'Home', url: `${siteUrl}/` },
+      ...(parentPage ? [{ name: parentPage.heading, url: siteUrl + parentPage.path }] : []),
+      { name: page.heading, url },
+    ];
+    const listed = page.jobs.slice(0, LISTED);
+
+    writePage(template, {
+      path: page.path,
+      title: `${page.heading} | ${SITE}`,
+      description: page.lead,
+      schema: {
+        '@context': 'https://schema.org',
+        '@graph': [
+          {
+            '@type': 'CollectionPage',
+            name: page.heading,
+            description: page.lead,
+            url,
+            isPartOf: { '@type': 'WebSite', name: SITE, url: `${siteUrl}/` },
+            mainEntity: {
+              '@type': 'ItemList',
+              numberOfItems: page.stats.count,
+              itemListElement: listed.map((job, index) => ({
+                '@type': 'ListItem',
+                position: index + 1,
+                url: `${siteUrl}/jobs/${job.id}`,
+                name: job.title,
+              })),
+            },
+          },
+          {
+            '@type': 'BreadcrumbList',
+            itemListElement: crumbs.map((crumb, index) => ({
+              '@type': 'ListItem',
+              position: index + 1,
+              name: crumb.name,
+              item: crumb.url,
+            })),
+          },
+        ],
+      },
+      body: [
+        '<main>',
+        `<nav aria-label="Breadcrumb"><a href="/">All roles</a>${
+          parentPage ? ` \u203a <a href="${esc(parentPage.path)}">${esc(parentPage.heading)}</a>` : ''
+        }</nav>`,
+        `<h1>${esc(page.heading)}</h1>`,
+        `<p>${esc(page.lead)}</p>`,
+        '<section aria-labelledby="landing-roles">',
+        `<h2 id="landing-roles">${
+          page.stats.count > LISTED ? `The newest ${LISTED} roles` : 'Roles'
+        }</h2>`,
+        page.stats.count > LISTED
+          ? `<p class="pj-lede">${esc(
+              `${page.stats.count.toLocaleString('en-AU')} in all. The board filters the rest by ` +
+                'pay, level, work arrangement, sponsor and more.'
+            )}</p>`
+          : '',
+        '<ul class="pj-list">',
+        ...listed.map(recentCard),
+        '</ul>',
+        '</section>',
+        related,
+        nav,
+        '</main>',
+      ].join(''),
+    });
   });
 
   const sitemap = [
@@ -598,7 +866,7 @@ function main() {
   );
 
   console.log(
-    `seo-assets: ${urls.length} pages written (${jobs.length} roles), plus 404.html, ` +
+    `seo-assets: ${urls.length} pages written (${jobs.length} roles, ${landing.length} landing pages), plus 404.html, ` +
       `robots.txt and sitemap.xml -> ${target}\n` +
       `seo-assets: ${recentDays.jobs.length} roles pre-loaded` +
       (recentDays.from ? ` (${recentDays.from} to ${recentDays.to})` : '')

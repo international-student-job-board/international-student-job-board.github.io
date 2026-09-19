@@ -17,6 +17,12 @@ export interface Company {
   hqCity: string;
   /** Free-text HQ address; the postcode in it is what places the map pin. */
   hqAddress: string;
+  /**
+   * Where the company is headquartered, as one place a filter can list - "Melbourne,
+   * Victoria" - or '' when the address names no city. Worked out by the pipeline's `locate`
+   * stage from the free text above, so a suburb or a council reads as the city it is in.
+   */
+  location: string;
   /** The company's own one-liner. */
   tagline: string;
   linkedin: string;
@@ -72,6 +78,13 @@ export interface Job {
    */
   invitedScore?: number;
   city: string;
+  /**
+   * Where the role is, as one place a filter can list - "Melbourne, Victoria" - or '' when the
+   * advert's place couldn't be told apart from another state's of the same name. The pipeline's
+   * `locate` stage works it out from `city`, so Endeavour Hills reads as Melbourne and a
+   * Canberra role at a Sydney company as Canberra, not from the employer's state.
+   */
+  location: string;
   /**
    * The state on this role's row.
    *
@@ -169,4 +182,13 @@ export function jobLocation(job: Job): string {
     .map((part) => (part ?? '').trim())
     .filter(Boolean)
     .join(', ');
+}
+
+/** A city and its state as the one value the location filters hold: "Melbourne, Victoria". Blank
+ * when there is no city - a state alone names no place a person would search for. */
+export function placeKey(city: string | undefined, state: string | undefined): string {
+  const name = (city ?? '').trim();
+  if (!name) return '';
+  const region = (state ?? '').trim();
+  return region ? `${name}, ${region}` : name;
 }

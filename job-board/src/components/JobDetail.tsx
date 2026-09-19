@@ -1,5 +1,6 @@
 import { Fragment, Suspense, lazy, useState } from 'react';
 import { Job, Salary, hasSalary, jobLocation } from '../types';
+import { trackApply } from '../analytics';
 import { formatDate, formatSalaryAud, orNotSpecified, NOT_SPECIFIED } from '../format';
 import {
   visaUrl,
@@ -240,7 +241,8 @@ function SalaryFact({ salary }: { salary: Salary }) {
 }
 
 // Apply action.
-function ApplyButton({ url, jobTitle }: { url: string; jobTitle: string }) {
+function ApplyButton({ job }: { job: Job }) {
+  const { applyUrl: url, title: jobTitle } = job;
   const isEmail = url.trim().toLowerCase().startsWith('mailto:');
   const href = isEmail
     ? emailApplyHref(url, jobTitle, SITE_NAME, SITE_URL)
@@ -256,6 +258,7 @@ function ApplyButton({ url, jobTitle }: { url: string; jobTitle: string }) {
     <a
       className={`btn btn-primary${isEmail ? ' btn-email' : ''}`}
       href={href}
+      onClick={() => trackApply(job, isEmail ? 'email' : 'site')}
       {...(isEmail ? {} : OUTBOUND)}
     >
       {isEmail ? (
@@ -597,7 +600,7 @@ export function JobDetail({ job, titleLevel = 1 }: { job: Job; titleLevel?: 1 | 
           </dl>
 
           <div className="detail-actions detail-actions-inline">
-            <ApplyButton url={job.applyUrl} jobTitle={job.title} />
+            <ApplyButton job={job} />
           </div>
         </section>
 
@@ -674,7 +677,7 @@ export function JobDetail({ job, titleLevel = 1 }: { job: Job; titleLevel?: 1 | 
 
       <aside className="detail-side">
         <div className="detail-actions">
-          <ApplyButton url={job.applyUrl} jobTitle={job.title} />
+          <ApplyButton job={job} />
           <p className="apply-note">
             {applyByEmail
               ? 'Applications for this role are sent by email to the employer.'

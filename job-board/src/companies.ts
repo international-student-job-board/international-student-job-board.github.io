@@ -2,7 +2,7 @@
 // its own file, separate from the jobs CSV. The two overlap: every row of jobs.csv also
 // carries its employer's columns, and the jobs page reads those (see jobs.ts).
 
-import { Company } from './types';
+import { Company, placeKey } from './types';
 import { parseCsv, splitList, triState, glassdoorFields } from './csv';
 import { dataUrl } from './dataUrl';
 
@@ -26,6 +26,7 @@ function toCompany(row: Record<string, string>): Company {
     employees: pick(row, 'Employees').trim(),
     hqCity: pick(row, 'HQ city').trim(),
     hqAddress: pick(row, 'HQ address').trim(),
+    location: placeKey(pick(row, 'Company city'), pick(row, 'Company state')),
     tagline: pick(row, 'Tagline').trim(),
     linkedin: pick(row, 'LinkedIn').trim(),
     openings: Number.parseInt(pick(row, 'Job openings'), 10) || 0,
@@ -63,11 +64,10 @@ export type CompanySort = 'openings' | 'name';
 
 /** The list-valued filters on the companies page. */
 export type CompanyFilterKey =
-  | 'states'
+  | 'hqLocations'
   | 'industries'
   | 'companyTypes'
   | 'growthStages'
-  | 'hqCities'
   | 'openRoles'
   | 'sponsor'
   | 'students';
@@ -75,11 +75,10 @@ export type CompanyFilterKey =
 export type CompanyFilters = Record<CompanyFilterKey, string[]>;
 
 export const NO_COMPANY_FILTERS: CompanyFilters = {
-  states: [],
+  hqLocations: [],
   industries: [],
   companyTypes: [],
   growthStages: [],
-  hqCities: [],
   openRoles: [],
   sponsor: [],
   students: [],

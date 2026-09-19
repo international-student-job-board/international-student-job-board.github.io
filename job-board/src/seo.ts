@@ -28,7 +28,18 @@ const HOME_DESCRIPTION =
   'and recent graduates, mapped with the migration pathways and visa requirements.';
 
 /** Title and description for an address. */
-export function metaFor(route: Route, job: Job | null, origin: string): PageMeta {
+/** A landing page's own address and heading - see src/landing.ts. */
+export interface LandingMeta {
+  path: string;
+  heading: string;
+}
+
+export function metaFor(
+  route: Route,
+  job: Job | null,
+  origin: string,
+  landing?: LandingMeta | null
+): PageMeta {
   const at = (path: string) => `${origin}${path}`;
 
   if (job) {
@@ -47,6 +58,16 @@ export function metaFor(route: Route, job: Job | null, origin: string): PageMeta
         .filter(Boolean)
         .join(' '),
       url: at(`/jobs/${encodeURIComponent(job.id)}`),
+    };
+  }
+
+  if (landing && route === 'jobs') {
+    return {
+      title: `${landing.heading} | ${SITE_NAME}`,
+      description:
+        `${landing.heading}: roles at Australian startups and scaleups for international ` +
+        'students and graduates, with visa pathways and whether the employer is an accredited sponsor.',
+      url: at(landing.path),
     };
   }
 
@@ -225,6 +246,20 @@ export function websiteSchema(origin: string): object {
     name: SITE_NAME,
     url: origin || SITE_URL,
     description: HOME_DESCRIPTION,
+  };
+}
+
+/** A landing page - a list of roles for one view of the board. The static page carries the
+ * fuller version, with the roles themselves; this keeps the address's own data right once the
+ * app has taken over. */
+export function landingSchema(meta: PageMeta, heading: string, origin: string): object {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: heading,
+    description: meta.description,
+    url: meta.url,
+    isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: origin || SITE_URL },
   };
 }
 
