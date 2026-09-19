@@ -105,6 +105,22 @@ describe('a view and its filters are the same thing', () => {
     expect(viewOf(filtersOf({ location: LOCATIONS[0], type: TYPES[0], sponsor: true }))).toBeNull();
   });
 
+  test("the city the board started on by default is the home page, not that city's landing page", () => {
+    const melbourne = filtersOf({ location: LOCATIONS[0] });
+    expect(viewOf(melbourne, LOCATIONS[0])).toBeNull();
+    // Chosen by the reader (no default recorded), it is one.
+    expect(viewOf(melbourne)).toEqual({ location: LOCATIONS[0] });
+    // A different city than the default is a choice too.
+    expect(viewOf(filtersOf({ location: LOCATIONS[1] }), LOCATIONS[0])).toEqual({
+      location: LOCATIONS[1],
+    });
+    // And the default plus anything else the reader picked is a view like any other.
+    expect(viewOf(filtersOf({ location: LOCATIONS[0], sponsor: true }), LOCATIONS[0])).toEqual({
+      location: LOCATIONS[0],
+      sponsor: true,
+    });
+  });
+
   test('no filters at all is the board, not a landing page', () => {
     expect(viewOf(EMPTY_FILTERS)).toBeNull();
   });

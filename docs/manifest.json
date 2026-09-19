@@ -1,6 +1,7 @@
 {
   "short_name": "International Student Job Board",
   "name": "International Student Job Board",
+  "description": "Startup and scaleup jobs across Australia, built for international students and graduates - open to everyone.",
   "icons": [
     { "src": "icons/favicon.ico", "sizes": "16x16 32x32", "type": "image/x-icon" },
     { "src": "icons/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },

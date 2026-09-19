@@ -2,6 +2,7 @@ import { lazy, Suspense, useDeferredValue, useEffect, useMemo, useRef } from 're
 import './App.css';
 import { useJobsData, useCompanyCount } from './useJobsData';
 import { useAppNavigation, overlayView } from './useAppNavigation';
+import { useScrolledClass } from './useScrolledClass';
 import { useIsMobile } from './useMediaQuery';
 import {
   EMPTY_FILTERS,
@@ -37,7 +38,7 @@ import { BrowseLinks } from './components/BrowseLinks';
 import { Freshness } from './components/Freshness';
 import { WhatsNew } from './components/WhatsNew';
 import { trackEvent, trackFilterChange, trackPageView, trackRoleOpen } from './analytics';
-import { Filters, countActiveFilters, SALARY_STEPS } from './components/Filters';
+import { Filters, countActiveFilters } from './components/Filters';
 import { FiltersDisclosure } from './components/FiltersDisclosure';
 import { JobCard } from './components/JobCard';
 import { Pagination } from './components/Pagination';
@@ -71,6 +72,8 @@ function App() {
     setFilters,
     page,
     settleLanding,
+    homeDefault,
+    setHomeDefault,
     arrivedWithFilters,
     detailRef,
     listRef,
@@ -127,12 +130,11 @@ function App() {
    *  - arrived on a filtered link: drop any values the data can no longer offer
    *    (a company with nothing open now, a typo) so the link never sits matching
    *    nothing without saying why;
-   *  - arrived clean: default to the roles most worth a first look - the
-   *    reader's own state (inferred from their time zone, when it has roles),
-   *    accredited sponsors, companies that hire international students, and a
-   *    floor on pay just high enough to screen out unpaid or junk listings.
-   *    All of it is just a starting point - each shows as a chip and one click
-   *    clears it.
+   *  - arrived clean: default to the reader's own city (inferred from their time
+   *    zone, when it has roles) and nothing else. Sponsors, students and a pay
+   *    floor used to be switched on here too; a first visit now starts from where
+   *    the reader is, and every other filter is theirs to choose. The location
+   *    shows as a chip and one click clears it.
    */
   useEffect(() => {
     if (status !== 'ready' || syncedFromData.current) return;
@@ -141,25 +143,21 @@ function App() {
     // An address like /jobs-in/melbourne is a set of filters, and needs the board's options to
     // say which ("Melbourne, Victoria"). Read here, once they exist.
     const fromPath = filtersForPath(window.location.pathname, options);
+    // A clean arrival: no address filters, no page, no one role asked for, nothing chosen yet. A
+    // direct link to one job should open exactly that job - not silently gain default filters
+    // the sharer never added, which would leave a reader elsewhere with a dead-looking link.
+    const clean =
+      !fromPath && !arrivedWithFilters.current && !selectedId && countActiveFilters(filters) === 0;
+    // A visitor outside Australia gets every place - narrowing to "wherever Australia's time zone
+    // last resolved to" would be a guess, not a default. The time zone names a state; its capital
+    // is where most of that state's roles are.
+    const home = isLikelyAustralia() ? (CAPITAL_LOCATIONS[inferAustralianState()] ?? '') : '';
+    const startCity = clean && home && options.jobLocations.includes(home) ? home : '';
+    if (startCity) setHomeDefault(startCity);
     setFilters((current) => {
       if (fromPath) return overlayView(pruneToOptions(current, options), fromPath);
       if (arrivedWithFilters.current) return pruneToOptions(current, options);
-      if (countActiveFilters(current) > 0) return current;
-      // A direct link to one job, with no filters of its own, should open
-      // exactly that job - not silently gain default filters the sharer never
-      // added, which would leave a reader elsewhere with a dead-looking link.
-      if (selectedId) return current;
-      // A visitor outside Australia gets every place - narrowing to "wherever
-      // Australia's time zone last resolved to" would be a guess, not a default.
-      // The time zone names a state; its capital is where most of that state's roles are.
-      const home = isLikelyAustralia() ? (CAPITAL_LOCATIONS[inferAustralianState()] ?? '') : '';
-      return {
-        ...current,
-        ...(home && options.jobLocations.includes(home) ? { jobLocations: [home] } : {}),
-        ...(options.sponsor.includes('yes') ? { sponsor: ['yes'] } : {}),
-        ...(options.students.includes('yes') ? { students: ['yes'] } : {}),
-        salaryMin: SALARY_STEPS[0],
-      };
+      return startCity ? { ...current, jobLocations: [startCity] } : current;
     });
     settleLanding();
     // options is derived from the loaded jobs and stable by the time status flips.
@@ -189,7 +187,7 @@ function App() {
   /** The address of a page of this same list - same filters, same role open, the page swapped. */
   const hrefForPage = (n: number) => {
     // On a landing page the path already says every filter, so only the page goes in the query.
-    const landing = roleId ? null : viewOf(filters);
+    const landing = roleId ? null : viewOf(filters, homeDefault);
     const target = landing ? pathForView(landing) : null;
     const query = withPage(target ? new URLSearchParams() : filtersToParams(filters), n).toString();
     return `${target ?? window.location.pathname}${query ? `?${query}` : ''}`;
@@ -198,7 +196,7 @@ function App() {
   /** The address bar, the tab title and the structured data all describe the same thing. */
   const reading = showDetail && route === 'jobs' ? selected : null;
   // A string, not the view: the view is rebuilt on every render, and this is an effect's dependency.
-  const view = route === 'jobs' && !roleId ? viewOf(filters) : null;
+  const view = route === 'jobs' && !roleId ? viewOf(filters, homeDefault) : null;
   const landingPath = view ? viewPath(view) : null;
   const landingHeading = view ? viewHeading(view) : '';
   useEffect(() => {
@@ -238,6 +236,10 @@ function App() {
     );
     return () => window.clearTimeout(timer);
   }, [searched]);
+
+  // The role pane locks itself unless pinned - but not while it is scrolled, or it couldn't be
+  // scrolled back up once the page had moved out from under it.
+  useScrolledClass(detailRef);
 
   // Scroll the (sticky) detail panel back to the top when a different job is shown.
   useEffect(() => {
@@ -284,31 +286,34 @@ function App() {
     <div className={`app${showDetail ? ' detail-open' : ''}`} id="top">
       <Header route={route} />
 
-      {/* The board's headline, its one-line description and what's new belong to the board. On a
-          role's own address the role is the page - its title is the <h1> - so none of it is
-          shown above it. */}
-      {!roleId && (
-        <header className="page-intro page-intro-home">
+      {/* The board's headline, its one-line description and what's new stay above the board, an
+          open role included. Only on a phone, where an open role replaces the list and the
+          filters, does it go too (App.css). One <h1> per page: on a role's own address the role's
+          title is it, so the board's headline steps down to a paragraph that looks the same. */}
+      <header className="page-intro page-intro-home">
+        {roleId ? (
+          <p className="page-intro-title">Startup jobs in Australia for international students and graduates</p>
+        ) : (
           <h1 className="page-intro-title">
-            {view ? landingHeading : 'Startup jobs in Australia for international students'}
+            {view ? landingHeading : 'Startup jobs in Australia for international students and graduates'}
           </h1>
-          {/* On a landing page the lead says what this view holds, in real numbers - the same
-              sentence the page's static HTML opens with. */}
-          <p className="page-lead">
-            {view && status === 'ready'
-              ? viewLead(view, visible.length, new Set(visible.map((job) => job.company.name)).size)
-              : "Jobs sourced from each state's open-sourced database of startups and scaleups, mapped with visa pathways, occupation types and skill assessments."}
-          </p>
-          {/* That the board is live, and whether anything changed since the reader was last here.
-              Not on a landing page, where the heading is already about something specific. */}
-          {!view && (
-            <div className="intro-status">
-              {status === 'ready' && <Freshness jobs={openJobs} onShow={showRecent} />}
-              <WhatsNew />
-            </div>
-          )}
-        </header>
-      )}
+        )}
+        {/* On a landing page the lead says what this view holds, in real numbers - the same
+            sentence the page's static HTML opens with. */}
+        <p className="page-lead">
+          {view && status === 'ready'
+            ? viewLead(view, visible.length, new Set(visible.map((job) => job.company.name)).size)
+            : "Jobs sourced from each state's open-sourced database of startups and scaleups, mapped with visa pathways, occupation types and skill assessments."}
+        </p>
+        {/* That the board is live, and whether anything changed since the reader was last here.
+            Not on a landing page, where the heading is already about something specific. */}
+        {!view && (
+          <div className="intro-status">
+            {status === 'ready' && <Freshness jobs={openJobs} onShow={showRecent} />}
+            <WhatsNew />
+          </div>
+        )}
+      </header>
 
       <div className="filters-region" hidden={status === 'ready' && openJobs.length === 0}>
         {/* Open where there is room for it beside the list. On a phone it is closed: open, the

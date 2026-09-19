@@ -98,7 +98,7 @@ export function viewLead(
     sponsor ? ' at accredited visa sponsors' : '',
   ].join('');
   const who = employers === 1 ? 'startup or scaleup' : 'startups and scaleups';
-  return `${roles.toLocaleString('en-AU')} open ${scope}, at ${employers.toLocaleString('en-AU')} ${who}.`;
+  return `${roles.toLocaleString('en-AU')} open ${scope}, at ${employers.toLocaleString('en-AU')} ${who}, for international students and graduates.`;
 }
 
 /** Every filter that holds a list - the ones a landing view must leave alone. */
@@ -114,7 +114,26 @@ const VIEW_FILTERS = new Set<keyof FilterState>(['jobLocations', 'types', 'spons
  * combination the pages cover - and no search, pay, level or anything else on top. That is what
  * makes an address and a filter set interchangeable: the address says all of it.
  */
-export function viewOf(filters: FilterState): View | null {
+export function viewOf(filters: FilterState, defaulted = ''): View | null {
+  const view = viewOfFilters(filters);
+  // The city the board started on because of the reader's time zone is a default, not a
+  // choice: it is still the home page, not that city's landing page. It becomes one only if
+  // the reader picks the city themselves (App clears `defaulted` the moment the location
+  // filter is touched).
+  if (
+    view &&
+    defaulted &&
+    view.location === defaulted &&
+    !view.type &&
+    !view.sponsor &&
+    !view.level
+  ) {
+    return null;
+  }
+  return view;
+}
+
+function viewOfFilters(filters: FilterState): View | null {
   const { jobLocations, types, sponsor } = filters;
   const { jobLevels } = filters;
   if (jobLocations.length > 1 || types.length > 1 || sponsor.length > 1) return null;

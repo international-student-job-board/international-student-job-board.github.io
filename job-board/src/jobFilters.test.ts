@@ -157,3 +157,52 @@ test('daysBeforeISO counts calendar days across month ends and leap days', () =>
   expect(daysBeforeISO('2028-03-01', 1)).toBe('2028-02-29');
   expect(daysBeforeISO('nonsense', 1)).toBe('');
 });
+
+describe('searching', () => {
+  const role = (over: Record<string, unknown>) =>
+    ({
+      ...job({}),
+      ...over,
+    }) as Job;
+  const found = (query: string, j: Job) => matches(j, { ...EMPTY_FILTERS, query }, 0);
+
+  const target = role({
+    title: 'Marketing Coordinator',
+    type: 'Marketing & Communication',
+    location: 'Sydney, New South Wales',
+    city: 'Sydney',
+    jobLevels: ['Graduate'],
+    workArrangements: ['Remote'],
+    employmentType: 'Full-time',
+  });
+
+  test('every word has to match, in any order', () => {
+    expect(found('marketing sydney', target)).toBe(true);
+    expect(found('sydney marketing', target)).toBe(true);
+    expect(found('graduate marketing sydney', target)).toBe(true);
+  });
+
+  test('a word the role does not have rules it out', () => {
+    expect(found('marketing melbourne', target)).toBe(false);
+    expect(found('senior marketing', target)).toBe(false);
+  });
+
+  test('level, arrangement and kind of work are searchable', () => {
+    expect(found('graduate', target)).toBe(true);
+    expect(found('remote', target)).toBe(true);
+    expect(found('communication', target)).toBe(true);
+    expect(found('full-time', target)).toBe(true);
+  });
+
+  test('a partial word still matches, as it always did', () => {
+    expect(found('market', target)).toBe(true);
+  });
+
+  test('extra spaces and capitals do not matter', () => {
+    expect(found('  GRADUATE   Marketing ', target)).toBe(true);
+  });
+
+  test('an empty search matches everything', () => {
+    expect(found('   ', target)).toBe(true);
+  });
+});

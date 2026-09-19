@@ -161,7 +161,8 @@ function leadFor(view, stats) {
   const opening =
     `${stats.count.toLocaleString('en-AU')} open ${scope}, ` +
     `at ${stats.employers.toLocaleString('en-AU')} ` +
-    `${stats.employers === 1 ? 'startup or scaleup' : 'startups and scaleups'}.`;
+    `${stats.employers === 1 ? 'startup or scaleup' : 'startups and scaleups'}, ` +
+    'for international students and graduates.';
   const sponsors = sponsor
     ? ''
     : stats.sponsored

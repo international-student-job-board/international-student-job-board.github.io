@@ -57,7 +57,20 @@ describe('what each address tells a search engine', () => {
   test('a role leads with the role, not with the site', () => {
     const meta = metaFor('jobs', job(), ORIGIN);
     expect(meta.title.startsWith('Graduate Software Engineer at Acme')).toBe(true);
-    expect(meta.url).toBe(`${ORIGIN}/jobs/7`);
+    expect(meta.url).toBe(`${ORIGIN}/jobs/7/`);
+  });
+
+  test('every address but the home page is the slashed one - the one that answers, not redirects', () => {
+    // GitHub Pages serves /path/ with a 200 and answers /path with a 301. A canonical naming the
+    // unslashed form points at a redirect, which points back at the page: Search Console's
+    // "Page with redirect", and the canonical is ignored.
+    expect(metaFor('companies', null, ORIGIN).url).toBe(`${ORIGIN}/companies/`);
+    expect(metaFor('about', null, ORIGIN).url).toBe(`${ORIGIN}/about/`);
+    expect(metaFor('post', null, ORIGIN).url).toBe(`${ORIGIN}/post/`);
+    expect(metaFor('jobs', null, ORIGIN, { path: '/jobs-in/melbourne', heading: 'x' }).url).toBe(
+      `${ORIGIN}/jobs-in/melbourne/`
+    );
+    expect(metaFor('jobs', null, ORIGIN).url).toBe(`${ORIGIN}/`);
   });
 
   test('its description says what someone would have searched for', () => {

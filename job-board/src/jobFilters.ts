@@ -153,16 +153,38 @@ export function matches(job: Job, filters: FilterState, postedAfter: number): bo
 
   const q = filters.query.trim().toLowerCase();
   if (!q) return true;
-  const haystack = [
-    job.title,
-    job.company.name,
-    jobLocation(job),
-    ...job.occupationNames,
-    ...job.company.industries,
-  ]
-    .join(' ')
-    .toLowerCase();
-  return haystack.includes(q);
+  // Every word has to be somewhere in the role, in any order: "graduate marketing sydney" finds a
+  // Marketing role at graduate level in Sydney. The whole phrase used to have to appear as one
+  // unbroken run of text, so any search of more than one field's worth of words found nothing.
+  const text = searchText(job);
+  return q.split(/\s+/).every((word) => text.includes(word));
+}
+
+/** What a search reads, built once per role: it is asked once per role per filter pass, and a pass
+ * runs on every keystroke. */
+const searchIndex = new WeakMap<Job, string>();
+
+function searchText(job: Job): string {
+  let text = searchIndex.get(job);
+  if (text === undefined) {
+    text = [
+      job.title,
+      job.company.name,
+      jobLocation(job),
+      job.location,
+      job.type,
+      job.employmentType,
+      ...job.jobLevels,
+      ...job.workArrangements,
+      ...job.occupationNames,
+      ...job.company.industries,
+      ...job.company.types,
+    ]
+      .join(' ')
+      .toLowerCase();
+    searchIndex.set(job, text);
+  }
+  return text;
 }
 
 /** One picker per facet: the values a job carries for that filter. Shared between the

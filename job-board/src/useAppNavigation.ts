@@ -53,6 +53,9 @@ export interface AppNavigation {
   setFilters: (update: FilterState | ((current: FilterState) => FilterState)) => void;
   page: number;
   setPage: (page: number) => void;
+  /** The city the board started on by default (from the reader's time zone), or ''. See viewOf. */
+  homeDefault: string;
+  setHomeDefault: (location: string) => void;
   /** Whether the address is a landing page's and its filters are still to be read from it - true
    * until App has the board's options to resolve it with, so the address isn't rewritten to
    * something else in the meantime. */
@@ -87,6 +90,7 @@ export function useAppNavigation(): AppNavigation {
   const [landingPending, setLandingPending] = useState(
     () => typeof window !== 'undefined' && isLandingPath(window.location.pathname)
   );
+  const [homeDefault, setHomeDefault] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // On mobile the list and detail are separate "pages"; this flips to the detail page when a
   // job is tapped.
@@ -179,7 +183,7 @@ export function useAppNavigation(): AppNavigation {
     // exactly a landing view (one city, one kind of work, sponsors): that view's own path, and
     // nothing in the query but the page. Anything else: the board, the filters in the query.
     const { jobId } = parsePath(window.location.pathname);
-    const view = jobId ? null : viewOf(filters);
+    const view = jobId ? null : viewOf(filters, homeDefault);
     const landingPath = view ? pathForView(view) : null;
     const pathname = jobId ? window.location.pathname : (landingPath ?? pathFor('jobs'));
     const qs = withPage(
@@ -189,7 +193,13 @@ export function useAppNavigation(): AppNavigation {
     const search = qs ? `?${qs}` : '';
     if (search === window.location.search && pathname === window.location.pathname) return;
     window.history.replaceState(window.history.state, '', `${pathname}${search}`);
-  }, [filters, page, route, selectedId, landingPending]);
+  }, [filters, page, route, selectedId, landingPending, homeDefault]);
+
+  // The default city stops being one as soon as the reader changes the location filter - picking
+  // the same city again after that is a choice, and a landing page.
+  useEffect(() => {
+    if (homeDefault && filters.jobLocations.join('|') !== homeDefault) setHomeDefault('');
+  }, [filters.jobLocations, homeDefault]);
 
   // Back to page 1 whenever the filters change. Compared by what they say, not by identity: the
   // board rebuilds the filter object when it settles them against the data, and a link to page
@@ -229,6 +239,8 @@ export function useAppNavigation(): AppNavigation {
     selectedId,
     landingPending,
     settleLanding: () => setLandingPending(false),
+    homeDefault,
+    setHomeDefault,
     showDetail,
     setShowDetail,
     filters,

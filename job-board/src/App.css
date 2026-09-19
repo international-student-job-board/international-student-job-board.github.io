@@ -1703,6 +1703,13 @@ a.glassdoor-rating:focus-visible {
       overflow-y: auto;
     }
   }
+
+  /* Scrolled away from its top, it stays scrollable whether or not it is pinned: the page can
+     be scrolled back up under a pane parked at the bottom of a long role, and that pane must
+     still be able to scroll back up (see useScrolledClass). */
+  .detail-scroll.is-scrolled {
+    overflow-y: auto;
+  }
 }
 
 /* Back button only appears on the mobile detail page (shown via media query). */
@@ -3413,6 +3420,7 @@ a.occ-visa-code:focus-visible {
     display: none;
   }
 
+  .app.detail-open .page-intro,
   .app.detail-open .filters-region,
   .app.detail-open .jobs-panel {
     display: none;

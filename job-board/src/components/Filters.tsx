@@ -366,7 +366,7 @@ export function Filters({ filters, options, counts, resultCount, onChange, onCle
           <input
             id="job-search"
             type="search"
-            placeholder="Search company, title or occupation"
+            placeholder="Search title, company, place or level"
             value={filters.query}
             onChange={(e) => set({ query: e.target.value })}
           />

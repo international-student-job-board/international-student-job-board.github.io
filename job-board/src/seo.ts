@@ -24,8 +24,8 @@ export interface PageMeta {
 }
 
 const HOME_DESCRIPTION =
-  'Curated startup and scaleup jobs across Australia for international students ' +
-  'and recent graduates, mapped with the migration pathways and visa requirements.';
+  'Startup and scaleup jobs across Australia, with pay, Glassdoor ratings and visa sponsorship ' +
+  'info. Built for international students and graduates - open to everyone.';
 
 /** Title and description for an address. */
 /** A landing page's own address and heading - see src/landing.ts. */
@@ -40,7 +40,10 @@ export function metaFor(
   origin: string,
   landing?: LandingMeta | null
 ): PageMeta {
-  const at = (path: string) => `${origin}${path}`;
+  // The address a page is served at: GitHub Pages answers /path with a 301 to /path/, so the
+  // canonical has to be the slashed form or it points at a redirect (see served() in
+  // scripts/seo-assets.js, which writes the same for the static pages).
+  const at = (path: string) => `${origin}${path.endsWith('/') ? path : `${path}/`}`;
 
   if (job) {
     const where = jobLocation(job) || 'Australia';
@@ -77,7 +80,8 @@ export function metaFor(
         title: `Australian startups and scaleups hiring | ${SITE_NAME}`,
         description:
           'Australian startups and scaleups that are hiring, with their state, industry, ' +
-          'size, stage and whether they are an accredited visa sponsor.',
+          'size, stage and whether they are an accredited visa sponsor or hire international ' +
+          'students and graduates.',
         url: at('/companies'),
       };
     case 'post':
@@ -92,13 +96,13 @@ export function metaFor(
       return {
         title: `About and visa resources | ${SITE_NAME}`,
         description:
-          'How this board works, and the official Home Affairs and ABS sources ' +
-          'behind its visa, occupation and skills-assessment information.',
+          'How this board works for international students and graduates, and the official Home ' +
+          'Affairs and ABS sources behind its visa, occupation and skills-assessment information.',
         url: at('/about'),
       };
     default:
       return {
-        title: `${SITE_NAME} | Australian Startup Jobs`,
+        title: `Startup Jobs in Australia | ${SITE_NAME}`,
         description: HOME_DESCRIPTION,
         url: at('/'),
       };

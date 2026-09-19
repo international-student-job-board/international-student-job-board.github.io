@@ -76,6 +76,15 @@ const EMPLOYMENT_SCHEMA = {
   Internship: 'INTERN',
 };
 
+/**
+ * The address a page is actually served at. GitHub Pages serves a page from its folder at
+ * /path/ and answers /path with a 301 to it, so the version without the slash is never a page -
+ * only a redirect. Canonicals, the sitemap, structured data and internal links all have to name
+ * the version that answers 200: a sitemap of redirects, and canonicals pointing at the redirect
+ * that points back at the page, are what Search Console calls "Page with redirect".
+ */
+const served = (urlPath) => (urlPath === '/' || urlPath.endsWith('/') ? urlPath : `${urlPath}/`);
+
 const esc = (value) =>
   String(value ?? '').replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
@@ -94,7 +103,7 @@ const esc = (value) =>
  * until then it is what a crawler reads without running any JavaScript at all.
  */
 function writePage(template, { path: urlPath, title, description, schema, body }) {
-  const url = siteUrl + urlPath;
+  const url = siteUrl + served(urlPath);
   // Every replacement is a function, never a string. A replacement string is read for `$1`, `$&`
   // and the like, and a role's description says "Pay around A$104k": the `$1` in it was replaced
   // with the text the pattern had just captured, splicing a fragment of the page's own <meta>
@@ -337,14 +346,14 @@ function main() {
 
   const nav =
     '<nav aria-label="Site"><a href="/">All roles</a> · ' +
-    '<a href="/companies">Companies</a> · ' +
-    '<a href="/about">About &amp; visa resources</a> · ' +
-    '<a href="/post">Post a job</a></nav>';
+    '<a href="/companies/">Companies</a> · ' +
+    '<a href="/about/">About &amp; visa resources</a> · ' +
+    '<a href="/post/">Post a job</a></nav>';
 
   /** One role as a list item - the same shape everywhere it is linked. */
   const jobLink = (job) => {
     const bits = [job.company, job.city, job.type, job.salary].filter(Boolean).join(' · ');
-    return `<li><a href="/jobs/${esc(job.id)}">${esc(job.title)}</a>${
+    return `<li><a href="/jobs/${esc(job.id)}/">${esc(job.title)}</a>${
       bits ? ` - ${esc(bits)}` : ''
     }</li>`;
   };
@@ -353,7 +362,7 @@ function main() {
   const landingLink = (view, text) => {
     const target = landingPathFor(view);
     const page = target && landingByPath.get(target);
-    return page ? `<a href="${esc(page.path)}">${esc(text || page.heading)}</a>` : '';
+    return page ? `<a href="${esc(served(page.path))}">${esc(text || page.heading)}</a>` : '';
   };
 
   const pageList = (pages, limit) =>
@@ -363,7 +372,7 @@ function main() {
           .slice(0, limit)
           .map(
             (page) =>
-              `<li><a href="${esc(page.path)}">${esc(page.heading)}</a> ` +
+              `<li><a href="${esc(served(page.path))}">${esc(page.heading)}</a> ` +
               `(${page.stats.count.toLocaleString('en-AU')} roles)</li>`
           )
           .join('') +
@@ -398,7 +407,7 @@ function main() {
     path: '/companies',
     title: `Australian startups and scaleups hiring | ${SITE}`,
     description:
-      'Australian startups and scaleups that are hiring, with their state, industry, size, stage and whether they are an accredited visa sponsor.',
+      'Australian startups and scaleups that are hiring, with their state, industry, size, stage and whether they are an accredited visa sponsor or hire international students and graduates.',
     body: [
       '<main>',
       '<h1>Australian startups and scaleups hiring</h1>',
@@ -432,7 +441,7 @@ function main() {
       path: '/about',
       title: `About and visa resources | ${SITE}`,
       description:
-        'How this board works, and the official Home Affairs and ABS sources behind its visa, occupation and skills-assessment information.',
+        'How this board works for international students and graduates, and the official Home Affairs and ABS sources behind its visa, occupation and skills-assessment information.',
       body: `<main><h1>About this board</h1><p>${esc(
         'A curated board of startup and scaleup roles across Australia for international ' +
           'students and graduates. Every role is checked by hand, and shows the visa ' +
@@ -535,7 +544,7 @@ function main() {
           },
         },
         directApply: false,
-        url: `${siteUrl}/jobs/${job.id}`,
+        url: `${siteUrl}/jobs/${job.id}/`,
       },
       body: [
         '<article>',
@@ -614,7 +623,7 @@ function main() {
     ].filter(Boolean);
     return (
       '<li class="pj">' +
-      `<a class="pj-title" href="/jobs/${esc(job.id)}">${esc(job.title)}</a>` +
+      `<a class="pj-title" href="/jobs/${esc(job.id)}/">${esc(job.title)}</a>` +
       `<span class="pj-company">${esc(job.company)}</span>` +
       (meta ? `<span class="pj-meta">${esc(meta)}</span>` : '') +
       `<time class="pj-posted" datetime="${esc(job.posted)}">Posted ${esc(shortDate(job.posted))}</time>` +
@@ -637,25 +646,26 @@ function main() {
 
   writePage(template, {
     path: '/',
-    title: 'International Student Job Board | Australian Startup Jobs',
+    title: 'Startup Jobs in Australia | International Student Job Board',
     description:
-      'Curated startup and scaleup jobs in Australia for international students and graduates, with migration pathways and visa info!',
+      'Startup and scaleup jobs across Australia, with pay, Glassdoor ratings and visa sponsorship info. Built for international students and graduates - open to everyone.',
     schema: {
       '@context': 'https://schema.org',
       '@type': 'WebSite',
       name: SITE,
       url: `${siteUrl}/`,
       description:
-        'Curated startup and scaleup jobs across Australia for international students ' +
-        'and recent graduates, mapped with the migration pathways and visa requirements.',
+        'Startup and scaleup jobs across Australia, with pay, Glassdoor ratings and visa ' +
+        'sponsorship info. Built for international students and graduates - open to everyone.',
     },
     body: [
       '<main>',
-      '<h1>Jobs at Australian startups, mapped with migration pathways and visa requirements!</h1>',
+      '<h1>Startup jobs in Australia for international students and graduates</h1>',
       `<p>${esc(
-        'Curated startup and scaleup roles across Australia for international students ' +
-          'and graduates. Every listing shows the visa pathways, ANZSCO occupation and ' +
-          'skills assessment that apply, and whether the employer sponsors visas.'
+        'Startup and scaleup jobs across Australia - open to everyone, and built for ' +
+          'international students and graduates. Every listing shows the pay where known, the ' +
+          'employer\'s Glassdoor rating, the visa pathways, ANZSCO occupation and skills ' +
+          'assessment that apply, and whether the employer sponsors visas.'
       )}</p>`,
       nav,
       recentDays.jobs.length
@@ -770,10 +780,10 @@ function main() {
       sponsorSwitch ? `<p>${sponsorSwitch}</p>` : '',
     ].join('');
 
-    const url = siteUrl + page.path;
+    const url = siteUrl + served(page.path);
     const crumbs = [
       { name: 'Home', url: `${siteUrl}/` },
-      ...(parentPage ? [{ name: parentPage.heading, url: siteUrl + parentPage.path }] : []),
+      ...(parentPage ? [{ name: parentPage.heading, url: siteUrl + served(parentPage.path) }] : []),
       { name: page.heading, url },
     ];
     const listed = page.jobs.slice(0, LISTED);
@@ -797,7 +807,7 @@ function main() {
               itemListElement: listed.map((job, index) => ({
                 '@type': 'ListItem',
                 position: index + 1,
-                url: `${siteUrl}/jobs/${job.id}`,
+                url: `${siteUrl}/jobs/${job.id}/`,
                 name: job.title,
               })),
             },
@@ -816,7 +826,7 @@ function main() {
       body: [
         '<main>',
         `<nav aria-label="Breadcrumb"><a href="/">All roles</a>${
-          parentPage ? ` \u203a <a href="${esc(parentPage.path)}">${esc(parentPage.heading)}</a>` : ''
+          parentPage ? ` \u203a <a href="${esc(served(parentPage.path))}">${esc(parentPage.heading)}</a>` : ''
         }</nav>`,
         `<h1>${esc(page.heading)}</h1>`,
         `<p>${esc(page.lead)}</p>`,
@@ -847,7 +857,7 @@ function main() {
     ...urls.map((url) =>
       [
         '  <url>',
-        `    <loc>${escape(siteUrl + url.loc)}</loc>`,
+        `    <loc>${escape(siteUrl + served(url.loc))}</loc>`,
         `    <lastmod>${url.lastmod || today}</lastmod>`,
         `    <changefreq>${url.changefreq}</changefreq>`,
         `    <priority>${url.priority}</priority>`,

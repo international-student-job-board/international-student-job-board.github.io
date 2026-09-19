@@ -70,13 +70,15 @@ describe('the newest roles are on screen before the whole board has loaded', () 
     expect(h1s[0]).toHaveTextContent('Product Designer');
   });
 
-  test("and nothing of the board's own intro sits above the role", async () => {
+  test("the board's intro stays above an open role, as a paragraph - the role is the one heading", async () => {
     at('/jobs/2');
     render(<App />);
     await screen.findByText(/the newest 2 roles/i);
-    expect(screen.queryByText(/startup jobs in australia for international students/i)).toBeNull();
-    expect(screen.queryByText(/open-sourced database of startups/i)).toBeNull();
-    expect(screen.queryByRole('note', { name: /what's new/i })).toBeNull();
+    expect(
+      screen.getByText(/startup jobs in australia for international students/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/open-sourced database of startups/i)).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   });
 
   test('a link to a role the snapshot lacks waits for the board, not the wrong role', async () => {

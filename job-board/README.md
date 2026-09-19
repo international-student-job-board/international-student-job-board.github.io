@@ -399,3 +399,13 @@ the employer sponsors - nothing about the person. All are no-ops without the tag
 descriptions through `String.replace` with a replacement *string*, where `$1` is a
 back-reference - so "Pay around A$104k" spliced a fragment of the page's own `<meta>` into the
 description of every role paid over A$100k.
+
+### Addresses end in a slash
+
+GitHub Pages serves each page from its folder at `/path/` and answers `/path` with a **301**.
+So every canonical, `og:url`, sitemap entry, structured-data URL and internal link in the static
+pages uses the slashed form (`served()` in `seo-assets.js`; `at()` in `src/seo.ts` for the app),
+and only `/` is unslashed. The unslashed form used everywhere before made every sitemap URL a
+redirect and every canonical point at a redirect that pointed back - Search Console's "Page
+with redirect" - which is a likely reason pages weren't being indexed. Don't write a URL without
+it. (Google Analytics `page_path` for these pages now has the slash too.)
