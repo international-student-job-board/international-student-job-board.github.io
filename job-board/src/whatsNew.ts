@@ -12,12 +12,8 @@ export interface Update {
 
 export const UPDATES: Update[] = [
   {
-    date: '2026-09-19',
-    text: 'Filter by the city a role is in and the city an employer is based in, and browse jobs by city, kind of work and visa sponsorship.',
-  },
-  {
-    date: '2026-09-11',
-    text: 'Salary ranges and Glassdoor employer ratings now show on every listing.',
+    date: '2026-09-12',
+    text: 'Salary ranges and Glassdoor employer ratings!',
   },
 ];
 

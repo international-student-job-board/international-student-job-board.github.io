@@ -4459,8 +4459,7 @@ a.occ-visa-code:focus-visible {
 .whats-new {
   position: relative;
   max-width: 60ch;
-  padding: 2px var(--s7) 2px var(--s4);
-  border-left: 2px solid var(--ink);
+  padding: 2px var(--s7) 2px 0;
   font-size: var(--fs-sm);
   line-height: var(--lh-body);
   color: var(--muted);
