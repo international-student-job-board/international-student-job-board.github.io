@@ -1,4 +1,5 @@
 import { toJobs, companiesFrom, isRecent, linkedinId, MONTHS_LISTED, COLUMNS } from './jobs';
+import { invitedScoreFor } from './references';
 import { parseCsv, escapeCell, toCsvRow, splitList, anzscoCodes, triState } from './csv';
 
 const HEADER = COLUMNS.join(',');
@@ -56,8 +57,8 @@ describe('reading the CSV', () => {
       )
     );
     expect(job.employmentType).toBe('Full-time');
-    expect(job.jobLevel).toBe('Senior');
-    expect(job.workArrangement).toBe('On-site');
+    expect(job.jobLevels).toEqual(['Senior']);
+    expect(job.workArrangements).toEqual(['On-site']);
     expect(job.educationLevels).toEqual(['Bachelor', 'Master']);
     expect(job.salary.base).toEqual({
       min: 101268,
@@ -87,6 +88,26 @@ describe('reading the CSV', () => {
     );
     expect(job.salary.source).toBe('advert');
     expect(job.salary.isEstimate).toBe(false);
+  });
+
+  test('a role spanning two job levels keeps both, semicolon-separated', () => {
+    const [job] = toJobs(parseCsv(csv(row({ 'Job level': 'Mid;Senior' }))));
+    expect(job.jobLevels).toEqual(['Mid', 'Senior']);
+  });
+
+  test('a Glassdoor estimate records how specific it is', () => {
+    const [job] = toJobs(
+      parseCsv(
+        csv(
+          row({
+            'Company salary estimate AUD': '95000',
+            'Salary source': 'glassdoor',
+            'Salary scope': 'company',
+          })
+        )
+      )
+    );
+    expect(job.salary.scope).toBe('company');
   });
 
   test('the Glassdoor rating folds onto the employer', () => {
@@ -426,5 +447,29 @@ describe('roles older than the listing window', () => {
 
   test('the window is two months', () => {
     expect(MONTHS_LISTED).toBe(2);
+  });
+});
+
+describe('a pre-loaded slice of the board', () => {
+  test('arriving after the whole board, it does not overwrite what the board registered', () => {
+    // The reference maps are global. The slice carries only its own rows' scores, so if it
+    // landed last and replaced them, every occupation outside it would lose its score.
+    toJobs(
+      parseCsv(
+        csv(
+          row({ 'Job ID': '1', 'ANZSCO 2022': '261313', 'Invited Score': '90' }),
+          row({ 'Job ID': '2', 'ANZSCO 2022': '234211', 'Invited Score': '85' })
+        )
+      )
+    );
+    toJobs(parseCsv(csv(row({ 'Job ID': '2', 'ANZSCO 2022': '234211' }))), true);
+    expect(invitedScoreFor('261313')).toBe(90);
+    expect(invitedScoreFor('234211')).toBe(85);
+  });
+
+  test('its roles are still read the way the board reads them', () => {
+    const [job] = toJobs(parseCsv(csv(row({ 'Job title': 'Analyst', 'Job city': 'Perth' }))), true);
+    expect(job.title).toBe('Analyst');
+    expect(job.city).toBe('Perth');
   });
 });

@@ -5,7 +5,9 @@
     "Junior",
     "Mid",
     "Senior",
-    "Lead"
+    "Lead",
+    "Director",
+    "Executive"
   ],
   "type": [
     "Full-time",

@@ -99,8 +99,13 @@ export interface Job {
    * content/constants.json, or '' when nothing reliable was found.
    */
   employmentType: string;
-  jobLevel: string;
-  workArrangement: string;
+  /** Usually one value, but a role can carry more than one - e.g. LinkedIn's
+   * own "Mid-Senior level" seniority tag becomes both `Mid` and `Senior` when
+   * the title itself doesn't say which. */
+  jobLevels: string[];
+  /** Usually one value, but occasionally more when the advert itself names more
+   * than one (e.g. "Hybrid or Remote"). */
+  workArrangements: string[];
   /** Degrees the advert mentions - a role can name more than one. */
   educationLevels: string[];
   salary: Salary;
@@ -109,21 +114,29 @@ export interface Job {
 /**
  * A role's pay, as far as it is known.
  *
- *  - `base` is a base-salary range, in its original currency and converted to AUD.
+ *  - `base` is a base-salary range, in its original currency and converted to AUD -
+ *    always annualised; the pipeline rejects hourly/monthly figures rather than
+ *    guess at converting them.
  *  - `estimateAud` is a single "typical" AUD figure (Glassdoor's median, or
  *    levels.fyi's total-comp estimate).
  *  - `source` is where the figure came from: `advert` (the employer published
  *    it - not an estimate), `glassdoor` or `levels.fyi` (an estimate).
+ *  - `scope` says how specific an estimate is: `role` (this listing, or a
+ *    same-title/same-seniority Glassdoor bucket) or `company` (no role match,
+ *    so a company-wide average stands in instead). Blank for `advert` and for
+ *    older rows enriched before this was recorded.
  *  - `sourceUrl` is the page to link to for a Glassdoor / levels.fyi figure.
  *
  * `isEstimate` is derived: true unless the source is the advert.
  */
 export type SalarySource = 'advert' | 'glassdoor' | 'levels.fyi' | '';
+export type SalaryScope = 'role' | 'company' | '';
 
 export interface Salary {
   base?: { min?: number; max?: number; currency: string; minAud?: number; maxAud?: number };
   estimateAud?: number;
   source: SalarySource;
+  scope?: SalaryScope;
   sourceUrl: string;
   isEstimate: boolean;
 }

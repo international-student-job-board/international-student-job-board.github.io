@@ -275,7 +275,15 @@ function ApplyButton({ url, jobTitle }: { url: string; jobTitle: string }) {
   );
 }
 
-export function JobDetail({ job }: { job: Job }) {
+/**
+ * `titleLevel` is which heading the role's title is. A page has one <h1>, and which element
+ * it is depends on what the page is: on a role's own address that is the role's title, but on
+ * the board it is the board's headline, and the role showing beside the list is one item under
+ * it. The two look identical - the size comes from .detail-title, not from the tag - so this
+ * only decides what a search engine and a screen reader take the page to be about.
+ */
+export function JobDetail({ job, titleLevel = 1 }: { job: Job; titleLevel?: 1 | 2 }) {
+  const Title = titleLevel === 1 ? 'h1' : 'h2';
   const { company } = job;
   const [mapOpen, setMapOpen] = useState(false);
   const occupations = resolveOccupations(job);
@@ -290,7 +298,7 @@ export function JobDetail({ job }: { job: Job }) {
   // row that adds nothing.
   const unitGroups = unitGroupsFor(job);
   const companyHref = outboundHref(company.website, 'employer');
-  const salaryNote = salarySourceNote(job.salary.source);
+  const salaryNote = salarySourceNote(job.salary.source, job.salary.scope);
 
   return (
     <article className="job-detail" aria-labelledby="job-detail-title">
@@ -311,9 +319,9 @@ export function JobDetail({ job }: { job: Job }) {
           )}
         </p>
 
-        <h1 id="job-detail-title" className="detail-title">
+        <Title id="job-detail-title" className="detail-title">
           {job.title}
-        </h1>
+        </Title>
 
         <div className="detail-meta">
           <span className="detail-posted">
@@ -346,11 +354,35 @@ export function JobDetail({ job }: { job: Job }) {
             </div>
             <div className="fact">
               <dt className="fact-label">Job level</dt>
-              <dd className="fact-value">{orNotSpecified(job.jobLevel)}</dd>
+              <dd className="fact-value">
+                {job.jobLevels.length === 0 ? (
+                  NOT_SPECIFIED
+                ) : (
+                  <span className="value-list">
+                    {job.jobLevels.map((level) => (
+                      <span key={level} className="value-chip">
+                        {level}
+                      </span>
+                    ))}
+                  </span>
+                )}
+              </dd>
             </div>
             <div className="fact">
               <dt className="fact-label">Work arrangement</dt>
-              <dd className="fact-value">{orNotSpecified(job.workArrangement)}</dd>
+              <dd className="fact-value">
+                {job.workArrangements.length === 0 ? (
+                  NOT_SPECIFIED
+                ) : (
+                  <span className="value-list">
+                    {job.workArrangements.map((arrangement) => (
+                      <span key={arrangement} className="value-chip">
+                        {arrangement}
+                      </span>
+                    ))}
+                  </span>
+                )}
+              </dd>
             </div>
             <div className="fact">
               <dt className="fact-label">

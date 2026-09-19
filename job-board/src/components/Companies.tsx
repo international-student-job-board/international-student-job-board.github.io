@@ -11,7 +11,14 @@ import {
   searchCompanies,
   sortCompanies,
 } from '../companies';
-import { companyViewFromParams, companyViewToParams, pruneCompanyFilters } from '../filterParams';
+import {
+  companyViewFromParams,
+  companyViewToParams,
+  pruneCompanyFilters,
+  pageFromParams,
+  withPage,
+} from '../filterParams';
+import { Pagination } from './Pagination';
 import { FilterSelect } from './FilterSelect';
 import { FiltersModal, FilterSection } from './FiltersModal';
 import { FiltersDisclosure } from './FiltersDisclosure';
@@ -146,8 +153,10 @@ export function Companies() {
   const [sort, setSort] = useState<CompanySort>(start.sort);
   const [modalOpen, setModalOpen] = useState(false);
   const isMobile = useIsMobile();
-  const [page, setPage] = useState(1);
-  const topRef = useRef<HTMLDivElement>(null);
+  const [page, setPage] = useState(() =>
+    pageFromParams(new URLSearchParams(window.location.search))
+  );
+  const topRef = useRef<HTMLElement>(null);
   const [view, setView] = useState<View>('cards');
   // Which card the pointer is on, so the map can open that suburb alongside it.
   const [hovered, setHovered] = useState<string | null>(null);
@@ -165,11 +174,11 @@ export function Companies() {
   // Reflect the view into the query string in place - no new history entry per change, and
   // the path (which is always /companies here) is left alone.
   useEffect(() => {
-    const qs = companyViewToParams({ query, filters, minRating, sort }).toString();
+    const qs = withPage(companyViewToParams({ query, filters, minRating, sort }), page).toString();
     const search = qs ? `?${qs}` : '';
     if (search === window.location.search) return;
     window.history.replaceState(window.history.state, '', `${window.location.pathname}${search}`);
-  }, [query, filters, minRating, sort]);
+  }, [query, filters, minRating, sort, page]);
 
   // Back/forward moves between saved views.
   useEffect(() => {
@@ -179,6 +188,7 @@ export function Companies() {
       setFilters(next.filters);
       setMinRating(next.minRating);
       setSort(next.sort);
+      setPage(pageFromParams(new URLSearchParams(window.location.search)));
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
@@ -284,10 +294,16 @@ export function Companies() {
   }, [companies, deferredQuery, filters]);
 
   // Back to the first page whenever the list underneath changes, so you are
-  // never left on page 40 of a set that now has three.
+  // never left on page 40 of a set that now has three. Compared by what the view says rather
+  // than by identity, so settling a shared link against the data - which rebuilds the filter
+  // objects without changing anything - doesn't throw away the page it asked for.
+  const viewKey = companyViewToParams({ query, filters, minRating, sort }).toString();
+  const seenView = useRef(viewKey);
   useEffect(() => {
+    if (seenView.current === viewKey) return;
+    seenView.current = viewKey;
     setPage(1);
-  }, [query, filters, sort, minRating]);
+  }, [viewKey]);
 
   const clearAll = () => {
     setFilters(NO_FILTERS);
@@ -299,19 +315,19 @@ export function Companies() {
   const pageCompanies = shown.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   /**
-   * Turning a page puts you at the top of the new one.
-   *
-   * scrollIntoView rather than window.scrollTo, because on this page the window
-   * isn't what scrolls: the content sits in .about-panel, which has its own
-   * overflow. Asking the top of the list to come into view works whichever
-   * ancestor is doing the scrolling - the panel on a wide screen, the window
-   * once the panes stack. The window call stays for the stacked case, where
-   * there is a page scroll to reset as well.
+   * Turning a page puts you at the top of the new one - the top of the results, not of the
+   * page, so the intro and filters you have already scrolled past don't return between pages.
+   * The results band carries the scroll-margin that keeps it clear of the sticky header.
    */
   const goToPage = (next: number) => {
     setPage(next);
     topRef.current?.scrollIntoView?.({ block: 'start' });
-    window.scrollTo?.({ top: 0 });
+  };
+
+  /** The address of a page of this same list. */
+  const hrefForPage = (n: number) => {
+    const params = withPage(companyViewToParams({ query, filters, minRating, sort }), n);
+    return `${window.location.pathname}${params.toString() ? `?${params}` : ''}`;
   };
 
   const openings = shown.reduce((total, c) => total + c.openings, 0);
@@ -373,86 +389,99 @@ export function Companies() {
   };
 
   return (
-    <div className="about" ref={topRef}>
+    <>
       <header className="page-intro">
-        <h1 id="companies-heading">Startups and scaleups founded in Australia</h1>
+        <h1 id="companies-heading" className="page-intro-title">
+          Startups and scaleups founded in Australia
+        </h1>
+        <p className="page-lead">
+          Australian startups and scaleups, with Glassdoor ratings and reviews, plus whether they're
+          an accredited visa sponsor or if they hire international students and graduates.
+        </p>
       </header>
 
-      <section className="about-section" aria-labelledby="companies-heading">
-        <div className="filters-region companies-filters">
-          <FiltersDisclosure activeCount={chips.length + (query.trim() ? 1 : 0)}>
-            <div className="filterbar" role="search">
-              <div className="filter-row">
-                <div className="filter-search">
-                  <label className="visually-hidden" htmlFor="company-search">
-                    Search companies
-                  </label>
-                  <img
-                    className="search-icon"
-                    src={`${base}/icons/magifying-glass.svg`}
-                    alt=""
-                    aria-hidden="true"
-                    width={18}
-                    height={18}
-                  />
-                  <input
-                    id="company-search"
-                    type="search"
-                    placeholder="Search by name, industry or what they build"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                  />
-                </div>
-
-                {QUICK_KEYS.map((key) => (
-                  <span key={key}>{selectFor(key, false)}</span>
-                ))}
-
-                <RatingFilter value={minRating} onChange={setMinRating} counts={ratingCounts} />
-
-                <FilterSelect
-                  label="Sort"
-                  multiple={false}
-                  searchable={false}
-                  options={SORTS.map((s) => ({ value: s.value, label: s.label }))}
-                  selected={[sort]}
-                  onChange={(next) => setSort((next[0] as CompanySort) ?? 'openings')}
+      <div className="filters-region">
+        <FiltersDisclosure
+          activeCount={chips.length + (query.trim() ? 1 : 0)}
+          defaultOpen={!isMobile}
+        >
+          <div className="filterbar" role="search">
+            <div className="filter-row">
+              <div className="filter-search">
+                <label className="visually-hidden" htmlFor="company-search">
+                  Search companies
+                </label>
+                <img
+                  className="search-icon"
+                  src={`${base}/icons/magifying-glass.svg`}
+                  alt=""
+                  aria-hidden="true"
+                  width={18}
+                  height={18}
                 />
-
-                <button
-                  type="button"
-                  className={`more-filters${modalCount ? ' is-set' : ''}`}
-                  onClick={() => setModalOpen(true)}
-                >
-                  More filters
-                  {modalCount > 0 && <span className="more-filters-count">{modalCount}</span>}
-                </button>
+                <input
+                  id="company-search"
+                  type="search"
+                  placeholder="Search name or industry"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
               </div>
 
-              <ActiveFilters chips={chips} onClear={clearAll} />
+              {QUICK_KEYS.map((key) => (
+                <span key={key}>{selectFor(key, false)}</span>
+              ))}
 
-              <FiltersModal
-                open={modalOpen}
-                onClose={() => setModalOpen(false)}
-                onClear={clearAll}
-                resultCount={shown.length}
-                resultNoun="company"
-                resultNounPlural="companies"
+              <RatingFilter value={minRating} onChange={setMinRating} counts={ratingCounts} />
+
+              <FilterSelect
+                label="Sort"
+                multiple={false}
+                searchable={false}
+                options={SORTS.map((s) => ({ value: s.value, label: s.label }))}
+                selected={[sort]}
+                onChange={(next) => setSort((next[0] as CompanySort) ?? 'openings')}
+              />
+
+              <button
+                type="button"
+                className={`more-filters${modalCount ? ' is-set' : ''}`}
+                onClick={() => setModalOpen(true)}
               >
-                {MODAL_GROUPS.map((group) => (
-                  <FilterSection title={group.title} key={group.title}>
-                    {group.keys.map((key) => (
-                      <div className="fmodal-control" key={key}>
-                        {selectFor(key, true)}
-                      </div>
-                    ))}
-                  </FilterSection>
-                ))}
-              </FiltersModal>
+                More filters
+                {modalCount > 0 && <span className="more-filters-count">{modalCount}</span>}
+              </button>
             </div>
-          </FiltersDisclosure>
-        </div>
 
+            <ActiveFilters chips={chips} onClear={clearAll} />
+
+            <FiltersModal
+              open={modalOpen}
+              onClose={() => setModalOpen(false)}
+              onClear={clearAll}
+              resultCount={shown.length}
+              resultNoun="company"
+              resultNounPlural="companies"
+            >
+              {MODAL_GROUPS.map((group) => (
+                <FilterSection title={group.title} key={group.title}>
+                  {group.keys.map((key) => (
+                    <div className="fmodal-control" key={key}>
+                      {selectFor(key, true)}
+                    </div>
+                  ))}
+                </FilterSection>
+              ))}
+            </FiltersModal>
+          </div>
+        </FiltersDisclosure>
+      </div>
+
+      <section
+        className="about-section results-band"
+        aria-labelledby="companies-heading"
+        ref={topRef}
+      >
         {status === 'loading' && <p className="panel-note">Loading companies . . .</p>}
         {status === 'error' && (
           <p className="panel-note" role="alert">
@@ -464,8 +493,9 @@ export function Companies() {
           <>
             <div className="jobs-head company-head">
               <p className="result-count" aria-live="polite">
-                {shown.length} {shown.length === 1 ? 'company' : 'companies'}
-                {openings > 0 && ` · ${openings} open roles`}
+                {shown.length.toLocaleString('en-AU')}{' '}
+                {shown.length === 1 ? 'company' : 'companies'}
+                {openings > 0 && ` · ${openings.toLocaleString('en-AU')} open roles`}
               </p>
 
               <div className="view-toggle" role="group" aria-label="How to show the companies">
@@ -508,33 +538,19 @@ export function Companies() {
               </div>
             )}
 
-            {view !== 'map' && totalPages > 1 && (
-              <nav className="pagination" aria-label="Company pages">
-                <button
-                  type="button"
-                  className="page-btn"
-                  disabled={currentPage === 1}
-                  onClick={() => goToPage(currentPage - 1)}
-                >
-                  Prev
-                </button>
-                <span className="page-status" aria-live="polite">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <button
-                  type="button"
-                  className="page-btn"
-                  disabled={currentPage === totalPages}
-                  onClick={() => goToPage(currentPage + 1)}
-                >
-                  Next
-                </button>
-              </nav>
+            {view !== 'map' && (
+              <Pagination
+                page={currentPage}
+                totalPages={totalPages}
+                label="Company pages"
+                hrefFor={hrefForPage}
+                onPage={goToPage}
+              />
             )}
           </>
         )}
       </section>
-    </div>
+    </>
   );
 }
 

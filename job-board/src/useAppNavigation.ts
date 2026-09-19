@@ -1,8 +1,23 @@
 import { RefObject, useEffect, useRef, useState } from 'react';
 import { EMPTY_FILTERS } from './jobFilters';
-import { filtersToParams, filtersFromParams, hasFilterParams } from './filterParams';
+import {
+  filtersToParams,
+  filtersFromParams,
+  hasFilterParams,
+  pageFromParams,
+  withPage,
+  PAGE_PARAM,
+} from './filterParams';
 import { Route, parsePath, pathFor, pathFromLegacyHash } from './routes';
 import { FilterState } from './components/Filters';
+
+/** The page the address asks for on arrival. */
+const pageFromUrl = (): number =>
+  pageFromParams(new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search));
+
+/** Whether the layout has stacked the list and the role into one column - see the 900px rule in App.css. */
+const isStacked = (): boolean =>
+  typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 900px)').matches;
 
 /** The filters the address asks for on arrival - a shared or bookmarked view. */
 const filtersFromUrl = (): FilterState =>
@@ -38,15 +53,19 @@ export interface AppNavigation {
  */
 export function useAppNavigation(): AppNavigation {
   const [filters, setFilters] = useState<FilterState>(filtersFromUrl);
+  // A link to page 3 is as specific as a link with filters: it names a view, so the board
+  // doesn't swap in its default filters underneath it.
   const arrivedWithFilters = useRef(
-    typeof window !== 'undefined' && hasFilterParams(new URLSearchParams(window.location.search))
+    typeof window !== 'undefined' &&
+      (hasFilterParams(new URLSearchParams(window.location.search)) ||
+        new URLSearchParams(window.location.search).has(PAGE_PARAM))
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // On mobile the list and detail are separate "pages"; this flips to the detail page when a
   // job is tapped.
   const [showDetail, setShowDetail] = useState(false);
   const [route, setRoute] = useState<Route>(() => parsePath(window.location.pathname).route);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(pageFromUrl);
   const detailRef = useRef<HTMLElement>(null);
   const listRef = useRef<HTMLElement>(null);
 
@@ -77,6 +96,7 @@ export function useAppNavigation(): AppNavigation {
       read();
       if (parsePath(window.location.pathname).route === 'jobs') {
         setFilters(filtersFromUrl());
+        setPage(pageFromUrl());
       }
     };
 
@@ -115,16 +135,22 @@ export function useAppNavigation(): AppNavigation {
    */
   useEffect(() => {
     if (route !== 'jobs') return;
-    const qs = filtersToParams(filters).toString();
+    const qs = withPage(filtersToParams(filters), page).toString();
     const search = qs ? `?${qs}` : '';
     if (search === window.location.search) return;
     window.history.replaceState(window.history.state, '', `${window.location.pathname}${search}`);
-  }, [filters, route, selectedId]);
+  }, [filters, page, route, selectedId]);
 
-  // Back to page 1 whenever the filters change.
+  // Back to page 1 whenever the filters change. Compared by what they say, not by identity: the
+  // board rebuilds the filter object when it settles them against the data, and a link to page
+  // 3 must survive that - nothing about the view actually changed.
+  const filtersKey = filtersToParams(filters).toString();
+  const seenFilters = useRef(filtersKey);
   useEffect(() => {
+    if (seenFilters.current === filtersKey) return;
+    seenFilters.current = filtersKey;
     setPage(1);
-  }, [filters]);
+  }, [filtersKey]);
 
   const openJob = (id: string) => {
     setSelectedId(id);
@@ -133,14 +159,19 @@ export function useAppNavigation(): AppNavigation {
     // arrived from under twenty back-button steps. The filter query rides along so closing
     // the role returns to the same narrowed list.
     window.history.replaceState(null, '', pathFor('jobs', id) + window.location.search);
-    window.scrollTo({ top: 0 });
+    // Only where the role replaces the list. Beside it, the role is pinned in view and the
+    // list keeps its place, so jumping to the top would throw away where you were reading.
+    if (isStacked()) window.scrollTo({ top: 0 });
   };
 
-  /** Turning a page puts you at the top of the new one. */
+  /**
+   * Turning a page puts you at the top of the new list - the top of the list, not of the
+   * page, so the intro and filters you already scrolled past don't come back between pages.
+   * (.jobs-panel carries the scroll-margin that keeps it clear of the sticky header.)
+   */
   const goToPage = (next: number) => {
     setPage(next);
-    listRef.current?.scrollTo?.({ top: 0 });
-    window.scrollTo?.({ top: 0 });
+    listRef.current?.scrollIntoView?.({ block: 'start' });
   };
 
   return {

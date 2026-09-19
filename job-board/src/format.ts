@@ -13,6 +13,12 @@ export function todayISO(): string {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
+/** An ISO date (YYYY-MM-DD) that many days earlier - done in UTC, so a DST change can't skip a day. */
+export function daysBeforeISO(iso: string, days: number): string {
+  const time = new Date(`${iso}T00:00:00Z`).getTime();
+  return Number.isNaN(time) ? '' : new Date(time - days * 86_400_000).toISOString().slice(0, 10);
+}
+
 // Format an ISO date (YYYY-MM-DD) as "12 Feb 2026".
 export function formatDate(iso: string): string {
   const date = new Date(iso);

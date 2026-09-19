@@ -191,10 +191,28 @@ describe('government links', () => {
     );
   });
 
-  test('the salary source note names the source, or is blank for the advert', () => {
+  test('the salary source note names the source, with no scope recorded', () => {
     expect(salarySourceNote('glassdoor')).toBe('Source: Glassdoor');
     expect(salarySourceNote('levels.fyi')).toBe('Source: Levels.fyi');
-    expect(salarySourceNote('advert')).toBe('');
+  });
+
+  test('an advert-stated salary says so - it is not an estimate', () => {
+    expect(salarySourceNote('advert')).toBe('Stated directly in the job advert - not an estimate.');
+  });
+
+  test('a role-scoped estimate says it is for this specific role', () => {
+    expect(salarySourceNote('glassdoor', 'role')).toBe(
+      'An estimate from Glassdoor for this specific role.'
+    );
+    expect(salarySourceNote('levels.fyi', 'role')).toBe(
+      'An estimate from Levels.fyi for this specific role.'
+    );
+  });
+
+  test('a company-scoped estimate says it is not this specific role', () => {
+    expect(salarySourceNote('glassdoor', 'company')).toBe(
+      'An estimate from Glassdoor, averaged across the whole company - not this specific role.'
+    );
   });
 
   test('a salary-source URL is passed through only for Glassdoor or levels.fyi', () => {

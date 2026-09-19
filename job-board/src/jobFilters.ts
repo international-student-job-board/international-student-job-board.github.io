@@ -1,6 +1,6 @@
 import { Job, hasSalary, salaryRangeAud, jobLocation } from './types';
 import { isRecent } from './jobs';
-import { dateValue, todayISO } from './format';
+import { dateValue, todayISO, daysBeforeISO } from './format';
 import { getConstant } from './constants';
 import {
   pathwayVisasFor,
@@ -44,11 +44,18 @@ export const EMPTY_FILTERS: FilterState = {
   minRating: 0,
 };
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/** The recency filter, resolved to an instant for one filtering pass. */
+/**
+ * The recency filter, resolved to an instant for one filtering pass.
+ *
+ * A role's posting date is a calendar date with no time of day, read as midnight UTC. So the
+ * window is counted in calendar days - "posted no earlier than N days before today" - and not
+ * as `now - N * 24h`. The rolling version broke on exactly the roles it was for: a role dated
+ * yesterday is midnight yesterday, which is already more than 24 hours ago by mid-morning, so
+ * "Last 24 hours" was empty however fresh the data was. With no time to go on, "last 24 hours"
+ * can only mean today and yesterday, and that is what it returns.
+ */
 export const cutoff = (filters: FilterState): number =>
-  filters.postedWithinDays > 0 ? Date.now() - filters.postedWithinDays * DAY_MS : 0;
+  filters.postedWithinDays > 0 ? dateValue(daysBeforeISO(todayISO(), filters.postedWithinDays)) : 0;
 
 /** An empty filter narrows nothing; otherwise the job's value has to be in it. */
 const allows = (selected: string[], value: string) =>
@@ -97,8 +104,8 @@ export function matches(job: Job, filters: FilterState, postedAfter: number): bo
   if (!allows(filters.states, job.state)) return false;
   if (!allows(filters.types, job.type)) return false;
   if (!allows(filters.employmentTypes, job.employmentType)) return false;
-  if (!allows(filters.jobLevels, job.jobLevel)) return false;
-  if (!allows(filters.workArrangements, job.workArrangement)) return false;
+  if (!overlaps(filters.jobLevels, job.jobLevels)) return false;
+  if (!overlaps(filters.workArrangements, job.workArrangements)) return false;
   if (!overlaps(filters.educationLevels, job.educationLevels)) return false;
   if (!allows(filters.cities, job.city)) return false;
   if (!overlaps(filters.industries, job.company.industries)) return false;
@@ -167,8 +174,8 @@ const FACET_PICKERS: Record<FilterListKey, (job: Job) => string[]> = {
   states: (j) => [j.state],
   types: (j) => [j.type],
   employmentTypes: (j) => [j.employmentType],
-  jobLevels: (j) => [j.jobLevel],
-  workArrangements: (j) => [j.workArrangement],
+  jobLevels: (j) => j.jobLevels,
+  workArrangements: (j) => j.workArrangements,
   educationLevels: (j) => j.educationLevels,
   cities: (j) => [j.city],
   industries: (j) => j.company.industries,

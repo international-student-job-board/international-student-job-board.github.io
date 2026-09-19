@@ -4,8 +4,8 @@ const base = process.env.PUBLIC_URL || '';
 const NAV = [
   { route: 'jobs', label: 'Jobs' },
   { route: 'companies', label: 'Startups and scaleups' },
+  { route: 'about', label: 'How it works' },
   { route: 'post', label: 'Post a job' },
-  { route: 'about', label: 'About' },
   // Only ever built into a local dev bundle, so it can't reach the live site.
   ...(process.env.NODE_ENV === 'development' ? [{ route: 'admin', label: 'Add a job' }] : []),
 ];

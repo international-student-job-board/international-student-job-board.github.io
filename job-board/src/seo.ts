@@ -133,12 +133,19 @@ const SCHEMA_EMPLOYMENT: Record<string, string> = {
   Contract: 'CONTRACTOR',
   Casual: 'TEMPORARY',
   Freelance: 'CONTRACTOR',
+  Internship: 'INTERN',
 };
 
-/** "On-site" -> nothing; "Remote"/"Hybrid" -> the jobLocationType Google expects. */
+/**
+ * "On-site" and "Hybrid" -> nothing; "Remote" -> the jobLocationType Google expects.
+ *
+ * Only a fully remote role is TELECOMMUTE. A hybrid one still has to be attended at its
+ * jobLocation, and marking it remote makes it a "work from home" result for people who can't
+ * do the job from home - which Google treats as misleading markup. It is left as an ordinary
+ * on-site posting, same as scripts/seo-assets.js does for the static pages.
+ */
 const SCHEMA_ARRANGEMENT: Record<string, string> = {
   Remote: 'TELECOMMUTE',
-  Hybrid: 'TELECOMMUTE',
 };
 
 export function jobPostingSchema(job: Job, url: string, validThrough: string): object {
@@ -147,6 +154,7 @@ export function jobPostingSchema(job: Job, url: string, validThrough: string): o
     .filter(Boolean);
 
   const employmentType = SCHEMA_EMPLOYMENT[job.employmentType];
+  const schemaArrangement = job.workArrangements.map((a) => SCHEMA_ARRANGEMENT[a]).find(Boolean);
   const { base } = job.salary;
   // Only a figure the employer actually published belongs in structured data -
   // a levels.fyi estimate would misrepresent it as the advertised salary.
@@ -184,9 +192,7 @@ export function jobPostingSchema(job: Job, url: string, validThrough: string): o
     ...(job.posted ? { datePosted: job.posted } : {}),
     ...(validThrough ? { validThrough } : {}),
     ...(employmentType ? { employmentType } : {}),
-    ...(SCHEMA_ARRANGEMENT[job.workArrangement]
-      ? { jobLocationType: SCHEMA_ARRANGEMENT[job.workArrangement] }
-      : {}),
+    ...(schemaArrangement ? { jobLocationType: schemaArrangement } : {}),
     ...(baseSalary ? { baseSalary } : {}),
     hiringOrganization: {
       '@type': 'Organization',
@@ -198,7 +204,11 @@ export function jobPostingSchema(job: Job, url: string, validThrough: string): o
       address: {
         '@type': 'PostalAddress',
         ...(job.city ? { addressLocality: job.city } : {}),
-        addressRegion: 'VIC',
+        // No addressRegion, deliberately. It was hard-coded to VIC, telling Google that every
+        // role on the board was in Victoria; but the obvious replacement, the row's state, is
+        // wrong too - that column is the employer's (see jobLocation in types.ts), so 15% of
+        // roles would be placed in a state their city isn't in. It is optional, and a wrong
+        // value in structured data is worse than a missing one.
         addressCountry: 'AU',
       },
     },

@@ -35,7 +35,7 @@ const JOB_COLUMNS = [
   'Employment type', 'Job level', 'Work arrangement', 'Education level',
   'Base salary min', 'Base salary max', 'Base salary currency',
   'Base salary min AUD', 'Base salary max AUD', 'Company salary estimate AUD',
-  'Salary source', 'Salary source URL', 'Advert posted',
+  'Salary source', 'Salary source URL', 'Advert posted', 'Salary scope',
 ];
 
 const CONTENT_DIR = path.join(__dirname, '..', 'content');

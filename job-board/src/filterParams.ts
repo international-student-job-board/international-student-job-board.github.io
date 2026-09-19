@@ -45,6 +45,7 @@ const LIST_KEYS = Object.keys(LIST_PARAM) as FilterListKey[];
 /** The scalar filters. */
 const QUERY_PARAM = 'q';
 const POSTED_PARAM = 'posted';
+export const PAGE_PARAM = 'page';
 const SALARY_MIN_PARAM = 'salarymin';
 const SALARY_MAX_PARAM = 'salarymax';
 const RATING_PARAM = 'rating';
@@ -218,4 +219,18 @@ export function pruneCompanyFilters(
 ): CompanyFilters {
   const { filters: pruned, changed } = prune(filters, options, COMPANY_LIST_KEYS);
   return changed ? pruned : filters;
+}
+
+/** The page the address asks for: `?page=3` is 3; anything absent or unreadable is the first. */
+export function pageFromParams(params: URLSearchParams): number {
+  const n = Number.parseInt(params.get(PAGE_PARAM) ?? '', 10);
+  return Number.isFinite(n) && n > 1 ? n : 1;
+}
+
+/** The same params with the page set - and left out for page 1, so the first page keeps its clean address. */
+export function withPage(params: URLSearchParams, page: number): URLSearchParams {
+  const next = new URLSearchParams(params);
+  if (page > 1) next.set(PAGE_PARAM, String(page));
+  else next.delete(PAGE_PARAM);
+  return next;
 }

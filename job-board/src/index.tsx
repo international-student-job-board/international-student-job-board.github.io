@@ -5,6 +5,7 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { loadOccupations, loadOscaOccupations, loadInvitationRound } from './references';
 import { loadConstants } from './constants';
+import { loadRecentJobs } from './jobs';
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 
@@ -14,6 +15,11 @@ const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
  * inside render, and threading a promise through all of that to save two small files at
  * boot would not be a trade worth making.
  */
+// The newest few days of roles start downloading now, alongside the reference data rather than
+// after it: the board's first paint is these roles, so they are the one thing worth not
+// queueing behind the rest.
+void loadRecentJobs();
+
 Promise.allSettled([
   loadOccupations(),
   loadOscaOccupations(),

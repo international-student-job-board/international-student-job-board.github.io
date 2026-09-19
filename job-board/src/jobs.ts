@@ -1,7 +1,7 @@
 // content/jobs.csv is the board: one row per open role, with the employer's columns
 // repeated on each of its roles.
 
-import { Job, Company, Salary, SalarySource } from './types';
+import { Job, Company, Salary, SalarySource, SalaryScope } from './types';
 import {
   parseCsv,
   splitList,
@@ -77,6 +77,7 @@ export const COLUMNS = [
   'Salary source',
   'Salary source URL',
   'Advert posted',
+  'Salary scope',
 ] as const;
 
 function toCompany(row: Record<string, string>): Company {
@@ -140,12 +141,15 @@ function toSalary(row: Record<string, string>): Salary {
   const raw = (row['Salary source'] ?? '').trim().toLowerCase();
   const source: SalarySource =
     raw === 'advert' || raw === 'glassdoor' || raw === 'levels.fyi' ? raw : '';
+  const rawScope = (row['Salary scope'] ?? '').trim().toLowerCase();
+  const scope: SalaryScope = rawScope === 'role' || rawScope === 'company' ? rawScope : '';
   return {
     base,
     estimateAud: int(row['Company salary estimate AUD']),
     source,
     sourceUrl: (row['Salary source URL'] ?? '').trim(),
     isEstimate: source === 'glassdoor' || source === 'levels.fyi',
+    scope,
   };
 }
 
@@ -170,15 +174,27 @@ function toJob(row: Record<string, string>, company: Company): Job {
     applyUrl: (row['Job URL'] ?? '').trim(),
     company,
     employmentType: (row['Employment type'] ?? '').trim(),
-    jobLevel: (row['Job level'] ?? '').trim(),
-    workArrangement: (row['Work arrangement'] ?? '').trim(),
+    jobLevels: splitNames(row['Job level']),
+    workArrangements: splitNames(row['Work arrangement']),
     educationLevels: splitNames(row['Education level']),
     salary: toSalary(row),
   };
 }
 
-/** Rows -> roles, newest first. */
-export function toJobs(rows: Record<string, string>[]): Job[] {
+/** Set once the whole board has registered its reference maps, so a snapshot can't overwrite them. */
+let boardRegistered = false;
+
+/**
+ * Rows -> roles, newest first.
+ *
+ * `snapshot` marks rows that are only a slice of the board (the pre-loaded newest days). It
+ * registers the unit-group titles and invited scores those rows carry - the reference maps
+ * are global, and a slice has to be readable on its own - but only until the full board has
+ * done the same. The snapshot is a few hundred rows against thousands, so it is very likely
+ * to land first, but nothing guarantees it, and a slice arriving last must not replace the
+ * maps the whole board built.
+ */
+export function toJobs(rows: Record<string, string>[], snapshot = false): Job[] {
   const companies = foldCompanies(rows);
 
   // The four-digit titles live only in this file, so they are registered for
@@ -191,7 +207,7 @@ export function toJobs(rows: Record<string, string>[]): Job[] {
       if (names[i] && !titles[code]) titles[code] = names[i];
     });
   }
-  setUnitGroupTitles(titles);
+  if (!snapshot || !boardRegistered) setUnitGroupTitles(titles);
 
   // Likewise the invited scores: SkillSelect scores an occupation, not a row, so every code
   // a row carries gets the same score. The first row to name a code wins, same as titles
@@ -204,7 +220,8 @@ export function toJobs(rows: Record<string, string>[]): Job[] {
       if (!(code in scores)) scores[code] = score;
     }
   }
-  setInvitedScores(scores);
+  if (!snapshot || !boardRegistered) setInvitedScores(scores);
+  if (!snapshot) boardRegistered = true;
 
   return rows
     .map((row) => {
@@ -298,6 +315,35 @@ function enrich(jobs: Job[], companies: Company[]): Job[] {
     }
     return { ...job, company };
   });
+}
+
+const RECENT_URL = dataUrl('/recent-jobs.csv');
+
+let recent: Promise<Job[]> | null = null;
+
+/**
+ * The newest few days of roles, written next to the board at build time (see
+ * scripts/seo-assets.js) so there is something to show while the whole board - several
+ * megabytes of CSV - downloads and parses.
+ *
+ * Never rejects: it is a head start, not something the board depends on. The file is absent
+ * in development and on a build from before it existed, and either is just "no snapshot".
+ * Memoised, so index.tsx can start the download before React mounts and the hook that reads
+ * it later gets the same request rather than making another.
+ */
+export function loadRecentJobs(): Promise<Job[]> {
+  if (!recent) {
+    recent = (async () => {
+      try {
+        const res = await fetch(RECENT_URL);
+        if (!res.ok) return [];
+        return toJobs(parseCsv(await res.text()), true);
+      } catch {
+        return [];
+      }
+    })();
+  }
+  return recent;
 }
 
 export async function loadJobs(): Promise<Job[]> {

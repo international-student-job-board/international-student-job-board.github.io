@@ -26,7 +26,7 @@
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/icons/apple-touch-icon.png" />
     <meta
       name="description"
-      content="Curated startup and scaleup jobs in Australia for international students and graduates, with migration pathways and visa info!"
+      content="Startup and scaleup jobs in Australia for international students and graduates, with migration pathways and visa info!"
     />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -46,7 +46,7 @@
     />
     <meta
       property="og:description"
-      content="Curated startup and scaleup jobs in Australia for international students and graduates, with migration pathways and visa info!"
+      content="Startup and scaleup jobs in Australia for international students and graduates, with migration pathways and visa info!"
     />
     <meta property="og:url" content="https://international-student-job-board.github.io/" />
     <meta
@@ -115,6 +115,64 @@
         margin-top: 24px;
         font-size: 0.875rem;
         color: var(--muted, #666);
+      }
+
+      /* The newest roles, as cards. Same hierarchy as .job-card in App.css - the
+         title leads in weight, then three greys step back through company, place
+         and date - so the moment React swaps this out for the real list is a
+         change of layout, not of look. Sits on the app's tokens, with fallbacks
+         for the instant before main.css is parsed. */
+      .preboot .pj-lede {
+        font-size: 0.875rem;
+        color: var(--muted, #555);
+      }
+      .preboot .pj-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--s3, 12px);
+      }
+      .preboot .pj {
+        display: flex;
+        flex-direction: column;
+        gap: var(--s1, 4px);
+        padding: var(--s5, 24px);
+        border: 0;
+        border-radius: var(--radius, 15px);
+        background: var(--white, #fff);
+        box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
+      }
+      .preboot .pj-title {
+        font-size: var(--fs-h3, 1.125rem);
+        font-weight: var(--fw-strong, 600);
+        line-height: 1.3;
+        text-decoration: none;
+      }
+      .preboot .pj-company {
+        font-size: 0.875rem;
+        color: var(--muted-strong, #444);
+      }
+      .preboot .pj-meta {
+        font-size: 0.875rem;
+        color: var(--muted, #555);
+      }
+      .preboot .pj-posted {
+        font-size: 0.8125rem;
+        color: var(--muted, #555);
+      }
+      .preboot .pj-flags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--s2, 8px);
+        margin-top: var(--s3, 12px);
+      }
+      .preboot .pj-flag {
+        padding: var(--s1, 4px) var(--s3, 12px);
+        border-radius: 999px;
+        background: var(--sponsor, #008040);
+        color: var(--white, #fff);
+        font-size: 0.8125rem;
+        font-weight: var(--fw-strong, 600);
+        line-height: 1.3;
       }
     </style>
   </head>

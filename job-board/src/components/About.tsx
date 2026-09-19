@@ -5,11 +5,11 @@ const HOW_STUDENTS = [
   {
     n: 1,
     title: 'Checkout local startups',
-    body: 'We have tagged jobs manually verified to accept international students and graduates.',
+    body: 'We have tagged jobs verified to accept international students and graduates.',
   },
   {
     n: 2,
-    title: 'Vibe check',
+    title: 'Check the fit',
     body: 'See the visa you can apply on, where it can lead, and if the role actually matches your skills.',
   },
   {
@@ -39,26 +39,22 @@ const NOW = [
   'Whether the role offers an employer-sponsored visa',
   'Roles being mapped with possible ANZSCO occupations',
   'The usual like the employer details, type and location',
-  'Browse Australian startups that are hiring',
-  'A bomb search filter to find matching roles and startups!',
+  'Checkout Australian startups and scaleups',
 ];
 
 const NEXT = [
-  'Salary information for each role',
-  'Newsletter of roles that match your visa and skills delivered to your inbox',
-  "A map view of jobs by location, coz that's easier to find where to work",
-  'Create one resume and use that to apply to many job applications (bye bye bye to forms!)',
+  'Precise salary information for each role',
+  'Roles that match your visa needs and skills',
+  'Create one resume and use it to apply to many roles',
   'Track how your application is progressing',
-  'Interview tips and reviews from international students who applied to these startups before',
   'Networking events',
-  '. . . a backend',
 ];
 
 export function About() {
   return (
     <div className="about">
       <header className="about-hero">
-        <h1>International students 🤝🏿 local startups</h1>
+        <h1>Where international students meet Australian startups</h1>
         <p className="about-lede">
           We have created this website to connect international students and graduates with roles at
           startups and scaleups founded in Australia.
@@ -147,8 +143,9 @@ export function About() {
           for the latest information on visa requirements and eligibility.
         </p>
         <p>
-          Plus, gotta get my s**t together to build a proper backend to this GitHub pages website.
-          Just thought of getting it out there whilst fleshing it out.
+          This board runs on GitHub Pages today, with a proper backend on the way - we wanted it
+          live and useful for job hunting sooner rather than later, and are building the rest of it
+          in the open.
         </p>
         <p>
           Please submit a{' '}

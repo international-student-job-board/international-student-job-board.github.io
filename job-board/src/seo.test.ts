@@ -17,8 +17,8 @@ const job = (over: Partial<Job> = {}): Job =>
     posted: '2026-07-01',
     applyUrl: 'https://acme.test/apply',
     employmentType: '',
-    jobLevel: '',
-    workArrangement: '',
+    jobLevels: [],
+    workArrangements: [],
     educationLevels: [],
     salary: { source: '', sourceUrl: '', isEstimate: false },
     company: {
@@ -123,7 +123,7 @@ describe('JobPosting structured data', () => {
     const s = jobPostingSchema(
       job({
         employmentType: 'Full-time',
-        workArrangement: 'Remote',
+        workArrangements: ['Remote'],
         salary: {
           base: { minAud: 95000, maxAud: 110000, currency: 'AUD' },
           source: 'advert',
@@ -157,6 +157,35 @@ describe('JobPosting structured data', () => {
       ''
     ) as Record<string, any>;
     expect(s.baseSalary).toBeUndefined();
+  });
+
+  test('no region is claimed for a role, whatever state its row carries', () => {
+    // It was hard-coded to VIC, so every role was reported to Google as being in Victoria. The
+    // row's own state is no better: that column is the employer's, and beside a role's city it
+    // puts Melbourne in New South Wales. Locality and country are what is known to be true.
+    const address = (over: Partial<Job>) =>
+      (jobPostingSchema(job(over), `${ORIGIN}/jobs/7`, '') as Record<string, any>).jobLocation
+        .address;
+    const sydneyRoleAtVictorianCompany = address({ city: 'Sydney', state: 'Victoria' });
+    expect(sydneyRoleAtVictorianCompany.addressRegion).toBeUndefined();
+    expect(sydneyRoleAtVictorianCompany.addressLocality).toBe('Sydney');
+    expect(sydneyRoleAtVictorianCompany.addressCountry).toBe('AU');
+  });
+
+  test('only a fully remote role is marked as work-from-home', () => {
+    // A hybrid role is still attended in person. Marking it TELECOMMUTE surfaces it as a
+    // "work from home" result for people who cannot do it from home.
+    const type = (arrangements: string[]) =>
+      (
+        jobPostingSchema(job({ workArrangements: arrangements }), `${ORIGIN}/jobs/7`, '') as Record<
+          string,
+          any
+        >
+      ).jobLocationType;
+    expect(type(['Remote'])).toBe('TELECOMMUTE');
+    expect(type(['Hybrid'])).toBeUndefined();
+    expect(type(['On-site'])).toBeUndefined();
+    expect(type([])).toBeUndefined();
   });
 
   test('the pages that are not a role describe the site instead', () => {

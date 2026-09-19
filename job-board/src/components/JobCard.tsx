@@ -1,5 +1,7 @@
+import { MouseEvent as ReactMouseEvent } from 'react';
 import { Job, hasSalary, jobLocation } from '../types';
 import { formatDate, formatSalaryAud } from '../format';
+import { pathFor } from '../routes';
 
 interface Props {
   job: Job;
@@ -10,7 +12,7 @@ interface Props {
 export function JobCard({ job, selected, onSelect }: Props) {
   const meta = [
     job.type,
-    job.workArrangement,
+    job.workArrangements.join('/'),
     jobLocation(job),
     hasSalary(job.salary) ? formatSalaryAud(job.salary) : '',
   ]
@@ -20,13 +22,26 @@ export function JobCard({ job, selected, onSelect }: Props) {
     job.company.accreditedSponsor ||
     job.company.hiresInternationalStudents ||
     job.invitedScore !== undefined;
+
+  // A real link, not a button, so right-click "open in new tab", middle-click and
+  // ctrl/cmd-click all just work. Only a plain, unmodified left click is worth
+  // taking over for the in-place select-and-show-detail behaviour; everything else
+  // is left to the browser. Same guard useAppNavigation's own document-level
+  // handler uses, so the two never fight over the same click.
+  const handleClick = (event: ReactMouseEvent<HTMLAnchorElement>) => {
+    if (event.defaultPrevented || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    onSelect(job.id);
+  };
+
   return (
     <li>
-      <button
-        type="button"
+      <a
+        href={pathFor('jobs', job.id)}
         className={`job-card${selected ? ' is-selected' : ''}`}
         aria-current={selected ? 'true' : undefined}
-        onClick={() => onSelect(job.id)}
+        onClick={handleClick}
       >
         <span className="job-card-title">{job.title}</span>
         <span className="job-card-company">{job.company.name}</span>
@@ -48,7 +63,7 @@ export function JobCard({ job, selected, onSelect }: Props) {
             )}
           </span>
         )}
-      </button>
+      </a>
     </li>
   );
 }

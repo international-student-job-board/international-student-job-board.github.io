@@ -28,8 +28,8 @@ const job = (over: Partial<Job> = {}): Job =>
     posted: '2026-09-07',
     applyUrl: 'https://acme.test/apply',
     employmentType: '',
-    jobLevel: '',
-    workArrangement: '',
+    jobLevels: [],
+    workArrangements: [],
     educationLevels: [],
     salary: emptySalary,
     company: {
@@ -59,8 +59,8 @@ test('the working-conditions facts show what a role carries and "Not specified" 
     <JobDetail
       job={job({
         employmentType: 'Full-time',
-        jobLevel: 'Senior',
-        workArrangement: 'On-site',
+        jobLevels: ['Senior'],
+        workArrangements: ['On-site'],
         educationLevels: ['Bachelor'],
       })}
     />
@@ -124,7 +124,7 @@ test('an estimated salary shows the AUD figure and links its source', () => {
   expect(screen.getByLabelText('Salary source')).toBeInTheDocument();
 });
 
-test('a published salary carries no source note or link', () => {
+test('a published salary carries no link, but the tooltip says it is stated directly', () => {
   render(
     <JobDetail
       job={job({
@@ -140,24 +140,24 @@ test('a published salary carries no source note or link', () => {
   const fact = factFor('Salary');
   expect(fact).toHaveTextContent('A$95k-A$110k');
   expect(fact).not.toHaveTextContent('~');
-  expect(screen.queryByLabelText('Salary source')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Salary source')).toBeInTheDocument();
   expect(screen.queryByRole('link', { name: /glassdoor|levels/i })).not.toBeInTheDocument();
 });
 
-test('the salary is the plain AUD figure', () => {
+test('an estimate scoped to the company, not the role, says so in the tooltip', () => {
   render(
     <JobDetail
       job={job({
         salary: {
-          base: { minAud: 95000, maxAud: 110000, currency: 'AUD' },
-          source: 'advert',
-          sourceUrl: '',
-          isEstimate: false,
+          estimateAud: 95000,
+          source: 'glassdoor',
+          scope: 'company',
+          sourceUrl: 'https://www.glassdoor.com.au/Salary/Acme-Salaries-E1.htm',
+          isEstimate: true,
         },
       })}
     />
   );
-  const fact = factFor('Salary');
-  expect(fact).toHaveTextContent('A$95k-A$110k');
-  expect(screen.queryByLabelText('Salary source')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Salary source')).toBeInTheDocument();
+  expect(screen.getByText(/averaged across the whole company/i)).toBeInTheDocument();
 });

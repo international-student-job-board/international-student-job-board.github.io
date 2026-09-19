@@ -37,14 +37,16 @@ export const FIELDS: Field[] = [
   {
     key: 'Job level',
     label: 'Job level',
-    type: 'select',
-    options: ['', ...getConstant('jobLevel')],
+    type: 'text',
+    placeholder: 'Senior',
+    hint: `Usually one of: ${getConstant('jobLevel').join(', ')}. A role spanning two (e.g. a LinkedIn "Mid-Senior level" ad) can carry both - separate with a semicolon.`,
   },
   {
     key: 'Work arrangement',
     label: 'Work arrangement',
-    type: 'select',
-    options: ['', ...getConstant('arrangement')],
+    type: 'text',
+    placeholder: 'Hybrid',
+    hint: `Usually one of: ${getConstant('arrangement').join(', ')}. A role naming more than one (e.g. "Hybrid or Remote") can carry both - separate with a semicolon.`,
   },
   {
     key: 'Education level',
@@ -87,6 +89,13 @@ export const FIELDS: Field[] = [
     type: 'url',
     placeholder: 'https://www.glassdoor.com.au/Salary/…',
     hint: 'The page to link to for a Glassdoor / levels.fyi figure.',
+  },
+  {
+    key: 'Salary scope',
+    label: 'Salary scope',
+    type: 'select',
+    options: ['', 'role', 'company'],
+    hint: 'For a Glassdoor/levels.fyi estimate: "role" if it matched this specific role, "company" if it is a wider company average. Leave blank for an advert-stated figure.',
   },
   { key: 'Job city', label: 'City', type: 'text', placeholder: 'Melbourne' },
   { key: 'Job country', label: 'Country', type: 'text', placeholder: 'Australia' },
@@ -201,6 +210,7 @@ export const FIELD_GROUPS: { title: string; keys: string[] }[] = [
       'Company salary estimate AUD',
       'Salary source',
       'Salary source URL',
+      'Salary scope',
     ],
   },
   {

@@ -533,8 +533,8 @@ export const OCCUPATION_LIST_NOTE = [
   ...Object.entries(OCCUPATION_LIST_NAMES).map(([code, name]) => `${code} - ${name}`),
 ].join('\n');
 
-/** How a salary source reads, for the link label and the "i" note beside a
- * figure that isn't the employer's own. */
+/** How a salary source reads, for the link label beside a figure that isn't
+ * the employer's own. */
 const SALARY_SOURCE_LABEL: Record<string, string> = {
   glassdoor: 'Glassdoor',
   'levels.fyi': 'Levels.fyi',
@@ -542,9 +542,22 @@ const SALARY_SOURCE_LABEL: Record<string, string> = {
 
 export const salarySourceLabel = (source: string): string => SALARY_SOURCE_LABEL[source] ?? '';
 
-export const salarySourceNote = (source: string): string => {
+/**
+ * What the salary figure is and where it came from, for the "i" beside it:
+ * stated directly in the advert, an estimate for this specific role, or an
+ * estimate averaged across the whole company when no role-specific figure was
+ * found. `scope` is blank on rows enriched before this was tracked, which
+ * falls back to the older, less specific wording rather than showing nothing.
+ */
+export const salarySourceNote = (source: string, scope?: string): string => {
+  if (source === 'advert') return 'Stated directly in the job advert - not an estimate.';
   const label = salarySourceLabel(source);
-  return label ? `Source: ${label}` : '';
+  if (!label) return '';
+  if (scope === 'role') return `An estimate from ${label} for this specific role.`;
+  if (scope === 'company') {
+    return `An estimate from ${label}, averaged across the whole company - not this specific role.`;
+  }
+  return `Source: ${label}`;
 };
 
 /** A Glassdoor / levels.fyi salary-source URL, passed through only when it is

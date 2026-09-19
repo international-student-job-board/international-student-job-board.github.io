@@ -41,12 +41,38 @@ REACT_APP_BUILD_DATE=$(date +%Y-%m-%d) BUILD_PATH=../docs npx react-scripts buil
 touch ../docs/.nojekyll
 
 node scripts/sync-data.js ../docs    # 2. copy content/*.json + CSVs into it
-node scripts/seo-assets.js ../docs   # 3. write 404.html, sitemap.xml, robots.txt
+node scripts/seo-assets.js ../docs   # 3. write 404.html, sitemap.xml, robots.txt,
+                                     #    a page per address, and recent-jobs.csv
 ```
 
 Step 1 is the slow one. If you've only edited a file under `content/` and
 `../docs` already holds a build, steps 2 and 3 alone are enough to refresh the
-deployed data without rebuilding the app itself.
+deployed data without rebuilding the app itself. Step 3 is safe to repeat over the
+same folder: it strips its own previous output before writing.
+
+### The newest three days, pre-loaded
+
+`jobs.csv` and `companies.csv` are ~6.5 MB between them, and the board can't show
+anything until they've downloaded and parsed. So step 3 also writes
+**`recent-jobs.csv`** - the newest three days of roles, ~130 KB (~23 KB gzipped) -
+and the landing page's static HTML lists the same roles in full. Two consumers:
+
+- **A crawler with no JavaScript** reads them straight from the HTML: title,
+  employer, city, pay, posted date, sponsor status, each a link to its own page.
+- **The app** fetches `recent-jobs.csv` first (`loadRecentJobs` in `src/jobs.ts`,
+  kicked off in `src/index.tsx` before React mounts) and shows those roles in place
+  of loading placeholders while the full board arrives. It says so above the list,
+  and it steps aside for any link that asked for something specific - filters, a page
+  number, or a role that isn't in the snapshot - rather than flash the wrong list.
+
+**"Three days" ends on the newest posting, not on today** (`scripts/recent-window.js`).
+The board is rebuilt when the data is refreshed, not daily, so a window measured
+from the wall clock would shrink and then empty out the longer the data sat. The
+heading only says "Posted in the last 3 days" while the newest posting is from today
+or yesterday; otherwise it says "Latest roles" and gives the dates.
+
+The file is a build artefact: it lives in `../docs`, never in `content/`, and
+doesn't exist under `npm start` (the loader treats that as "no snapshot").
 
 ---
 
@@ -54,6 +80,18 @@ deployed data without rebuilding the app itself.
 
 The interface follows *Refactoring UI*; the reasoning behind specific choices is
 in comments in `src/App.css` next to the rules they explain.
+
+Two rules worth knowing when touching the page structure:
+
+- **One `<h1>` per page, chosen by what the page is.** On a role's own address the
+  role's title is the `<h1>` and the board's headline becomes a paragraph; on the
+  board, the headline is the `<h1>` and the role beside the list is an `<h2>`. They
+  look identical either way - size comes from the class, not the tag (*"separate
+  visual hierarchy from document hierarchy"*).
+- **A role's state is not known.** The CSV's `State` column is the employer's, so
+  pairing it with a role's city prints "Melbourne, New South Wales" on ~15% of roles.
+  Nothing outside the employer's own card shows it, and structured data omits
+  `addressRegion` rather than assert one.
 
 ---
 

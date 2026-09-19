@@ -136,7 +136,9 @@
   --font:
     'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
-  --list-w: 480px;
+  /* 424px of card once the gutter is taken off each side - what it was before the list
+     took the page gutter, so a card's meta line still fits on two lines. */
+  --list-w: 520px;
 }
 
 * {
@@ -196,7 +198,11 @@ optgroup {
 }
 
 .app {
-  height: 100vh;
+  /* The page scrolls as a whole, on every route: the top bar stays put (it is sticky)
+     and everything under it - the intro, the filters, the list - moves up as you read.
+     This was a fixed 100vh box with the panes scrolling inside it, which left the list
+     whatever the header didn't take: about 350px of a laptop screen. */
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   /* No grey flash on tap; the elements carry their own pressed states. */
@@ -1273,13 +1279,12 @@ a.glassdoor-rating:focus-visible {
 .jobs-panel {
   background: var(--soft);
   color: var(--ink);
-  height: 100%;
-  overflow-y: auto;
-  /* The two panes scroll independently; contain keeps a flick inside the one
-     under the cursor instead of running on into the page behind it. */
-  overscroll-behavior: contain;
-  padding: var(--s6);
+  /* The list is as tall as its cards and scrolls with the page. The left padding is the
+     page gutter, so the first card lines up with the headline and the filters above it. */
+  padding: var(--s6) var(--gutter);
   border-right: 1px solid var(--line);
+  /* Turning a page scrolls this into view; keep it clear of the sticky top bar. */
+  scroll-margin-top: var(--topbar-h);
 }
 
 /* Two font sizes on one line, aligned on the baseline they share rather than
@@ -1293,15 +1298,31 @@ a.glassdoor-rating:focus-visible {
   flex-shrink: 0;
 }
 
-.app > .page-intro {
+.page-intro {
   padding: var(--s6) var(--gutter) var(--s5);
 }
 
 /**
  * The intro spans the page, like the filter bar it sits above.
  */
-.page-intro .panel-banner {
+.page-intro .panel-banner,
+.page-intro .page-lead {
   max-width: none;
+}
+
+/* The board's own headline is the one thing on the page that has to outrank
+   everything else at a glance - a stranger deciding whether this site is
+   worth their time. --fs-display already exists for exactly this job (see
+   .how-n), just never wired to a headline; scoped to this one intro so every
+   other page's h1 keeps the quieter --fs-h2 it already had. */
+.page-intro-home h1 {
+  font-size: var(--fs-display);
+}
+
+/* "New:" is the word worth noticing; the rest reads as the quiet caveat text
+   every other .panel-banner already uses. */
+.panel-banner strong {
+  color: var(--ink);
 }
 
 .jobs-head {
@@ -1445,6 +1466,10 @@ a.glassdoor-rating:focus-visible {
   box-shadow: var(--shadow-sm);
   font-family: inherit;
   cursor: pointer;
+  /* It's an <a> now (right-click / middle-click / ctrl-click "open in new tab"
+     need a real href) rather than a <button>, so the browser's own underline
+     needs switching off explicitly - see JobCard.tsx. */
+  text-decoration: none;
   transition:
     box-shadow 0.18s var(--ease),
     transform 0.18s var(--ease),
@@ -1526,39 +1551,65 @@ a.glassdoor-rating:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--s4);
+  gap: var(--s2);
   margin-top: var(--s5);
 }
 
-/* Paging through results is a supporting action, not the point of the page -
-   a hairline control rather than a bordered button competing with the cards. */
-.page-btn {
-  padding: var(--s2) var(--s4);
-  border: 1px solid var(--line);
+/* Paging through results is a supporting action, not the point of the page, so
+   the controls stay quiet: numbers are bare until hovered, Prev and Next carry
+   the hairline, and the one filled control is the page you are on - the only
+   thing here that says where you are. A finger needs 44px; a pointer is fine
+   with 40. */
+.page-num,
+.page-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s1);
+  min-height: 40px;
   border-radius: var(--ctrl-radius);
-  background: var(--white);
   color: var(--ink);
-  font-family: inherit;
   font-size: var(--fs-sm);
   font-weight: var(--fw-strong);
-  cursor: pointer;
+  text-decoration: none;
   transition:
-    border-color 0.15s var(--ease),
-    color 0.15s var(--ease);
+    background 0.15s var(--ease),
+    border-color 0.15s var(--ease);
 }
 
-.page-btn:hover:not(:disabled) {
+.page-num {
+  min-width: 40px;
+  padding: 0 var(--s2);
+}
+
+.page-num:hover {
+  background: var(--chip);
+}
+
+.page-num.is-current {
+  background: var(--ink);
+  color: var(--white);
+}
+
+.page-step {
+  padding: 0 var(--s4);
+  border: 1px solid var(--line);
+  background: var(--white);
+}
+
+.page-step:hover {
   border-color: var(--ink);
 }
 
-.page-btn:disabled {
-  color: var(--line-strong);
-  cursor: default;
-}
+@media (max-width: 640px) {
+  .page-num,
+  .page-step {
+    min-height: 44px;
+  }
 
-.page-status {
-  font-size: var(--fs-sm);
-  color: var(--muted);
+  .page-num {
+    min-width: 44px;
+  }
 }
 
 /* Badges */
@@ -1594,7 +1645,13 @@ a.glassdoor-rating:focus-visible {
 
 /* ================= Detail panel ================= */
 .detail-panel {
-  height: 100%;
+  /* Pinned beside the list: the page scrolls, this stays, and scrolls on its own when the
+     role is longer than the window. It is as tall as what is left under the top bar. */
+  position: sticky;
+  top: var(--topbar-h);
+  align-self: start;
+  height: calc(100vh - var(--topbar-h));
+  height: calc(100dvh - var(--topbar-h));
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: var(--s6) clamp(var(--s5), 4vw, var(--s7));
@@ -1616,7 +1673,7 @@ a.glassdoor-rating:focus-visible {
   color: var(--muted);
 }
 
-.detail-empty h1 {
+.detail-empty h2 {
   color: var(--ink);
   font-size: var(--fs-h2);
   margin: 0 0 var(--s3);
@@ -2373,8 +2430,6 @@ a.occ-visa-code:focus-visible {
 /* ================= About page ================= */
 .about-panel {
   flex: 1;
-  min-height: 0;
-  overflow-y: auto;
 }
 
 .about-inner {
@@ -2389,9 +2444,6 @@ a.occ-visa-code:focus-visible {
 /**
  * The companies page is a listing, not something to read top to bottom.
  */
-.companies-panel .about {
-  max-width: none;
-}
 
 .about-hero {
   padding: var(--s2) 0 0;
@@ -2542,7 +2594,8 @@ a.occ-visa-code:focus-visible {
 
 .about-note a,
 .about-section a:not(.btn),
-.about-lede a {
+.about-lede a,
+.page-lead a {
   color: var(--ink);
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -2553,7 +2606,9 @@ a.occ-visa-code:focus-visible {
 
 .about-section a:not(.btn):hover,
 .about-section a:not(.btn):focus-visible,
-.about-lede a:hover {
+.about-lede a:hover,
+.page-lead a:hover,
+.page-lead a:focus-visible {
   text-decoration-color: var(--ink);
 }
 
@@ -2577,7 +2632,11 @@ a.occ-visa-code:focus-visible {
  * caveat is small, grey and behind a rule. Size on its own would leave the lead
  * competing with the headline at a glance.
  */
+/* .page-intro-title is the same headline as a paragraph: on a role's own address the role's
+   title is the page's <h1> and the board's headline steps down (see App.tsx). It has to look
+   identical, so it shares this rule rather than repeating it. */
 .page-intro h1,
+.page-intro-title,
 .about-intro h1 {
   margin: 0 0 var(--s3);
   font-size: var(--fs-h2);
@@ -3268,6 +3327,10 @@ a.occ-visa-code:focus-visible {
     overflow: visible;
   }
 
+  .detail-panel {
+    position: static;
+  }
+
   .detail-panel,
   .about-inner {
     padding: var(--s6) var(--gutter);
@@ -3442,37 +3505,9 @@ a.occ-visa-code:focus-visible {
 /* ================= Startups currently hiring =================
    Cards on the off-white surface, same raised-white treatment as the job
    cards, so "a thing you can click through to" looks the same on both pages. */
-/* The same band as the jobs filter bar: controls sitting on white above the
-   results, separated by a rule rather than floating in the page. */
-/* The filter bar on the companies page sits inside a padded section rather
-   than spanning the window, so it drops the page gutter the job board's bar
-   needs and keeps only its own rule underneath. */
-.companies-filters {
-  margin: 0 0 var(--s5);
-}
-
-/* No background of their own. The job board's bar paints itself white because
-   it spans the window and has the jobs column's tint beside it to separate
-   from; here it sits inside the page, so painting white only put a panel where
-   there is no panel. The rule underneath is what marks the edge. */
-.companies-filters .filters-toggle,
-.companies-filters .filterbar {
-  background: none;
-}
-
-.companies-filters .filters-toggle {
-  padding-left: 0;
-  padding-right: 0;
-}
-
-.companies-filters .filterbar {
-  padding: var(--s4) 0 var(--s5);
-}
-
-.companies-filters .filter-search {
-  flex: 1 1 240px;
-  max-width: 340px;
-}
+/* The filter bar is the job board's own, unchanged: white, full width, a rule
+   underneath. It used to be a second, inset version of it, which is most of what
+   made the two pages feel like different sites. */
 
 /* Count on the left, view toggle on the right, exactly as the jobs panel heads
    its list. */
@@ -3485,7 +3520,10 @@ a.occ-visa-code:focus-visible {
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  /* 320px, not 270: a card has to hold a company name and its "View 60 open roles"
+     pill side by side. At 270 the full-width page fitted a fourth column in and the pill
+     was clipped. */
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: var(--s4);
 }
 
@@ -3677,10 +3715,22 @@ a.occ-visa-code:focus-visible {
   color: var(--ink);
 }
 
-/* The companies page is a wall of cards, so it sits on the tinted surface the
-   job list uses rather than on white. */
-.about-panel.companies-panel {
+/* The companies page is laid out exactly as the job board is: intro and filter bar
+   on white, full width, then the results on the tinted surface the job list uses.
+   Same gutter on all three, so the headline, the filters and the first card share a
+   left edge - it is one frame with two pieces of content in it, not two layouts. */
+.listing-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.results-band {
+  flex: 1;
+  margin-top: 0;
+  padding: var(--s6) var(--gutter);
   background: var(--soft);
+  scroll-margin-top: var(--topbar-h);
 }
 
 /* ---- Company views ------------------------------------------------------
@@ -3696,7 +3746,7 @@ a.occ-visa-code:focus-visible {
 
 .company-views.is-split .company-map {
   position: sticky;
-  top: var(--s4);
+  top: calc(var(--topbar-h) + var(--s4));
 }
 
 .company-views.is-split .company-grid {
