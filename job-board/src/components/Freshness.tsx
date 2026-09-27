@@ -1,12 +1,16 @@
 import { useMemo } from 'react';
 import { freshness } from '../freshness';
 import { formatDate } from '../format';
+import { BUILD_DATE } from '../buildInfo';
 import { trackEvent } from '../analytics';
 import { Job } from '../types';
 
 /**
  * "Updated daily", with the proof beside it: how many roles arrived in the last day. It says the
- * board is daily only when the data is (see freshness.ts), and shows those roles on a click.
+ * board is daily only when the data is (see freshness.ts); otherwise it falls back to the date
+ * the site itself was last rebuilt (BUILD_DATE) rather than the newest role's posted date, which
+ * can lag behind a rebuild that simply found no new roles and would otherwise read as if the
+ * board had gone stale.
  */
 export function Freshness({
   jobs,
@@ -25,7 +29,7 @@ export function Freshness({
     return (
       <p className="freshness freshness-stale">
         <span className="freshness-dot" aria-hidden="true" />
-        Last updated {formatDate(f.newest)}
+        Last updated {formatDate(BUILD_DATE)}
       </p>
     );
   }
