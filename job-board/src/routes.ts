@@ -32,10 +32,14 @@ export function parsePath(pathname: string): Location {
   return { route: 'jobs', jobId: null };
 }
 
-/** The path for a route, or for one role. */
+/**
+ * The path for a route, or for one role. Slashed, because GitHub Pages serves each page from its
+ * folder and answers /about with a 301 to /about/ - a link or history entry without the slash
+ * sends Googlebot through a redirect, which Search Console reports as "Redirect error".
+ */
 export function pathFor(route: Route, jobId?: string): string {
-  if (jobId) return `${BASE}/jobs/${encodeURIComponent(jobId)}`;
-  return route === 'jobs' ? `${BASE}/` : `${BASE}/${route}`;
+  if (jobId) return `${BASE}/jobs/${encodeURIComponent(jobId)}/`;
+  return route === 'jobs' ? `${BASE}/` : `${BASE}/${route}/`;
 }
 
 /** The address for one role, absolute so it can be pasted anywhere. */

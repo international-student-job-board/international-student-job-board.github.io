@@ -273,10 +273,10 @@ export function filtersForPath(
   return viewPath(view) ? filtersOf(view) : null;
 }
 
-/** The address (with the base) for a view. */
+/** The address (with the base) for a view, slashed as the page is served (see pathFor). */
 export const pathForView = (view: View): string | null => {
   const path = viewPath(view);
-  return path ? `${BASE}${path}` : null;
+  return path ? `${BASE}${path}/` : null;
 };
 
 /** A link into a landing page, with how many roles are behind it. */

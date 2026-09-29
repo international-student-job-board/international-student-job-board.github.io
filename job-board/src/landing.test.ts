@@ -329,11 +329,11 @@ describe('the links the board offers', () => {
       ),
     ];
     const links = browseLinks(jobs);
-    expect(links.cities.map((l) => l.path)).toEqual(['/jobs-in/melbourne']);
-    expect(links.types.map((l) => l.path)).toEqual(['/roles/sales']);
+    expect(links.cities.map((l) => l.path)).toEqual(['/jobs-in/melbourne/']);
+    expect(links.types.map((l) => l.path)).toEqual(['/roles/sales/']);
     expect(links.sponsors.map((l) => l.path)).toEqual([
-      '/visa-sponsorship',
-      '/visa-sponsorship/in/melbourne',
+      '/visa-sponsorship/',
+      '/visa-sponsorship/in/melbourne/',
     ]);
     expect(links.cities[0]).toMatchObject({ label: 'Melbourne', count: 12 });
   });
@@ -344,9 +344,9 @@ describe('the links the board offers', () => {
       ...Array.from({ length: 10 }, () => job({ jobLevels: ['Graduate'] })),
     ];
     expect(browseLinks(jobs).levels.map((l) => [l.path, l.count])).toEqual([
-      ['/levels/graduate', 10],
-      ['/levels/mid', 11],
-      ['/levels/senior', 11],
+      ['/levels/graduate/', 10],
+      ['/levels/mid/', 11],
+      ['/levels/senior/', 11],
     ]);
   });
 

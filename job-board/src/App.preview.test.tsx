@@ -130,6 +130,6 @@ describe('the newest roles are on screen before the whole board has loaded', () 
     render(<App />);
     const list = await screen.findByRole('list');
     const link = within(list).getByRole('link', { name: /platform engineer/i });
-    expect(link).toHaveAttribute('href', '/jobs/1');
+    expect(link).toHaveAttribute('href', '/jobs/1/');
   });
 });

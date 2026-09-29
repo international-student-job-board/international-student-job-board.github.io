@@ -61,7 +61,7 @@ describe('opening a role', () => {
     render(<JobCard job={job()} selected={false} onSelect={() => undefined} />);
     expect(screen.getByRole('link', { name: /Senior Applied AI Engineer/ })).toHaveAttribute(
       'href',
-      '/jobs/7'
+      '/jobs/7/'
     );
   });
 
