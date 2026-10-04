@@ -1285,6 +1285,17 @@ a.glassdoor-rating:focus-visible {
   border-right: 1px solid var(--line);
   /* Turning a page scrolls this into view; keep it clear of the sticky top bar. */
   scroll-margin-top: var(--topbar-h);
+  /* Always taller than the detail panel beside it, by --pin-room. A sticky box can't
+     leave its parent, and the two panes share one grid row: with only a card or two
+     the row is exactly as tall as the panel, so the panel never pins - it scrolls off
+     under the top bar with the rest of the page, the scroll-state(stuck) query never
+     matches, and .detail-scroll stays overflow: hidden. The role can't be scrolled at
+     all. The extra room lets it pin under the top bar as it does beside a long list,
+     and once pinned the wheel scrolls the role. It only has to outlast a wheel tick
+     or a flick, so the panel pins fully in view rather than part-way under the bar. */
+  --pin-room: max(160px, 25vh);
+  min-height: calc(100vh - var(--topbar-h) + var(--pin-room));
+  min-height: calc(100dvh - var(--topbar-h) + var(--pin-room));
 }
 
 /* Two font sizes on one line, aligned on the baseline they share rather than
@@ -3384,6 +3395,11 @@ a.occ-visa-code:focus-visible {
 
   .workspace {
     display: block;
+  }
+
+  /* Stacked, nothing pins beside the list, so it needs no room to. */
+  .jobs-panel {
+    min-height: 0;
   }
 
   .jobs-panel,
