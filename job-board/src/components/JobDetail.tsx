@@ -683,6 +683,10 @@ export function JobDetail({ job, titleLevel = 1 }: { job: Job; titleLevel?: 1 | 
               ? 'Applications for this role are sent by email to the employer.'
               : "Applications are handled on the employer's preferred website."}
           </p>
+          <p className="apply-note">
+            The decision to hire, or to sponsor a visa for, an international student or graduate
+            rests with the employer alone.
+          </p>
         </div>
       </aside>
     </article>
