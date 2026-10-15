@@ -11,7 +11,6 @@ import {
   invitedOccupationCodesFor,
 } from './references';
 import { FilterState, FilterOptions, FilterListKey } from './components/Filters';
-import { RATING_UNSPECIFIED, RATING_VALUES } from './components/RatingFilter';
 
 /** The value a filter uses to mean "roles that don't say". */
 export const UNSPECIFIED = '';
@@ -20,6 +19,7 @@ export const EMPTY_FILTERS: FilterState = {
   query: '',
   companies: [],
   jobLocations: [],
+  jobStates: [],
   types: [],
   employmentTypes: [],
   jobLevels: [],
@@ -40,7 +40,6 @@ export const EMPTY_FILTERS: FilterState = {
   postedWithinDays: 0,
   salaryMin: 0,
   salaryMax: 0,
-  minRating: 0,
 };
 
 /**
@@ -101,6 +100,7 @@ export function filterOpenJobs(jobs: Job[]): Job[] {
 export function matches(job: Job, filters: FilterState, postedAfter: number): boolean {
   if (!allows(filters.companies, job.company.name)) return false;
   if (!allows(filters.jobLocations, job.location)) return false;
+  if (!allows(filters.jobStates, job.locationState)) return false;
   if (!allows(filters.types, job.type)) return false;
   if (!allows(filters.employmentTypes, job.employmentType)) return false;
   if (!overlaps(filters.jobLevels, job.jobLevels)) return false;
@@ -123,16 +123,6 @@ export function matches(job: Job, filters: FilterState, postedAfter: number): bo
   if (!overlaps(filters.pathwayVisas, pathwayVisasFor(job))) return false;
   if (!overlaps(filters.sponsor, answer(job.company.accreditedSponsor))) return false;
   if (!overlaps(filters.students, answer(job.company.hiresInternationalStudents))) return false;
-
-  // Employer rating: a company we couldn't match on Glassdoor can't be shown to
-  // clear the bar, so it drops out once a minimum is asked for - or it's the
-  // only thing shown when the reader asks for the unrated ones.
-  if (filters.minRating === RATING_UNSPECIFIED) {
-    if (job.company.glassdoorRating) return false;
-  } else if (filters.minRating > 0) {
-    const rating = job.company.glassdoorRating;
-    if (!rating || rating < filters.minRating) return false;
-  }
 
   // A role we can't date can't be shown to be recent, so it drops out when the reader asks
   // for recent ones.
@@ -192,6 +182,7 @@ function searchText(job: Job): string {
 const FACET_PICKERS: Record<FilterListKey, (job: Job) => string[]> = {
   companies: (j) => [j.company.name],
   jobLocations: (j) => [j.location],
+  jobStates: (j) => [j.locationState],
   types: (j) => [j.type],
   employmentTypes: (j) => [j.employmentType],
   jobLevels: (j) => j.jobLevels,
@@ -213,7 +204,6 @@ const FACET_PICKERS: Record<FilterListKey, (job: Job) => string[]> = {
 
 export type FacetCounts = Record<FilterListKey, Map<string, number>> & {
   postedWithinDays: Map<string, number>;
-  minRating: Map<string, number>;
 };
 
 /**
@@ -250,14 +240,7 @@ export function computeFacetCounts(openJobs: Job[], filters: FilterState): Facet
     postedCounts.set(value, openJobs.filter((job) => matches(job, asked, cutoff(asked))).length);
   });
 
-  // Same story for the rating rungs: thresholds, not values a role carries.
-  const ratingCounts = new Map<string, number>();
-  RATING_VALUES.forEach((value) => {
-    const asked = { ...filters, minRating: Number(value) };
-    ratingCounts.set(value, openJobs.filter((job) => matches(job, asked, postedAfter)).length);
-  });
-
-  return { ...byFilter, postedWithinDays: postedCounts, minRating: ratingCounts };
+  return { ...byFilter, postedWithinDays: postedCounts };
 }
 
 /** Every distinct value a facet offers across the open roles, plus what each filter needs
@@ -275,6 +258,7 @@ export function computeFilterOptions(openJobs: Job[]): FilterOptions {
   return {
     companies: from(FACET_PICKERS.companies),
     jobLocations: from(FACET_PICKERS.jobLocations),
+    jobStates: from(FACET_PICKERS.jobStates),
     types: from(FACET_PICKERS.types),
     employmentTypes: from(FACET_PICKERS.employmentTypes),
     jobLevels: from(FACET_PICKERS.jobLevels, byHierarchy(getConstant('jobLevel'))),

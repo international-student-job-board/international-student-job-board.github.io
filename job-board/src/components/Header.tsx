@@ -17,6 +17,8 @@ export function Header({ route }: { route: string }) {
         className="brand"
         href={pathFor('jobs')}
         aria-label="International Student Job Board - home"
+        // Home means the whole board: every filter off, first page, no role open.
+        data-reset-filters=""
       >
         <img className="brand-logo" src={`${base}/icons/logo.svg`} alt="" width={40} height={40} />
         <span className="brand-title">International Student Job Board</span>

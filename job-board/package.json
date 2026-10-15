@@ -30,6 +30,8 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "build-osca": "node scripts/build-osca-index.js",
+    "check:jobs": "node scripts/check-job-postings.js ../docs",
+    "notify:google": "node scripts/notify-google.js",
     "lint": "eslint src --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\""

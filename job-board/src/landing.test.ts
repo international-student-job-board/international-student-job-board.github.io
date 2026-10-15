@@ -105,22 +105,6 @@ describe('a view and its filters are the same thing', () => {
     expect(viewOf(filtersOf({ location: LOCATIONS[0], type: TYPES[0], sponsor: true }))).toBeNull();
   });
 
-  test("the city the board started on by default is the home page, not that city's landing page", () => {
-    const melbourne = filtersOf({ location: LOCATIONS[0] });
-    expect(viewOf(melbourne, LOCATIONS[0])).toBeNull();
-    // Chosen by the reader (no default recorded), it is one.
-    expect(viewOf(melbourne)).toEqual({ location: LOCATIONS[0] });
-    // A different city than the default is a choice too.
-    expect(viewOf(filtersOf({ location: LOCATIONS[1] }), LOCATIONS[0])).toEqual({
-      location: LOCATIONS[1],
-    });
-    // And the default plus anything else the reader picked is a view like any other.
-    expect(viewOf(filtersOf({ location: LOCATIONS[0], sponsor: true }), LOCATIONS[0])).toEqual({
-      location: LOCATIONS[0],
-      sponsor: true,
-    });
-  });
-
   test('no filters at all is the board, not a landing page', () => {
     expect(viewOf(EMPTY_FILTERS)).toBeNull();
   });
@@ -315,9 +299,10 @@ describe('the links the board offers', () => {
   const job = (over: Partial<Job> & { sponsor?: boolean }) =>
     ({
       location: 'Melbourne, Victoria',
+      locationState: 'Victoria',
       type: 'Sales',
       jobLevels: [],
-      company: { accreditedSponsor: over.sponsor ?? false },
+      company: { accreditedSponsor: over.sponsor ?? false, industries: [] },
       ...over,
     }) as unknown as Job;
 
@@ -350,10 +335,46 @@ describe('the links the board offers', () => {
     ]);
   });
 
+  test('only capital cities are listed, for jobs and for sponsors alike', () => {
+    const jobs = [
+      ...Array.from({ length: 12 }, () => job({ location: 'Geelong, Victoria', sponsor: true })),
+      ...Array.from({ length: 10 }, () => job({ sponsor: true })),
+    ];
+    const links = browseLinks(jobs);
+    expect(links.cities.map((l) => l.label)).toEqual(['Melbourne']);
+    expect(links.sponsors.map((l) => l.path)).toEqual([
+      '/visa-sponsorship/',
+      '/visa-sponsorship/in/melbourne/',
+    ]);
+  });
+
+  test('the major states, linked to the board with that state set', () => {
+    const jobs = [
+      ...Array.from({ length: 98 }, () => job({})),
+      job({ location: 'Hobart, Tasmania', locationState: 'Tasmania' }),
+    ];
+    // Tasmania's one role is under 2% of the board, so it is left out.
+    expect(browseLinks(jobs).states).toEqual([
+      { label: 'Victoria', path: '/?state=Victoria', count: 98 },
+    ]);
+  });
+
+  test('company industries, linked to the board with that industry set', () => {
+    const jobs = Array.from({ length: 10 }, () =>
+      job({ company: { accreditedSponsor: false, industries: ['fintech', 'saas'] } } as never)
+    );
+    expect(browseLinks(jobs).industries).toEqual([
+      { label: 'Fintech', path: '/?industry=fintech', count: 10 },
+      { label: 'SaaS', path: '/?industry=saas', count: 10 },
+    ]);
+  });
+
   test('nothing when there are too few roles to make a page', () => {
-    expect(browseLinks([job({}), job({})])).toEqual({
+    expect(browseLinks([job({ locationState: '' }), job({ locationState: '' })])).toEqual({
       cities: [],
+      states: [],
       types: [],
+      industries: [],
       levels: [],
       sponsors: [],
     });

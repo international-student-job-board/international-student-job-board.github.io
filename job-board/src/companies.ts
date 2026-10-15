@@ -3,7 +3,7 @@
 // carries its employer's columns, and the jobs page reads those (see jobs.ts).
 
 import { Company, placeKey } from './types';
-import { parseCsv, splitList, triState, glassdoorFields } from './csv';
+import { parseCsv, splitList, triState } from './csv';
 import { dataUrl } from './dataUrl';
 
 export type { Company } from './types';
@@ -33,7 +33,6 @@ function toCompany(row: Record<string, string>): Company {
     boardRoles: Number.parseInt(pick(row, 'Board roles'), 10) || 0,
     accreditedSponsor: triState(pick(row, 'Accredited sponsor', 'Sponsor visa available')),
     hiresInternationalStudents: triState(pick(row, 'Hires international students')),
-    ...glassdoorFields(row),
   };
 }
 
@@ -88,15 +87,12 @@ export const NO_COMPANY_FILTERS: CompanyFilters = {
 export interface CompanyView {
   query: string;
   filters: CompanyFilters;
-  /** Minimum Glassdoor rating; 0 any, -1 only the unrated. */
-  minRating: number;
   sort: CompanySort;
 }
 
 export const DEFAULT_COMPANY_VIEW: CompanyView = {
   query: '',
   filters: NO_COMPANY_FILTERS,
-  minRating: 0,
   sort: 'openings',
 };
 

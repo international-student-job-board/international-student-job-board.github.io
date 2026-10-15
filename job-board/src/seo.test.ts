@@ -172,17 +172,29 @@ describe('JobPosting structured data', () => {
     expect(s.baseSalary).toBeUndefined();
   });
 
-  test('no region is claimed for a role, whatever state its row carries', () => {
-    // It was hard-coded to VIC, so every role was reported to Google as being in Victoria. The
-    // row's own state is no better: that column is the employer's, and beside a role's city it
-    // puts Melbourne in New South Wales. Locality and country are what is known to be true.
+  test("the region is the role's own state - never the employer's", () => {
+    // The row's `State` is the employer's, and beside a role's city it puts Melbourne in New
+    // South Wales. The region comes from where the pipeline placed the role itself, and is left
+    // out when it couldn't (a place name that is in several states).
     const address = (over: Partial<Job>) =>
       (jobPostingSchema(job(over), `${ORIGIN}/jobs/7`, '') as Record<string, any>).jobLocation
         .address;
-    const sydneyRoleAtVictorianCompany = address({ city: 'Sydney', state: 'Victoria' });
-    expect(sydneyRoleAtVictorianCompany.addressRegion).toBeUndefined();
+    const sydneyRoleAtVictorianCompany = address({
+      city: 'Sydney',
+      state: 'Victoria',
+      location: 'Sydney, New South Wales',
+      locationState: 'New South Wales',
+    });
+    expect(sydneyRoleAtVictorianCompany.addressRegion).toBe('NSW');
     expect(sydneyRoleAtVictorianCompany.addressLocality).toBe('Sydney');
     expect(sydneyRoleAtVictorianCompany.addressCountry).toBe('AU');
+    const unplaced = address({
+      city: 'Norwood',
+      state: 'Victoria',
+      location: '',
+      locationState: '',
+    });
+    expect(unplaced.addressRegion).toBeUndefined();
   });
 
   test('only a fully remote role is marked as work-from-home', () => {

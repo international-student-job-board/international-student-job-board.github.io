@@ -81,7 +81,7 @@ export interface FilterChange {
   action: 'add' | 'remove';
 }
 
-const SCALARS = ['postedWithinDays', 'salaryMin', 'salaryMax', 'minRating'] as const;
+const SCALARS = ['postedWithinDays', 'salaryMin', 'salaryMax'] as const;
 
 /**
  * What changed between two sets of filters, one entry per value added or removed. The search box is

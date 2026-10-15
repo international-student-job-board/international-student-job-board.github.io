@@ -28,7 +28,6 @@ test('a filtered, searched, sorted view round-trips', () => {
   const v = view({
     query: 'health',
     filters: { hqLocations: ['Melbourne, Victoria'], industries: ['fintech'], sponsor: ['yes'] },
-    minRating: 4,
     sort: 'name',
   });
   expect(roundTrip(v)).toEqual(v);
@@ -53,13 +52,6 @@ test('the default sort is left out of the URL', () => {
 test('an unknown sort falls back to the base', () => {
   const out = companyViewFromParams(new URLSearchParams('sort=sideways'), DEFAULT_COMPANY_VIEW);
   expect(out.sort).toBe('openings');
-});
-
-test('"only unrated" round-trips and junk rating is dropped', () => {
-  expect(roundTrip(view({ minRating: -1 })).minRating).toBe(-1);
-  expect(
-    companyViewFromParams(new URLSearchParams('rating=9'), DEFAULT_COMPANY_VIEW).minRating
-  ).toBe(0);
 });
 
 test('hasCompanyFilterParams tells a shared link from a bare visit', () => {

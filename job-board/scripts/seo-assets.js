@@ -29,9 +29,9 @@ const {
   splitLevels,
   LEVEL_ORDER,
   typeLabel,
-  STATE_ABBREVIATIONS,
 } = require('./landing-pages');
 const { contentPath, DATA_FILES } = require('./data-files');
+const { jobPosting } = require('./job-posting');
 const { recentWindow, RECENT_DAYS } = require('./recent-window');
 
 const MONTHS_LISTED = 2;
@@ -65,16 +65,6 @@ function splitCsvLine(line) {
   cells.push(field);
   return cells;
 }
-
-/** Our label -> the schema.org JobPosting employmentType token. */
-const EMPLOYMENT_SCHEMA = {
-  'Full-time': 'FULL_TIME',
-  'Part-time': 'PART_TIME',
-  Contract: 'CONTRACTOR',
-  Casual: 'PART_TIME',
-  Freelance: 'CONTRACTOR',
-  Internship: 'INTERN',
-};
 
 /**
  * The address a page is actually served at. GitHub Pages serves a page from its folder at
@@ -250,6 +240,29 @@ function readJobs() {
           at(cells, 'Company salary estimate AUD')
         ),
         url: at(cells, 'Job URL').trim(),
+        // What the JobPosting is built from (scripts/job-posting.js), split the way the app splits
+        // the same cells, so the static page's markup and the app's come out the same.
+        website: at(cells, 'Website').trim(),
+        arrangements: splitLevels(at(cells, 'Work arrangement')),
+        educationLevels: splitLevels(at(cells, 'Education level')),
+        occupations: splitLevels(at(cells, 'ANZSCO occupation')),
+        salarySource: at(cells, 'Salary source').trim().toLowerCase(),
+        salaryBase: (() => {
+          const number = (name) => Math.round(Number(at(cells, name).replace(/[, ]/g, ''))) || undefined;
+          const base = {
+            min: number('Base salary min'),
+            max: number('Base salary max'),
+            minAud: number('Base salary min AUD'),
+            maxAud: number('Base salary max AUD'),
+          };
+          const any = base.min || base.max || base.minAud || base.maxAud;
+          return { ...base, currency: any ? at(cells, 'Base salary currency').trim().toUpperCase() || 'AUD' : '' };
+        })(),
+        // The employer's industries, split the way the app's splitList does.
+        industries: at(cells, 'Industries')
+          .split(/[;|]|,\s/)
+          .map((value) => value.trim())
+          .filter(Boolean),
         sponsor: /^true$/i.test(at(cells, 'Accredited sponsor').trim()),
         hiresStudents: /^true$/i.test(at(cells, 'Hires international students').trim()),
       };
@@ -379,12 +392,44 @@ function main() {
         '</ul>'
       : '';
 
+  // Only the capitals, as the app's own browse links have it (src/landing.ts).
+  const CAPITALS = new Set([
+    'Sydney, New South Wales',
+    'Melbourne, Victoria',
+    'Brisbane, Queensland',
+    'Perth, Western Australia',
+    'Adelaide, South Australia',
+    'Hobart, Tasmania',
+    'Darwin, Northern Territory',
+    'Canberra, Australian Capital Territory',
+  ]);
   const cityPages = landing.filter(
-    (page) => page.location && !page.type && !page.sponsor && !page.level
+    (page) => CAPITALS.has(page.location) && !page.type && !page.sponsor && !page.level
   );
   const typePages = landing.filter((page) => page.type && !page.location && !page.sponsor);
   const levelPages = landing.filter((page) => page.level && !page.location);
-  const sponsorPages = landing.filter((page) => page.sponsor && !(page.location && page.type));
+  const sponsorPages = landing.filter(
+    (page) =>
+      page.sponsor && !(page.location && page.type) && (!page.location || CAPITALS.has(page.location))
+  );
+
+  // States and industries have no landing page of their own: their links are the board with that
+  // filter set - the same address, and the same lists, as the app's browse links.
+  const counted = (values) => {
+    const counts = new Map();
+    for (const value of values) if (value) counts.set(value, (counts.get(value) || 0) + 1);
+    return Array.from(counts).sort((a, b) => b[1] - a[1]);
+  };
+  const boardLink = (param, value, label, count) =>
+    `<li><a href="/?${esc(new URLSearchParams({ [param]: value }).toString())}">${esc(label)}</a> ` +
+    `(${count.toLocaleString('en-AU')} roles)</li>`;
+  const stateLinks = counted(jobs.map((job) => (job.locationCity ? job.locationState : '')))
+    .filter(([, n]) => n >= jobs.length * 0.02)
+    .map(([state, n]) => boardLink('state', state, state, n));
+  const industryLinks = counted(jobs.flatMap((job) => Array.from(new Set(job.industries))))
+    .filter(([, n]) => n >= 10)
+    .slice(0, 12)
+    .map(([industry, n]) => boardLink('industry', industry, typeLabel(industry), n));
 
   /** Every way into the board a person might search for, as links a crawler can follow. */
   const browse = () =>
@@ -392,14 +437,20 @@ function main() {
       cityPages.length
         ? `<section aria-labelledby="browse-cities"><h2 id="browse-cities">Jobs by city</h2>${pageList(cityPages, 12)}</section>`
         : '',
-      typePages.length
-        ? `<section aria-labelledby="browse-types"><h2 id="browse-types">Jobs by kind of work</h2>${pageList(typePages, 12)}</section>`
+      stateLinks.length
+        ? `<section aria-labelledby="browse-states"><h2 id="browse-states">Jobs by state</h2><ul>${stateLinks.join('')}</ul></section>`
+        : '',
+      sponsorPages.length
+        ? `<section aria-labelledby="browse-sponsors"><h2 id="browse-sponsors">Visa sponsorship</h2>${pageList(sponsorPages, 12)}</section>`
         : '',
       levelPages.length
         ? `<section aria-labelledby="browse-levels"><h2 id="browse-levels">Jobs by level</h2>${pageList(levelPages, 12)}</section>`
         : '',
-      sponsorPages.length
-        ? `<section aria-labelledby="browse-sponsors"><h2 id="browse-sponsors">Visa sponsorship</h2>${pageList(sponsorPages, 12)}</section>`
+      typePages.length
+        ? `<section aria-labelledby="browse-types"><h2 id="browse-types">Jobs by kind of work</h2>${pageList(typePages, 12)}</section>`
+        : '',
+      industryLinks.length
+        ? `<section aria-labelledby="browse-industries"><h2 id="browse-industries">Jobs by industry</h2><ul>${industryLinks.join('')}</ul></section>`
         : '',
     ].join('');
 
@@ -496,56 +547,25 @@ function main() {
       path: `/jobs/${job.id}`,
       title: `${job.title} at ${job.company}${where ? ` - ${where}` : ''} | ${SITE}`,
       description,
-      schema: {
-        '@context': 'https://schema.org',
-        '@type': 'JobPosting',
-        title: job.title,
-        description,
-        identifier: { '@type': 'PropertyValue', name: SITE, value: job.id },
-        ...(job.posted ? { datePosted: job.posted } : {}),
-        ...(validThrough ? { validThrough } : {}),
-        ...(EMPLOYMENT_SCHEMA[job.employmentType]
-          ? { employmentType: EMPLOYMENT_SCHEMA[job.employmentType] }
-          : {}),
-        // Google's job search only surfaces "work from home" results for roles marked
-        // this way - a hybrid role still requires attending the jobLocation, so it's
-        // left as a normal on-site posting.
-        ...(job.arrangement === 'Remote' ? { jobLocationType: 'TELECOMMUTE' } : {}),
-        ...(job.salaryMinAud || job.salaryMaxAud
-          ? {
-              baseSalary: {
-                '@type': 'MonetaryAmount',
-                currency: 'AUD',
-                value: {
-                  '@type': 'QuantitativeValue',
-                  ...(job.salaryMinAud ? { minValue: job.salaryMinAud } : {}),
-                  ...(job.salaryMaxAud ? { maxValue: job.salaryMaxAud } : {}),
-                  unitText: 'YEAR',
-                },
-              },
-            }
-          : {}),
-        hiringOrganization: { '@type': 'Organization', name: job.company },
-        jobLocation: {
-          '@type': 'Place',
-          address: {
-            '@type': 'PostalAddress',
-            ...(job.city || job.locationCity
-              ? { addressLocality: job.city || job.locationCity }
-              : {}),
-            // The state of the place the advert names, not the employer's - the row's own
-            // `State` was wrong for 15% of roles, which is why this was left out until the
-            // pipeline could place the role itself. Absent when it couldn't (a name that is
-            // in several states): a wrong value in structured data is worse than a missing one.
-            ...(job.locationState
-              ? { addressRegion: STATE_ABBREVIATIONS[job.locationState] || job.locationState }
-              : {}),
-            addressCountry: 'AU',
-          },
-        },
-        directApply: false,
+      schema: jobPosting({
+        id: job.id,
         url: `${siteUrl}/jobs/${job.id}/`,
-      },
+        validThrough,
+        title: job.title,
+        company: job.company,
+        website: job.website,
+        tagline: job.tagline,
+        city: job.city,
+        locationCity: job.locationCity,
+        locationState: job.locationState,
+        posted: job.posted,
+        employmentType: job.employmentType,
+        levels: job.levels,
+        arrangements: job.arrangements,
+        education: job.educationLevels,
+        occupations: job.occupations,
+        salary: { source: job.salarySource, ...job.salaryBase },
+      }),
       body: [
         '<article>',
         `<h1>${esc(job.title)}</h1>`,
@@ -648,15 +668,15 @@ function main() {
     path: '/',
     title: 'Startup Jobs in Australia | International Student Job Board',
     description:
-      'Startup and scaleup jobs across Australia, with pay, Glassdoor ratings and visa sponsorship info. Built for international students and graduates - open to everyone.',
+      'Startup and scaleup jobs across Australia, with pay and visa sponsorship info. Built for international students and graduates - open to everyone.',
     schema: {
       '@context': 'https://schema.org',
       '@type': 'WebSite',
       name: SITE,
       url: `${siteUrl}/`,
       description:
-        'Startup and scaleup jobs across Australia, with pay, Glassdoor ratings and visa ' +
-        'sponsorship info. Built for international students and graduates - open to everyone.',
+        'Startup and scaleup jobs across Australia, with pay and visa sponsorship info. Built ' +
+        'for international students and graduates - open to everyone.',
     },
     body: [
       '<main>',
@@ -664,8 +684,8 @@ function main() {
       `<p>${esc(
         'Startup and scaleup jobs across Australia - open to everyone, and built for ' +
           'international students and graduates. Every listing shows the pay where known, the ' +
-          'employer\'s Glassdoor rating, the visa pathways, ANZSCO occupation and skills ' +
-          'assessment that apply, and whether the employer sponsors visas.'
+          'visa pathways, ANZSCO occupation and skills assessment that apply, and whether the ' +
+          'employer sponsors visas.'
       )}</p>`,
       nav,
       recentDays.jobs.length

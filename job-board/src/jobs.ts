@@ -2,16 +2,7 @@
 // repeated on each of its roles.
 
 import { Job, Company, Salary, SalarySource, SalaryScope, placeKey } from './types';
-import {
-  parseCsv,
-  splitList,
-  splitNames,
-  triState,
-  int,
-  glassdoorFields,
-  anzscoCodes,
-  unitGroupCodes,
-} from './csv';
+import { parseCsv, splitList, splitNames, triState, int, anzscoCodes, unitGroupCodes } from './csv';
 import { loadCompanies } from './companies';
 import { dateValue } from './format';
 import { setUnitGroupTitles, setInvitedScores } from './references';
@@ -47,9 +38,6 @@ export const COLUMNS = [
   'Job openings',
   'Accredited sponsor',
   'Hires international students',
-  'Glassdoor rating',
-  'Glassdoor reviews',
-  'Glassdoor URL',
   'Job title',
   'Job type',
   'ANZSCO occupation',
@@ -103,7 +91,6 @@ function toCompany(row: Record<string, string>): Company {
     boardRoles: Number.parseInt(row['Board roles'] ?? '', 10) || 0,
     accreditedSponsor: triState(row['Accredited sponsor']),
     hiresInternationalStudents: triState(row['Hires international students']),
-    ...glassdoorFields(row),
   };
 }
 
@@ -173,6 +160,10 @@ function toJob(row: Record<string, string>, company: Company): Job {
     invitedScore: invitedScore(row['Invited Score']),
     city: (row['Job city'] ?? '').trim(),
     location: placeKey(row['Job location city'], row['Job location state']),
+    // Only alongside a city, as `location` is: a state on its own is the employer's guess.
+    locationState: (row['Job location city'] ?? '').trim()
+      ? (row['Job location state'] ?? '').trim()
+      : '',
     state: (row['State'] ?? '').trim(),
     country: (row['Job country'] ?? '').trim(),
     posted: (row['Advert posted'] || row['Date posted'] || '').trim(),

@@ -39,11 +39,6 @@ export interface Company {
    */
   accreditedSponsor: boolean | undefined;
   hiresInternationalStudents: boolean | undefined;
-  /** Glassdoor's overall rating out of 5, the review count behind it, and the
-   * Overview page - undefined when we couldn't match the company on Glassdoor. */
-  glassdoorRating?: number;
-  glassdoorReviews?: number;
-  glassdoorUrl?: string;
 }
 
 export interface Job {
@@ -85,6 +80,8 @@ export interface Job {
    * Canberra role at a Sydney company as Canberra, not from the employer's state.
    */
   location: string;
+  /** The state `location` is in - "Victoria" - or '' when the place couldn't be settled. */
+  locationState: string;
   /**
    * The state on this role's row.
    *

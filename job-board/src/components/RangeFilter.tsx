@@ -19,6 +19,10 @@ interface Props {
   steps: number[];
   format: (aud: number) => string;
   tooltip?: string;
+  /** Laid out in place - the two dropdowns alone - rather than as a popover. For the filters
+   * dialog, whose section heading already names it (and carries the tooltip), and whose
+   * scrolling body a popover would be cut off by. */
+  inline?: boolean;
 }
 
 /**
@@ -28,7 +32,7 @@ interface Props {
  * and opened/closed the same way (outside click, Escape, focus-out) so it
  * behaves like its neighbours. A blank end is "unbounded", not zero.
  */
-export function RangeFilter({ label, value, onChange, steps, format, tooltip }: Props) {
+export function RangeFilter({ label, value, onChange, steps, format, tooltip, inline }: Props) {
   const [open, setOpen] = useState(false);
   const [alignRight, setAlignRight] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -80,6 +84,47 @@ export function RangeFilter({ label, value, onChange, steps, format, tooltip }: 
   const maxOptions = steps.filter((s) => !value.min || s > value.min);
   const minOptions = steps.filter((s) => !value.max || s < value.max);
 
+  const fields = (
+    <div className="range-row">
+      <label className="range-field">
+        <span>Min</span>
+        <select
+          value={value.min || ''}
+          onChange={(e) => onChange({ ...value, min: Number(e.target.value) })}
+        >
+          <option value="">Any</option>
+          {minOptions.map((step) => (
+            <option key={step} value={step}>
+              {format(step)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="range-field">
+        <span>Max</span>
+        <select
+          value={value.max || ''}
+          onChange={(e) => onChange({ ...value, max: Number(e.target.value) })}
+        >
+          <option value="">Any</option>
+          {maxOptions.map((step) => (
+            <option key={step} value={step}>
+              {format(step)}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+  );
+
+  if (inline) {
+    return (
+      <div className="range-inline" role="group" aria-label={label}>
+        {fields}
+      </div>
+    );
+  }
+
   const className = ['fselect', open ? 'is-open' : '', active ? 'is-active' : '']
     .filter(Boolean)
     .join(' ');
@@ -100,36 +145,7 @@ export function RangeFilter({ label, value, onChange, steps, format, tooltip }: 
 
       {open && (
         <div className="fselect-panel" id={panelId} data-align={alignRight ? 'right' : 'left'}>
-          <div className="range-row">
-            <label className="range-field">
-              <span>Min</span>
-              <select
-                value={value.min || ''}
-                onChange={(e) => onChange({ ...value, min: Number(e.target.value) })}
-              >
-                <option value="">Any</option>
-                {minOptions.map((step) => (
-                  <option key={step} value={step}>
-                    {format(step)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="range-field">
-              <span>Max</span>
-              <select
-                value={value.max || ''}
-                onChange={(e) => onChange({ ...value, max: Number(e.target.value) })}
-              >
-                <option value="">Any</option>
-                {maxOptions.map((step) => (
-                  <option key={step} value={step}>
-                    {format(step)}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+          {fields}
 
           <div className="fselect-foot">
             <span className="fselect-foot-info">

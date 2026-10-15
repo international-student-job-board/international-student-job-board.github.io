@@ -18,12 +18,10 @@ import {
   pageFromParams,
   withPage,
 } from '../filterParams';
-import { Pagination } from './Pagination';
+import { Pagination, rangeLabel } from './Pagination';
 import { FilterSelect } from './FilterSelect';
 import { FiltersModal, FilterSection } from './FiltersModal';
 import { FiltersDisclosure } from './FiltersDisclosure';
-import { RatingFilter, RATING_RUNGS, RATING_UNSPECIFIED, ratingChipLabel } from './RatingFilter';
-import { GlassdoorRating } from './GlassdoorRating';
 import { NOT_SPECIFIED } from '../format';
 import { prettyLabel, locationLabel } from '../labels';
 import { MANUAL_REVIEW_NOTE, SPONSOR_NOTE, SPONSOR_REGISTER_URL } from '../references';
@@ -105,13 +103,12 @@ const FIELDS: {
   },
 ];
 
-/** Filters that stay on the bar; the rest live in the "More filters" modal -
- * the same split the job board uses. */
+/** Filters that also sit on the bar; the "All filters" dialog holds every one of them. */
 const QUICK_KEYS: CompanyFilterKey[] = ['sponsor', 'students'];
 
-/** The modal's sections - the same headings the job board uses. Glassdoor rating lives on
- * the bar itself instead (see the RatingFilter beside the quick filters below), not in here. */
+/** The dialog's sections - the same headings the job board uses. */
 const MODAL_GROUPS: { title: string; keys: CompanyFilterKey[] }[] = [
+  { title: 'Visa and sponsorship', keys: ['students', 'sponsor'] },
   { title: 'Where', keys: ['hqLocations'] },
   { title: 'The company', keys: ['industries', 'companyTypes', 'growthStages', 'openRoles'] },
 ];
@@ -148,7 +145,6 @@ export function Companies() {
   const start = useRef(viewFromUrl()).current;
   const [query, setQuery] = useState(start.query);
   const [filters, setFilters] = useState<CompanyFilters>(start.filters);
-  const [minRating, setMinRating] = useState(start.minRating);
   const [sort, setSort] = useState<CompanySort>(start.sort);
   const [modalOpen, setModalOpen] = useState(false);
   const isMobile = useIsMobile();
@@ -173,11 +169,11 @@ export function Companies() {
   // Reflect the view into the query string in place - no new history entry per change, and
   // the path (which is always /companies here) is left alone.
   useEffect(() => {
-    const qs = withPage(companyViewToParams({ query, filters, minRating, sort }), page).toString();
+    const qs = withPage(companyViewToParams({ query, filters, sort }), page).toString();
     const search = qs ? `?${qs}` : '';
     if (search === window.location.search) return;
     window.history.replaceState(window.history.state, '', `${window.location.pathname}${search}`);
-  }, [query, filters, minRating, sort, page]);
+  }, [query, filters, sort, page]);
 
   // Back/forward moves between saved views.
   useEffect(() => {
@@ -185,7 +181,6 @@ export function Companies() {
       const next = viewFromUrl();
       setQuery(next.query);
       setFilters(next.filters);
-      setMinRating(next.minRating);
       setSort(next.sort);
       setPage(pageFromParams(new URLSearchParams(window.location.search)));
     };
@@ -232,14 +227,7 @@ export function Companies() {
   const matches = (c: Company, active: CompanyFilters) =>
     FIELDS.every((field) => overlaps(active[field.key], field.pick(c)));
 
-  // 0 = any, -1 = only the ones with no Glassdoor match, else a minimum rating.
-  const passesRating = (c: Company) =>
-    minRating === 0 ||
-    (minRating === RATING_UNSPECIFIED
-      ? !c.glassdoorRating
-      : !!c.glassdoorRating && c.glassdoorRating >= minRating);
-
-  // shown/ratingCounts/counts each walk the whole company list (counts does it once per
+  // shown/counts each walk the whole company list (counts does it once per
   // filter), too heavy to redo synchronously on every keystroke of the search box without the
   // input itself lagging behind what was typed - see the identical fix, and the explanation,
   // on the job board's own search (App.tsx). Deferring the query lets React keep the input
@@ -247,27 +235,10 @@ export function Companies() {
   const deferredQuery = useDeferredValue(query);
 
   const shown = useMemo(() => {
-    const filtered = searchCompanies(companies, deferredQuery).filter(
-      (c) => matches(c, filters) && passesRating(c)
-    );
+    const filtered = searchCompanies(companies, deferredQuery).filter((c) => matches(c, filters));
     return sortCompanies(filtered, sort);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companies, deferredQuery, filters, sort, minRating]);
-
-  /** How many companies each rating option would leave, the other filters held. */
-  const ratingCounts = useMemo(() => {
-    const pool = searchCompanies(companies, deferredQuery).filter((c) => matches(c, filters));
-    const counted = new Map<string, number>();
-    RATING_RUNGS.forEach((rung) =>
-      counted.set(
-        String(rung),
-        pool.filter((c) => !!c.glassdoorRating && c.glassdoorRating >= rung).length
-      )
-    );
-    counted.set(String(RATING_UNSPECIFIED), pool.filter((c) => !c.glassdoorRating).length);
-    return counted;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companies, deferredQuery, filters]);
+  }, [companies, deferredQuery, filters, sort]);
 
   /**
    * How many companies each option would leave, counted with that filter's own selection
@@ -296,7 +267,7 @@ export function Companies() {
   // never left on page 40 of a set that now has three. Compared by what the view says rather
   // than by identity, so settling a shared link against the data - which rebuilds the filter
   // objects without changing anything - doesn't throw away the page it asked for.
-  const viewKey = companyViewToParams({ query, filters, minRating, sort }).toString();
+  const viewKey = companyViewToParams({ query, filters, sort }).toString();
   const seenView = useRef(viewKey);
   useEffect(() => {
     if (seenView.current === viewKey) return;
@@ -304,10 +275,7 @@ export function Companies() {
     setPage(1);
   }, [viewKey]);
 
-  const clearAll = () => {
-    setFilters(NO_FILTERS);
-    setMinRating(0);
-  };
+  const clearAll = () => setFilters(NO_FILTERS);
 
   const totalPages = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -325,7 +293,7 @@ export function Companies() {
 
   /** The address of a page of this same list. */
   const hrefForPage = (n: number) => {
-    const params = withPage(companyViewToParams({ query, filters, minRating, sort }), n);
+    const params = withPage(companyViewToParams({ query, filters, sort }), n);
     return `${window.location.pathname}${params.toString() ? `?${params}` : ''}`;
   };
 
@@ -347,15 +315,6 @@ export function Companies() {
         })),
     }))
   );
-  if (minRating !== 0) {
-    chips.push({
-      id: 'rating',
-      field: 'Glassdoor rating',
-      value: ratingChipLabel(minRating),
-      remove: () => setMinRating(0),
-    });
-  }
-
   const modalCount = MODAL_GROUPS.reduce(
     (total, group) => total + group.keys.reduce((n, key) => n + filters[key].length, 0),
     0
@@ -394,8 +353,8 @@ export function Companies() {
           Startups and scaleups founded in Australia
         </h1>
         <p className="page-lead">
-          Australian startups and scaleups, with Glassdoor ratings and reviews, plus whether they're
-          an accredited visa sponsor or if they hire international students and graduates.
+          Australian startups and scaleups, and whether they're an accredited visa sponsor or if
+          they hire international students and graduates.
         </p>
       </header>
 
@@ -431,8 +390,6 @@ export function Companies() {
                 <span key={key}>{selectFor(key, false)}</span>
               ))}
 
-              <RatingFilter value={minRating} onChange={setMinRating} counts={ratingCounts} />
-
               <FilterSelect
                 label="Sort"
                 multiple={false}
@@ -447,7 +404,7 @@ export function Companies() {
                 className={`more-filters${modalCount ? ' is-set' : ''}`}
                 onClick={() => setModalOpen(true)}
               >
-                More filters
+                All filters
                 {modalCount > 0 && <span className="more-filters-count">{modalCount}</span>}
               </button>
             </div>
@@ -492,7 +449,10 @@ export function Companies() {
           <>
             <div className="jobs-head company-head">
               <p className="result-count" aria-live="polite">
-                {shown.length.toLocaleString('en-AU')}{' '}
+                {/* The map draws every company at once; the cards are a page of them. */}
+                {view === 'map' || shown.length === 0
+                  ? shown.length.toLocaleString('en-AU')
+                  : `Showing ${rangeLabel(currentPage, PAGE_SIZE, shown.length)}`}{' '}
                 {shown.length === 1 ? 'company' : 'companies'}
                 {openings > 0 && ` · ${openings.toLocaleString('en-AU')} open roles`}
               </p>
@@ -612,8 +572,6 @@ function CompanyCard({
       </div>
 
       {company.tagline && <p className="company-card-tagline">{company.tagline}</p>}
-
-      <GlassdoorRating company={company} className="company-card-glassdoor" />
 
       {(company.accreditedSponsor || company.hiresInternationalStudents) && (
         <ul className="company-card-flags" aria-label="Visa support">

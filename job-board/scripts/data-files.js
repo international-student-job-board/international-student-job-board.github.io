@@ -28,7 +28,6 @@ const JOB_COLUMNS = [
   'Industries', 'HQ city', 'HQ address', 'Company city', 'Company state',
   'Tagline', 'LinkedIn',
   'Job openings', 'Accredited sponsor', 'Hires international students',
-  'Glassdoor rating', 'Glassdoor reviews', 'Glassdoor URL',
   'Job title', 'Job type', 'ANZSCO occupation', 'ANZSCO 2022', 'ANZSCO 2013',
   'ANZSCO unit group', 'ANZSCO unit group title', 'OSCA occupation', 'OSCA code',
   'Job city', 'Job location city', 'Job location state', 'Job country',

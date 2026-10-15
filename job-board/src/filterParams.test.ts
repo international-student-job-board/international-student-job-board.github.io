@@ -10,6 +10,7 @@ const EMPTY: FilterState = {
   query: '',
   companies: [],
   jobLocations: [],
+  jobStates: [],
   types: [],
   employmentTypes: [],
   jobLevels: [],
@@ -30,7 +31,6 @@ const EMPTY: FilterState = {
   postedWithinDays: 0,
   salaryMin: 0,
   salaryMax: 0,
-  minRating: 0,
 };
 
 const roundTrip = (f: FilterState) =>
@@ -45,6 +45,7 @@ test('a filtered, searched view round-trips', () => {
     ...EMPTY,
     query: 'react',
     jobLocations: ['Melbourne, Victoria', 'Sydney, New South Wales'],
+    jobStates: ['Victoria', 'New South Wales'],
     jobLevels: ['Senior'],
     workArrangements: ['Remote'],
     anzscos: ['261313'],
@@ -52,7 +53,6 @@ test('a filtered, searched view round-trips', () => {
     postedWithinDays: 7,
     salaryMin: 100000,
     salaryMax: 180000,
-    minRating: 4,
   };
   expect(roundTrip(f)).toEqual(f);
 });
@@ -62,24 +62,19 @@ test('readable parameter names', () => {
     ...EMPTY,
     jobLocations: ['Melbourne, Victoria'],
     jobLevels: ['Senior'],
+    jobStates: ['Victoria'],
     salaryMin: 90000,
-    minRating: 3.5,
   }).toString();
   expect(qs).toContain('location=Melbourne%2C+Victoria');
   expect(qs).toContain('level=Senior');
   expect(qs).toContain('salarymin=90000');
-  expect(qs).toContain('rating=3.5');
+  expect(qs).toContain('state=Victoria');
 });
 
 test('the "not specified" choice survives the trip', () => {
   const f = { ...EMPTY, workArrangements: [''] };
   const qs = filtersToParams(f).toString();
   expect(qs).toBe('arrangement=%28none%29');
-  expect(roundTrip(f)).toEqual(f);
-});
-
-test('the "only unrated" rating choice round-trips', () => {
-  const f = { ...EMPTY, minRating: -1 };
   expect(roundTrip(f)).toEqual(f);
 });
 
@@ -90,7 +85,6 @@ test('junk and out-of-range params are dropped, not honoured', () => {
   const out = filtersFromParams(params, EMPTY);
   expect(out.jobLocations).toEqual(['Melbourne, Victoria']);
   expect(out.postedWithinDays).toBe(0);
-  expect(out.minRating).toBe(0);
   expect(out.salaryMin).toBe(0);
 });
 

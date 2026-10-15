@@ -1,4 +1,4 @@
-// What the board starts on for a first-time visitor: where they are, and nothing else.
+// What the board starts on for a first-time visitor: every role, with no filter switched on.
 
 import { render, screen, waitFor } from '@testing-library/react';
 import { COLUMNS } from './jobs';
@@ -50,18 +50,18 @@ afterEach(() => {
 });
 
 describe('a first visit', () => {
-  test('starts on the reader’s own city and no other filter', async () => {
+  test('shows every state - not only the one the reader’s time zone is in', async () => {
     render(<App />);
-    // Both Melbourne roles - not only the one at a sponsor that hires students.
-    expect(await screen.findByText('2 roles')).toBeInTheDocument();
-    await waitFor(() => expect(window.location.search).toBe('?location=Melbourne%2C+Victoria'));
+    // All three roles, Sydney's included, though the time zone says Melbourne.
+    expect(await screen.findByText('Showing 1–3 of 3 roles')).toBeInTheDocument();
+    await waitFor(() => expect(window.location.search).toBe(''));
   });
 
   test('sponsor, students and pay are not switched on for them', async () => {
     render(<App />);
-    await screen.findByText('2 roles');
-    await waitFor(() => expect(window.location.search).not.toBe(''));
+    await screen.findByText('Showing 1–3 of 3 roles');
     const query = new URLSearchParams(window.location.search);
+    expect(query.has('location')).toBe(false);
     expect(query.has('sponsor')).toBe(false);
     expect(query.has('students')).toBe(false);
     expect(query.has('salarymin')).toBe(false);

@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { InfoTooltip } from './InfoTooltip';
 
 /** Keeps the latest callback reachable from an effect without making it a dep -
  * the parent hands us a fresh `onClose` on every render, and re-running the
@@ -119,10 +120,22 @@ export function FiltersModal({
 }
 
 /** One titled block inside the modal - same spacing/heading treatment on both pages. */
-export function FilterSection({ title, children }: { title: string; children: ReactNode }) {
+export function FilterSection({
+  title,
+  tooltip,
+  children,
+}: {
+  title: string;
+  /** What the section's one filter means, on an "i" beside its heading. */
+  tooltip?: string;
+  children: ReactNode;
+}) {
   return (
     <section className="fmodal-section">
-      <h3>{title}</h3>
+      <h3>
+        {title}
+        {tooltip && <InfoTooltip text={tooltip} label={`What "${title}" means`} />}
+      </h3>
       <div className="fmodal-section-controls">{children}</div>
     </section>
   );

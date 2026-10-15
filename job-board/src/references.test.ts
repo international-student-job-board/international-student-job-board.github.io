@@ -12,7 +12,6 @@ import {
   occupationListLabel,
   salarySourceNote,
   salarySourceUrl,
-  glassdoorUrl,
 } from './references';
 import { Job } from './types';
 
@@ -192,8 +191,8 @@ describe('government links', () => {
   });
 
   test('the salary source note names the source, with no scope recorded', () => {
-    expect(salarySourceNote('glassdoor')).toBe('Source: Glassdoor');
     expect(salarySourceNote('levels.fyi')).toBe('Source: Levels.fyi');
+    expect(salarySourceNote('glassdoor')).toBe('An estimate.');
   });
 
   test('an advert-stated salary says so - it is not an estimate', () => {
@@ -201,9 +200,8 @@ describe('government links', () => {
   });
 
   test('a role-scoped estimate says it is for this specific role', () => {
-    expect(salarySourceNote('glassdoor', 'role')).toBe(
-      'An estimate from Glassdoor for this specific role.'
-    );
+    // An older Glassdoor estimate is described without naming Glassdoor.
+    expect(salarySourceNote('glassdoor', 'role')).toBe('An estimate for this specific role.');
     expect(salarySourceNote('levels.fyi', 'role')).toBe(
       'An estimate from Levels.fyi for this specific role.'
     );
@@ -211,7 +209,7 @@ describe('government links', () => {
 
   test('a company-scoped estimate says it is not this specific role', () => {
     expect(salarySourceNote('glassdoor', 'company')).toBe(
-      'An estimate from Glassdoor, averaged across the whole company - not this specific role.'
+      'An estimate, averaged across the whole company - not this specific role.'
     );
   });
 
@@ -219,17 +217,5 @@ describe('government links', () => {
     expect(salarySourceUrl('https://www.glassdoor.com.au/Salary/x.htm')).toContain('glassdoor');
     expect(salarySourceUrl('https://www.levels.fyi/jobs?jobId=1')).toContain('levels.fyi');
     expect(salarySourceUrl('https://evil.example/glassdoor.com')).toBeUndefined();
-  });
-
-  test('a Glassdoor URL is validated by host', () => {
-    expect(glassdoorUrl('https://www.glassdoor.com.au/Overview/x.htm')).toContain('glassdoor');
-    expect(glassdoorUrl('https://phish.test/glassdoor')).toBeUndefined();
-    expect(glassdoorUrl(undefined)).toBeUndefined();
-  });
-
-  test('a Salary-page URL is rewritten to the matching Reviews page', () => {
-    expect(
-      glassdoorUrl('https://www.glassdoor.com.au/Salary/DataAnnotation-Salaries-E8605843.htm')
-    ).toBe('https://www.glassdoor.com.au/Reviews/DataAnnotation-Reviews-E8605843.htm');
   });
 });

@@ -12,6 +12,16 @@ import { Route, parsePath, pathFor, pathFromLegacyHash } from './routes';
 import { FilterState } from './components/Filters';
 import { filtersForPath, isLandingPath, pathForView, viewOf } from './landing';
 
+/**
+ * Marks a history entry for a role opened over the list on a phone. Opening one there pushes an
+ * entry rather than replacing the list's, so the back button closes the role and returns to the
+ * list - the role replaces the list on a phone, and back taking the reader off the site instead
+ * would lose the list they were working through.
+ */
+const DETAIL_ENTRY = { boardDetail: true };
+const isDetailEntry = (): boolean =>
+  Boolean((window.history.state as { boardDetail?: boolean } | null)?.boardDetail);
+
 /** The page the address asks for on arrival. */
 const pageFromUrl = (): number =>
   pageFromParams(new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search));
@@ -53,21 +63,20 @@ export interface AppNavigation {
   setFilters: (update: FilterState | ((current: FilterState) => FilterState)) => void;
   page: number;
   setPage: (page: number) => void;
-  /** The city the board started on by default (from the reader's time zone), or ''. See viewOf. */
-  homeDefault: string;
-  setHomeDefault: (location: string) => void;
   /** Whether the address is a landing page's and its filters are still to be read from it - true
    * until App has the board's options to resolve it with, so the address isn't rewritten to
    * something else in the meantime. */
   landingPending: boolean;
   settleLanding: () => void;
   /** Whether the reader arrived on a link that already carried filters: if so the board
-   * leaves them be rather than layering an inferred home state on top. Read once, after the
+   * checks them against the data rather than leaving them as they are. Read once, after the
    * data has loaded, to settle the initial filters - see App's own effect for that. */
   arrivedWithFilters: RefObject<boolean>;
   detailRef: RefObject<HTMLDivElement | null>;
   listRef: RefObject<HTMLElement | null>;
   openJob: (id: string) => void;
+  /** Back from a role to the list - the same step as the browser's back button on a phone. */
+  closeJob: () => void;
   goToPage: (next: number) => void;
 }
 
@@ -90,7 +99,6 @@ export function useAppNavigation(): AppNavigation {
   const [landingPending, setLandingPending] = useState(
     () => typeof window !== 'undefined' && isLandingPath(window.location.pathname)
   );
-  const [homeDefault, setHomeDefault] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // On mobile the list and detail are separate "pages"; this flips to the detail page when a
   // job is tapped.
@@ -99,6 +107,8 @@ export function useAppNavigation(): AppNavigation {
   const [page, setPage] = useState(pageFromUrl);
   const detailRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLElement>(null);
+  // Where the list was scrolled to when a role was opened over it, to return there on the way back.
+  const listScroll = useRef(0);
 
   /**
    * The address is the source of truth for what is on screen, read on arrival and on every
@@ -107,6 +117,16 @@ export function useAppNavigation(): AppNavigation {
   useEffect(() => {
     const legacy = pathFromLegacyHash(window.location.hash);
     if (legacy) window.history.replaceState(null, '', legacy);
+
+    // Arriving on a role's own address on a phone - a shared link, a search result - there is no
+    // list behind it to go back to, so one is put there: back then shows the board rather than
+    // leaving the site.
+    const arrivedOn = parsePath(window.location.pathname);
+    if (isStacked() && arrivedOn.route === 'jobs' && arrivedOn.jobId && !isDetailEntry()) {
+      const role = `${window.location.pathname}${window.location.search}`;
+      window.history.replaceState(null, '', `${pathFor('jobs')}${window.location.search}`);
+      window.history.pushState(DETAIL_ENTRY, '', role);
+    }
 
     const read = () => {
       const here = parsePath(window.location.pathname);
@@ -125,9 +145,15 @@ export function useAppNavigation(): AppNavigation {
     // re-read while the board is showing.
     const onPopState = () => {
       read();
-      if (parsePath(window.location.pathname).route === 'jobs') {
+      const here = parsePath(window.location.pathname);
+      if (here.route === 'jobs') {
         setFilters(filtersFromUrl());
         setPage(pageFromUrl());
+      }
+      // Back from a role to the list on a phone: to where the reader was in it, once it is drawn.
+      if (here.route === 'jobs' && !here.jobId && isStacked()) {
+        const top = listScroll.current;
+        window.requestAnimationFrame(() => window.scrollTo({ top }));
       }
     };
 
@@ -143,6 +169,27 @@ export function useAppNavigation(): AppNavigation {
       if (url.origin !== window.location.origin) return;
 
       event.preventDefault();
+      // The site's title and logo: the whole board, from wherever the reader is - every filter
+      // off, the first page, no role open.
+      if (link.hasAttribute('data-reset-filters')) {
+        window.history.pushState(null, '', url.pathname);
+        window.scrollTo({ top: 0 });
+        setFilters(EMPTY_FILTERS);
+        setPage(1);
+        read();
+        return;
+      }
+      // A link to the board with filters in it - a state, an industry - sets those filters
+      // rather than dropping them along with the query.
+      const target = parsePath(url.pathname);
+      if (url.search && target.route === 'jobs' && !target.jobId && !isLandingPath(url.pathname)) {
+        window.history.pushState(null, '', `${url.pathname}${url.search}`);
+        window.scrollTo({ top: 0 });
+        setFilters(filtersFromParams(url.searchParams, EMPTY_FILTERS));
+        setPage(pageFromParams(url.searchParams));
+        read();
+        return;
+      }
       if (url.pathname !== window.location.pathname) {
         const leavingLanding = isLandingPath(window.location.pathname);
         window.history.pushState(null, '', url.pathname);
@@ -183,7 +230,7 @@ export function useAppNavigation(): AppNavigation {
     // exactly a landing view (one city, one kind of work, sponsors): that view's own path, and
     // nothing in the query but the page. Anything else: the board, the filters in the query.
     const { jobId } = parsePath(window.location.pathname);
-    const view = jobId ? null : viewOf(filters, homeDefault);
+    const view = jobId ? null : viewOf(filters);
     const landingPath = view ? pathForView(view) : null;
     const pathname = jobId ? window.location.pathname : (landingPath ?? pathFor('jobs'));
     const qs = withPage(
@@ -193,13 +240,7 @@ export function useAppNavigation(): AppNavigation {
     const search = qs ? `?${qs}` : '';
     if (search === window.location.search && pathname === window.location.pathname) return;
     window.history.replaceState(window.history.state, '', `${pathname}${search}`);
-  }, [filters, page, route, selectedId, landingPending, homeDefault]);
-
-  // The default city stops being one as soon as the reader changes the location filter - picking
-  // the same city again after that is a choice, and a landing page.
-  useEffect(() => {
-    if (homeDefault && filters.jobLocations.join('|') !== homeDefault) setHomeDefault('');
-  }, [filters.jobLocations, homeDefault]);
+  }, [filters, page, route, selectedId, landingPending]);
 
   // Back to page 1 whenever the filters change. Compared by what they say, not by identity: the
   // board rebuilds the filter object when it settles them against the data, and a link to page
@@ -215,13 +256,29 @@ export function useAppNavigation(): AppNavigation {
   const openJob = (id: string) => {
     setSelectedId(id);
     setShowDetail(true);
-    // replaceState rather than pushState: picking through a list shouldn't bury the page you
-    // arrived from under twenty back-button steps. The filter query rides along so closing
-    // the role returns to the same narrowed list.
-    window.history.replaceState(null, '', pathFor('jobs', id) + window.location.search);
-    // Only where the role replaces the list. Beside it, the role is pinned in view and the
-    // list keeps its place, so jumping to the top would throw away where you were reading.
-    if (isStacked()) window.scrollTo({ top: 0 });
+    const address = pathFor('jobs', id) + window.location.search;
+    if (isStacked()) {
+      // On a phone the role replaces the list, so it is a step of its own: back returns to the
+      // list. The filter query rides along so that is the same narrowed list.
+      listScroll.current = window.scrollY;
+      if (isDetailEntry()) window.history.replaceState(DETAIL_ENTRY, '', address);
+      else window.history.pushState(DETAIL_ENTRY, '', address);
+      window.scrollTo({ top: 0 });
+    } else {
+      // Beside the list, replaceState rather than pushState: picking through a list shouldn't
+      // bury the page you arrived from under twenty back-button steps. The role is pinned in
+      // view and the list keeps its place, so nothing scrolls either.
+      window.history.replaceState(null, '', address);
+    }
+  };
+
+  const closeJob = () => {
+    if (isDetailEntry()) {
+      window.history.back();
+      return;
+    }
+    setShowDetail(false);
+    window.history.replaceState(null, '', `${pathFor('jobs')}${window.location.search}`);
   };
 
   /**
@@ -239,8 +296,6 @@ export function useAppNavigation(): AppNavigation {
     selectedId,
     landingPending,
     settleLanding: () => setLandingPending(false),
-    homeDefault,
-    setHomeDefault,
     showDetail,
     setShowDetail,
     filters,
@@ -251,6 +306,7 @@ export function useAppNavigation(): AppNavigation {
     detailRef,
     listRef,
     openJob,
+    closeJob,
     goToPage,
   };
 }

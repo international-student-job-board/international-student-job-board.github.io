@@ -275,7 +275,7 @@ optgroup {
   font-size: var(--fs-h3);
   font-weight: var(--fw-strong);
   line-height: var(--lh-tight);
-  color: var(--ink);
+  color: var(--sponsor);
 }
 
 .topnav {
@@ -485,6 +485,9 @@ optgroup {
 }
 
 .fmodal-section > h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
   margin: 0;
   font-size: var(--fs-xs);
   font-weight: var(--fw-strong);
@@ -529,6 +532,19 @@ optgroup {
 
 .fmodal-control {
   display: inline-flex;
+}
+
+/* The salary range, laid out in place in the dialog: its label over the two dropdowns. */
+.fmodal-control.is-wide {
+  flex-basis: 100%;
+}
+
+.range-inline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  width: 100%;
+  max-width: 360px;
 }
 
 /* The dropdown trigger reads as a normal control, same as on the bar. */
@@ -862,56 +878,6 @@ optgroup {
   -webkit-appearance: none;
   font: inherit;
   font-weight: 400;
-}
-
-/* Glassdoor rating - "★ 4.0 based on 36 reviews", one line, one link. The same
-   type as the rest of the body text (buttons and cards don't inherit it, hence
-   the explicit values), muted grey, star in the usual ink. Renders as a plain
-   span when there's no usable link (see GlassdoorRating.tsx), so the underline
-   below is scoped to the anchor only - a span never claims to be clickable. */
-.glassdoor-rating {
-  font-family: inherit;
-  font-size: var(--fs-sm);
-  font-weight: 400;
-  line-height: var(--lh-body);
-  color: var(--muted);
-}
-
-/* Same underline convention as every other inline text link on the site (see
-   .reference-link): on by default rather than appearing only on hover, and
-   thickening on hover/focus instead of toggling on and off. */
-a.glassdoor-rating {
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  text-decoration-thickness: 1px;
-}
-
-a.glassdoor-rating:hover,
-a.glassdoor-rating:focus-visible {
-  text-decoration-thickness: 2px;
-}
-
-/* As the value of an "Employer rating" fact it is one row among many, so it
-   takes the same size and colour as every other fact value rather than its
-   standalone treatment. */
-.fact-value .glassdoor-rating {
-  font-size: inherit;
-  font-weight: inherit;
-  line-height: inherit;
-  color: inherit;
-}
-
-.glassdoor-star {
-  color: var(--ink);
-  vertical-align: -2px;
-}
-
-/* Lifted above the stretched company-site link so it stays clickable in its own right - see
-   .company-linkedin, the other card link with the same problem to solve. */
-.company-card-glassdoor {
-  position: relative;
-  z-index: 1;
-  margin-top: 6px;
 }
 
 .fselect-search {
@@ -1557,69 +1523,103 @@ a.glassdoor-rating:focus-visible {
   margin-top: var(--s3);
 }
 
-/* Pagination */
+/* Pagination - a quiet row of links, not a toolbar (see Pagination.tsx). No borders anywhere:
+   the numbers are muted text, the steps are muted chevrons, and the only thing with any weight is
+   the page you are on - ink and bold, nothing around it. Every target is still 40px (44px on a
+   phone) for a finger, though none of them shows its shape. */
 .pagination {
+  /* Sized by where it sits, not by the screen: the job list beside an open role is as narrow as
+     a phone. */
+  container-type: inline-size;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--s2);
   margin-top: var(--s5);
 }
 
-/* Paging through results is a supporting action, not the point of the page, so
-   the controls stay quiet: numbers are bare until hovered, Prev and Next carry
-   the hairline, and the one filled control is the page you are on - the only
-   thing here that says where you are. A finger needs 44px; a pointer is fine
-   with 40. */
+.page-steps,
+.page-nums {
+  display: flex;
+  align-items: center;
+}
+
+/* More room around the numbers than inside them, so the chevrons read as one cluster each side
+   and the numbers as another. */
+.page-nums {
+  gap: 2px;
+  margin: 0 var(--s3);
+}
+
 .page-num,
-.page-step {
+.page-step,
+.page-gap {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--s1);
+  min-width: 36px;
   min-height: 40px;
-  border-radius: var(--ctrl-radius);
-  color: var(--ink);
+  padding: 0 var(--s2);
+  border-radius: 999px;
+  color: var(--muted);
   font-size: var(--fs-sm);
-  font-weight: var(--fw-strong);
+  font-variant-numeric: tabular-nums;
   text-decoration: none;
   transition:
-    background 0.15s var(--ease),
-    border-color 0.15s var(--ease);
+    color 0.15s var(--ease),
+    background 0.15s var(--ease);
 }
 
-.page-num {
-  min-width: 40px;
-  padding: 0 var(--s2);
-}
-
-.page-num:hover {
-  background: var(--chip);
+a.page-num:hover,
+a.page-step:hover,
+a.page-num:focus-visible,
+a.page-step:focus-visible {
+  color: var(--ink);
 }
 
 .page-num.is-current {
-  background: var(--ink);
-  color: var(--white);
+  color: var(--ink);
+  font-weight: var(--fw-bold);
 }
 
-.page-step {
-  padding: 0 var(--s4);
-  border: 1px solid var(--line);
-  background: var(--white);
+.page-gap {
+  min-width: 0;
+  padding: 0 2px;
+  color: var(--line-strong);
 }
 
-.page-step:hover {
-  border-color: var(--ink);
+.page-chevron {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Nowhere to go: kept in place so the numbers don't shift, but plainly not a control. */
+.page-step.is-disabled {
+  color: var(--line);
 }
 
 @media (max-width: 640px) {
   .page-num,
-  .page-step {
+  .page-step,
+  .page-gap {
     min-height: 44px;
   }
+}
 
-  .page-num {
-    min-width: 44px;
+/* A phone, or the job list beside an open role: the same row, closer together, so it stays on
+   one line. */
+@container (max-width: 400px) {
+  .page-nums {
+    gap: 0;
+    margin: 0 var(--s1);
+  }
+
+  .page-num,
+  .page-step {
+    min-width: 30px;
+    padding: 0 var(--s1);
   }
 }
 
@@ -2269,7 +2269,7 @@ a.glassdoor-rating:focus-visible {
   border: 1.5px solid currentColor;
   border-radius: 999px;
   background: transparent;
-  color: inherit;
+  color: var(--sponsor);
   font-family: Georgia, 'Times New Roman', serif;
   font-style: italic;
   font-size: var(--fs-xs);
@@ -2673,20 +2673,21 @@ a.occ-visa-code:focus-visible {
 }
 
 /* The page controls sit inside .about-section on the companies page, so the prose rule above
-   reaches them: it underlined every number and, worse, set the colour to ink - which on the
-   current page's ink-filled button is ink on ink. They are controls, not prose links, so they
-   take their own look back. */
+   reaches them: it underlined every number and set it in ink, so the companies page's numbers
+   read darker than the job board's. They are controls, not prose links, so they take their own
+   look back - muted, darkening on hover, exactly as on the board. */
 .about-section a.page-num,
-.about-section a.page-step,
+.about-section a.page-step {
+  color: var(--muted);
+  text-decoration: none;
+}
+
 .about-section a.page-num:hover,
 .about-section a.page-step:hover,
 .about-section a.page-num:focus-visible,
 .about-section a.page-step:focus-visible {
+  color: var(--ink);
   text-decoration: none;
-}
-
-.about-section a.page-num.is-current {
-  color: var(--white);
 }
 
 /* Outbound resource link with a clear external affordance (used for the
@@ -3644,22 +3645,6 @@ a.occ-visa-code:focus-visible {
   color: var(--ink);
 }
 
-/* The Glassdoor rating is the exception: it reads as a line of text rather
-   than an affordance-carrying card element, so it keeps the site's ordinary
-   inline-link underline (see a.glassdoor-rating) instead of inheriting the
-   card-wide "no underline" rule above - this just needs to out-specificity
-   that rule, not repeat its declarations. */
-.about-section .company-card a.glassdoor-rating {
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  text-decoration-thickness: 1px;
-}
-
-.about-section .company-card a.glassdoor-rating:hover,
-.about-section .company-card a.glassdoor-rating:focus-visible {
-  text-decoration-thickness: 2px;
-}
-
 .company-card-head {
   display: flex;
   align-items: baseline;
@@ -4329,22 +4314,31 @@ a.occ-visa-code:focus-visible {
 }
 
 /* ================= Browse by city, kind of work and sponsorship ================= */
+/* The sitemap under the board - ways in by city, state, sponsorship, level, kind of work and
+   industry. It is ancillary navigation, not the page's point, so it stays quiet (Refactoring UI,
+   "Not every link needs a color"): small muted links that darken on hover, their counts a step
+   lighter. It sits on the page's own grey rather than behind a border, and the groups flow in
+   newspaper columns, so lists of five and lists of twelve pack together instead of leaving the
+   holes a fixed grid did. */
 .browse {
   padding: var(--s7) var(--gutter);
-  border-top: 1px solid var(--line);
-  background: var(--white);
+  background: var(--soft);
 }
 
 .browse-inner {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--s6) var(--s7);
   max-width: 1200px;
-  margin: 0 auto;
+  columns: 200px 4;
+  column-gap: var(--s7);
+}
+
+.browse-inner > section {
+  break-inside: avoid;
+  /* More room between groups than inside them, so each list reads as one. */
+  padding-bottom: var(--s6);
 }
 
 .browse-title {
-  margin: 0 0 var(--s3);
+  margin: 0 0 var(--s2);
   color: var(--muted);
   font-size: var(--fs-xs);
   font-weight: var(--fw-strong);
@@ -4353,42 +4347,49 @@ a.occ-visa-code:focus-visible {
 }
 
 .browse-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s1);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+/* Each item is spaced by its own padding rather than a fixed height, so a label that wraps in a
+   narrow column keeps its lines together and clear of the next item. */
 .browse-list li {
-  display: flex;
-  align-items: baseline;
-  gap: var(--s2);
+  padding: 5px 0;
+  line-height: 1.35;
 }
 
 .browse-list a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 32px;
-  color: var(--ink);
+  color: var(--muted-strong);
   font-size: var(--fs-sm);
   text-decoration: none;
+  transition: color 0.15s var(--ease);
 }
 
 .browse-list a:hover,
 .browse-list a:focus-visible {
+  color: var(--ink);
   text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .browse-count {
+  margin-left: var(--s2);
+  white-space: nowrap;
   color: var(--muted);
   font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 640px) {
-  .browse-list a {
-    min-height: 44px;
+  .browse-inner {
+    column-width: auto;
+    column-count: 2;
+    column-gap: var(--s5);
+  }
+
+  .browse-list li {
+    padding: 9px 0;
   }
 }
 

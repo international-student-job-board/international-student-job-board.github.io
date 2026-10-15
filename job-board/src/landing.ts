@@ -9,8 +9,10 @@
 import { FilterState } from './components/Filters';
 import { EMPTY_FILTERS } from './jobFilters';
 import { prettyLabel, locationLabel } from './labels';
-import { BASE, relativePath } from './routes';
+import { BASE, pathFor, relativePath } from './routes';
 import { Job } from './types';
+import { CAPITAL_LOCATIONS } from './geo';
+import { filtersToParams } from './filterParams';
 
 /** One of the views a landing page stands for. */
 export interface View {
@@ -114,26 +116,7 @@ const VIEW_FILTERS = new Set<keyof FilterState>(['jobLocations', 'types', 'spons
  * combination the pages cover - and no search, pay, level or anything else on top. That is what
  * makes an address and a filter set interchangeable: the address says all of it.
  */
-export function viewOf(filters: FilterState, defaulted = ''): View | null {
-  const view = viewOfFilters(filters);
-  // The city the board started on because of the reader's time zone is a default, not a
-  // choice: it is still the home page, not that city's landing page. It becomes one only if
-  // the reader picks the city themselves (App clears `defaulted` the moment the location
-  // filter is touched).
-  if (
-    view &&
-    defaulted &&
-    view.location === defaulted &&
-    !view.type &&
-    !view.sponsor &&
-    !view.level
-  ) {
-    return null;
-  }
-  return view;
-}
-
-function viewOfFilters(filters: FilterState): View | null {
+export function viewOf(filters: FilterState): View | null {
   const { jobLocations, types, sponsor } = filters;
   const { jobLevels } = filters;
   if (jobLocations.length > 1 || types.length > 1 || sponsor.length > 1) return null;
@@ -142,13 +125,7 @@ function viewOfFilters(filters: FilterState): View | null {
   if (LIST_FILTERS.some((key) => !VIEW_FILTERS.has(key) && (filters[key] as string[]).length)) {
     return null;
   }
-  if (
-    filters.query.trim() ||
-    filters.postedWithinDays ||
-    filters.salaryMin ||
-    filters.salaryMax ||
-    filters.minRating
-  ) {
+  if (filters.query.trim() || filters.postedWithinDays || filters.salaryMin || filters.salaryMax) {
     return null;
   }
 
@@ -288,6 +265,17 @@ export interface BrowseLink {
 
 const BROWSE_LIMIT = 12;
 
+/** The capitals, as Job location values - the only cities the browse links list. */
+const CAPITALS = new Set(Object.values(CAPITAL_LOCATIONS));
+
+/** A state is "major" enough to list once it holds this share of the board's roles. */
+const MAJOR_STATE_SHARE = 0.02;
+
+/** The board with these filters set - for the browse links that have no landing page of their
+ * own (a state, an industry). The same address the filters write when set by hand. */
+const boardWith = (filters: Partial<FilterState>): string =>
+  `${pathFor('jobs')}?${filtersToParams({ ...EMPTY_FILTERS, ...filters })}`;
+
 /**
  * The landing pages the board can offer, as links: cities, kinds of work, and the sponsors - each
  * only where there are enough roles to be worth a page.
@@ -306,7 +294,9 @@ export const LEVEL_ORDER = [
 
 export function browseLinks(jobs: Job[]): {
   cities: BrowseLink[];
+  states: BrowseLink[];
   types: BrowseLink[];
+  industries: BrowseLink[];
   levels: BrowseLink[];
   sponsors: BrowseLink[];
 } {
@@ -336,15 +326,37 @@ export function browseLinks(jobs: Job[]): {
   const sponsored = jobs.filter((job) => job.company.accreditedSponsor === true);
   const sponsorCities = new Map<string, number>();
   for (const job of sponsored) {
-    if (job.location) sponsorCities.set(job.location, (sponsorCities.get(job.location) ?? 0) + 1);
+    if (CAPITALS.has(job.location)) {
+      sponsorCities.set(job.location, (sponsorCities.get(job.location) ?? 0) + 1);
+    }
+  }
+
+  // A role's employer can be in several industries; the role counts in each, as the filter has it.
+  const industryCounts = new Map<string, number>();
+  for (const job of jobs) {
+    for (const industry of Array.from(new Set(job.company.industries))) {
+      industryCounts.set(industry, (industryCounts.get(industry) ?? 0) + 1);
+    }
   }
 
   return {
     cities: present(
-      tally((job) => job.location).map(([location, n]) =>
+      tally((job) => (CAPITALS.has(job.location) ? job.location : undefined)).map(([location, n]) =>
         link({ location }, splitLocation(location).city, n)
       )
     ),
+    states: tally((job) => job.locationState)
+      .filter(([, n]) => n >= jobs.length * MAJOR_STATE_SHARE)
+      .map(([state, n]) => ({ label: state, path: boardWith({ jobStates: [state] }), count: n })),
+    industries: Array.from(industryCounts)
+      .filter(([, n]) => n >= MIN_ROLES)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, BROWSE_LIMIT)
+      .map(([industry, n]) => ({
+        label: prettyLabel(industry),
+        path: boardWith({ industries: [industry] }),
+        count: n,
+      })),
     types: present(
       tally((job) => (job.type === NO_CATEGORY ? '' : job.type)).map(([type, n]) =>
         link({ type }, prettyLabel(type), n)

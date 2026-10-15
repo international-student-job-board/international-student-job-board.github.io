@@ -95,9 +95,6 @@ describe('the row lands in the right columns', () => {
     expect(missing).toEqual([
       'Company city',
       'Company state',
-      'Glassdoor rating',
-      'Glassdoor reviews',
-      'Glassdoor URL',
       'Job location city',
       'Job location state',
       'Job ID',

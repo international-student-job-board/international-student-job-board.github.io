@@ -4,9 +4,9 @@
 import { Job, jobLocation } from './types';
 import { Route } from './routes';
 import { SITE_NAME, SITE_URL } from './links';
-import { formatDate } from './format';
 import { resolveOccupations } from './references';
 import { MONTHS_LISTED } from './jobs';
+import { jobPosting, postingInput } from './jobPosting';
 
 /** When a listing stops being true, for the structured data's validThrough. */
 export function validThroughFor(job: Job): string {
@@ -24,8 +24,8 @@ export interface PageMeta {
 }
 
 const HOME_DESCRIPTION =
-  'Startup and scaleup jobs across Australia, with pay, Glassdoor ratings and visa sponsorship ' +
-  'info. Built for international students and graduates - open to everyone.';
+  'Startup and scaleup jobs across Australia, with pay and visa sponsorship info. Built for ' +
+  'international students and graduates - open to everyone.';
 
 /** Title and description for an address. */
 /** A landing page's own address and heading - see src/landing.ts. */
@@ -150,96 +150,13 @@ export function applyMeta({ title, description, url }: PageMeta): void {
   meta('name', 'twitter:description', description);
 }
 
-/** schema.org JobPosting for the role being read. */
-/** "Full-time" -> "FULL_TIME", the schema.org employmentType enum. */
-const SCHEMA_EMPLOYMENT: Record<string, string> = {
-  'Full-time': 'FULL_TIME',
-  'Part-time': 'PART_TIME',
-  Contract: 'CONTRACTOR',
-  Casual: 'TEMPORARY',
-  Freelance: 'CONTRACTOR',
-  Internship: 'INTERN',
-};
-
 /**
- * "On-site" and "Hybrid" -> nothing; "Remote" -> the jobLocationType Google expects.
- *
- * Only a fully remote role is TELECOMMUTE. A hybrid one still has to be attended at its
- * jobLocation, and marking it remote makes it a "work from home" result for people who can't
- * do the job from home - which Google treats as misleading markup. It is left as an ordinary
- * on-site posting, same as scripts/seo-assets.js does for the static pages.
+ * schema.org JobPosting for the role being read - built by src/jobPosting.ts, the same as the
+ * static role page's (scripts/job-posting.js), so the block the app writes over it on mount says
+ * exactly what the static one did.
  */
-const SCHEMA_ARRANGEMENT: Record<string, string> = {
-  Remote: 'TELECOMMUTE',
-};
-
 export function jobPostingSchema(job: Job, url: string, validThrough: string): object {
-  const occupations = resolveOccupations(job)
-    .map((o) => o.name)
-    .filter(Boolean);
-
-  const employmentType = SCHEMA_EMPLOYMENT[job.employmentType];
-  const schemaArrangement = job.workArrangements.map((a) => SCHEMA_ARRANGEMENT[a]).find(Boolean);
-  const { base } = job.salary;
-  // Only a figure the employer actually published belongs in structured data -
-  // a levels.fyi estimate would misrepresent it as the advertised salary.
-  const baseSalary =
-    !job.salary.isEstimate && base && (base.minAud || base.maxAud)
-      ? {
-          '@type': 'MonetaryAmount',
-          currency: 'AUD',
-          value: {
-            '@type': 'QuantitativeValue',
-            ...(base.minAud ? { minValue: base.minAud } : {}),
-            ...(base.maxAud ? { maxValue: base.maxAud } : {}),
-            unitText: 'YEAR',
-          },
-        }
-      : undefined;
-
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'JobPosting',
-    title: job.title,
-    description: [
-      `${job.title} at ${job.company.name}`,
-      jobLocation(job) ? ` in ${jobLocation(job)}` : '',
-      '. ',
-      job.company.tagline ? `${job.company.tagline}. ` : '',
-      occupations.length ? `ANZSCO occupation: ${occupations.join(', ')}. ` : '',
-      job.posted ? `Listed ${formatDate(job.posted)}.` : '',
-    ].join(''),
-    identifier: {
-      '@type': 'PropertyValue',
-      name: SITE_NAME,
-      value: job.id,
-    },
-    ...(job.posted ? { datePosted: job.posted } : {}),
-    ...(validThrough ? { validThrough } : {}),
-    ...(employmentType ? { employmentType } : {}),
-    ...(schemaArrangement ? { jobLocationType: schemaArrangement } : {}),
-    ...(baseSalary ? { baseSalary } : {}),
-    hiringOrganization: {
-      '@type': 'Organization',
-      name: job.company.name,
-      ...(job.company.website ? { sameAs: job.company.website } : {}),
-    },
-    jobLocation: {
-      '@type': 'Place',
-      address: {
-        '@type': 'PostalAddress',
-        ...(job.city ? { addressLocality: job.city } : {}),
-        // No addressRegion, deliberately. It was hard-coded to VIC, telling Google that every
-        // role on the board was in Victoria; but the obvious replacement, the row's state, is
-        // wrong too - that column is the employer's (see jobLocation in types.ts), so 15% of
-        // roles would be placed in a state their city isn't in. It is optional, and a wrong
-        // value in structured data is worse than a missing one.
-        addressCountry: 'AU',
-      },
-    },
-    directApply: false,
-    url,
-  };
+  return jobPosting(postingInput(job, url, validThrough));
 }
 
 /** The site itself, for the pages that aren't a single role. */

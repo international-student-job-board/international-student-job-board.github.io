@@ -13,7 +13,6 @@ import {
   computeFilterOptions,
 } from './jobFilters';
 import { Header } from './components/Header';
-import { CAPITAL_LOCATIONS, inferAustralianState, isLikelyAustralia } from './geo';
 import { pruneToOptions, filtersToParams, withPage } from './filterParams';
 import { pathFor, parsePath } from './routes';
 import {
@@ -41,7 +40,7 @@ import { trackEvent, trackFilterChange, trackPageView, trackRoleOpen } from './a
 import { Filters, countActiveFilters } from './components/Filters';
 import { FiltersDisclosure } from './components/FiltersDisclosure';
 import { JobCard } from './components/JobCard';
-import { Pagination } from './components/Pagination';
+import { Pagination, rangeLabel } from './components/Pagination';
 import { JobDetail } from './components/JobDetail';
 import { About } from './components/About';
 import { PostJob } from './components/PostJob';
@@ -67,17 +66,15 @@ function App() {
     route,
     selectedId,
     showDetail,
-    setShowDetail,
     filters,
     setFilters,
     page,
     settleLanding,
-    homeDefault,
-    setHomeDefault,
     arrivedWithFilters,
     detailRef,
     listRef,
     openJob,
+    closeJob,
     goToPage,
   } = useAppNavigation();
   // Whether the initial filters have been settled against the loaded data yet - see the
@@ -126,15 +123,11 @@ function App() {
   useEffect(() => rememberViewOptions(options), [options]);
 
   /**
-   * Once the data is in, settle the filters against it - one time.
-   *  - arrived on a filtered link: drop any values the data can no longer offer
-   *    (a company with nothing open now, a typo) so the link never sits matching
-   *    nothing without saying why;
-   *  - arrived clean: default to the reader's own city (inferred from their time
-   *    zone, when it has roles) and nothing else. Sponsors, students and a pay
-   *    floor used to be switched on here too; a first visit now starts from where
-   *    the reader is, and every other filter is theirs to choose. The location
-   *    shows as a chip and one click clears it.
+   * Once the data is in, settle the filters against it - one time. A filtered link drops any
+   * values the data can no longer offer (a company with nothing open now, a typo) so it never
+   * sits matching nothing without saying why. A clean arrival is left alone: the whole board,
+   * every state, and every filter the reader's to choose. (It used to start on the reader's own
+   * city, guessed from their time zone.)
    */
   useEffect(() => {
     if (status !== 'ready' || syncedFromData.current) return;
@@ -143,21 +136,10 @@ function App() {
     // An address like /jobs-in/melbourne is a set of filters, and needs the board's options to
     // say which ("Melbourne, Victoria"). Read here, once they exist.
     const fromPath = filtersForPath(window.location.pathname, options);
-    // A clean arrival: no address filters, no page, no one role asked for, nothing chosen yet. A
-    // direct link to one job should open exactly that job - not silently gain default filters
-    // the sharer never added, which would leave a reader elsewhere with a dead-looking link.
-    const clean =
-      !fromPath && !arrivedWithFilters.current && !selectedId && countActiveFilters(filters) === 0;
-    // A visitor outside Australia gets every place - narrowing to "wherever Australia's time zone
-    // last resolved to" would be a guess, not a default. The time zone names a state; its capital
-    // is where most of that state's roles are.
-    const home = isLikelyAustralia() ? (CAPITAL_LOCATIONS[inferAustralianState()] ?? '') : '';
-    const startCity = clean && home && options.jobLocations.includes(home) ? home : '';
-    if (startCity) setHomeDefault(startCity);
     setFilters((current) => {
       if (fromPath) return overlayView(pruneToOptions(current, options), fromPath);
       if (arrivedWithFilters.current) return pruneToOptions(current, options);
-      return startCity ? { ...current, jobLocations: [startCity] } : current;
+      return current;
     });
     settleLanding();
     // options is derived from the loaded jobs and stable by the time status flips.
@@ -187,16 +169,21 @@ function App() {
   /** The address of a page of this same list - same filters, same role open, the page swapped. */
   const hrefForPage = (n: number) => {
     // On a landing page the path already says every filter, so only the page goes in the query.
-    const landing = roleId ? null : viewOf(filters, homeDefault);
+    const landing = roleId ? null : viewOf(filters);
     const target = landing ? pathForView(landing) : null;
     const query = withPage(target ? new URLSearchParams() : filtersToParams(filters), n).toString();
     return `${target ?? window.location.pathname}${query ? `?${query}` : ''}`;
   };
 
   /** The address bar, the tab title and the structured data all describe the same thing. */
-  const reading = showDetail && route === 'jobs' ? selected : null;
+  // Only the role the address names: one that has gone (an expired role's old link) falls back to
+  // showing the first role, and that role must not be described under the other's address.
+  const reading =
+    showDetail && route === 'jobs' && selected && (!roleId || selected.id === roleId)
+      ? selected
+      : null;
   // A string, not the view: the view is rebuilt on every render, and this is an effect's dependency.
-  const view = route === 'jobs' && !roleId ? viewOf(filters, homeDefault) : null;
+  const view = route === 'jobs' && !roleId ? viewOf(filters) : null;
   const landingPath = view ? viewPath(view) : null;
   const landingHeading = view ? viewHeading(view) : '';
   useEffect(() => {
@@ -292,10 +279,14 @@ function App() {
           title is it, so the board's headline steps down to a paragraph that looks the same. */}
       <header className="page-intro page-intro-home">
         {roleId ? (
-          <p className="page-intro-title">Startup jobs in Australia for international students and graduates</p>
+          <p className="page-intro-title">
+            Startup jobs in Australia for international students and graduates
+          </p>
         ) : (
           <h1 className="page-intro-title">
-            {view ? landingHeading : 'Startup jobs in Australia for international students and graduates'}
+            {view
+              ? landingHeading
+              : 'Startup jobs in Australia for international students and graduates'}
           </h1>
         )}
         {/* On a landing page the lead says what this view holds, in real numbers - the same
@@ -344,7 +335,9 @@ function App() {
               <p className="result-count" aria-live="polite">
                 {previewing
                   ? `The newest ${visible.length.toLocaleString('en-AU')} roles, while the full board loads`
-                  : `${visible.length.toLocaleString('en-AU')} ${visible.length === 1 ? 'role' : 'roles'}`}
+                  : visible.length === 0
+                    ? '0 roles'
+                    : `Showing ${rangeLabel(currentPage, PAGE_SIZE, visible.length)} ${visible.length === 1 ? 'role' : 'roles'}`}
               </p>
             </div>
           )}
@@ -426,7 +419,7 @@ function App() {
 
         <main className="detail-panel">
           <div className="detail-scroll" ref={detailRef}>
-            <button type="button" className="detail-back" onClick={() => setShowDetail(false)}>
+            <button type="button" className="detail-back" onClick={closeJob}>
               ← Back to jobs
             </button>
             {selected ? (

@@ -536,7 +536,7 @@ export const OCCUPATION_LIST_NOTE = [
 /** How a salary source reads, for the link label beside a figure that isn't
  * the employer's own. */
 const SALARY_SOURCE_LABEL: Record<string, string> = {
-  glassdoor: 'Glassdoor',
+  glassdoor: '',
   'levels.fyi': 'Levels.fyi',
 };
 
@@ -551,13 +551,16 @@ export const salarySourceLabel = (source: string): string => SALARY_SOURCE_LABEL
  */
 export const salarySourceNote = (source: string, scope?: string): string => {
   if (source === 'advert') return 'Stated directly in the job advert - not an estimate.';
+  if (!(source in SALARY_SOURCE_LABEL)) return '';
+  // Named only where the source is one the board still draws on - older rows can carry a
+  // Glassdoor estimate, which is described without naming it.
   const label = salarySourceLabel(source);
-  if (!label) return '';
-  if (scope === 'role') return `An estimate from ${label} for this specific role.`;
+  const from = label ? ` from ${label}` : '';
+  if (scope === 'role') return `An estimate${from} for this specific role.`;
   if (scope === 'company') {
-    return `An estimate from ${label}, averaged across the whole company - not this specific role.`;
+    return `An estimate${from}, averaged across the whole company - not this specific role.`;
   }
-  return `Source: ${label}`;
+  return label ? `Source: ${label}` : 'An estimate.';
 };
 
 /** A Glassdoor / levels.fyi salary-source URL, passed through only when it is
@@ -567,26 +570,6 @@ export function salarySourceUrl(url: string): string | undefined {
   return /^https:\/\/(www\.)?(glassdoor\.[a-z.]+|levels\.fyi)\//.test(trimmed)
     ? trimmed
     : undefined;
-}
-
-/** Beside the employer-rating filter and fact. */
-export const RATING_NOTE = 'Employer ratings are from Glassdoor, out of 5.';
-
-/**
- * The Salary page's own address - "Glassdoor URL" carries this for some rows rather than the
- * Reviews page, because the pipeline reads the rating off the Salary page's JSON-LD block and
- * older rows kept that page's own URL as the rating link. Rewritten below rather than fixed at
- * the source everywhere, so a row keeps working the moment the data pipeline back-fills it.
- */
-const SALARY_PAGE =
-  /^(https:\/\/(?:www\.)?glassdoor\.[a-z.]+)\/Salary\/(.+)-Salaries-E(\d+)\.htm$/i;
-
-/** A Glassdoor company Reviews URL, for the rating link. */
-export function glassdoorUrl(url: string | undefined): string | undefined {
-  const trimmed = (url ?? '').trim();
-  if (!/^https:\/\/(www\.)?glassdoor\.[a-z.]+\//.test(trimmed)) return undefined;
-  const salary = trimmed.match(SALARY_PAGE);
-  return salary ? `${salary[1]}/Reviews/${salary[2]}-Reviews-E${salary[3]}.htm` : trimmed;
 }
 
 export const VISA_DISCLAIMER =

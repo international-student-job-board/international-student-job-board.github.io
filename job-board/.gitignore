@@ -26,3 +26,8 @@ yarn-error.log*
 # The sources live in content/ — see scripts/data-files.js.
 /public/jobs.json
 /public/data
+
+# The Indexing API notifier's record of what it has told Google (scripts/notify-google.js), and
+# its service-account key if kept here - never commit a key.
+/.indexing-state.json
+/*-indexing-key.json

@@ -5,6 +5,7 @@ import { Filters, FilterOptions, FilterState } from './Filters';
 const OPTIONS: FilterOptions = {
   companies: ['Acme', 'Zeta'],
   jobLocations: ['Melbourne, Victoria', 'Sydney, New South Wales'],
+  jobStates: ['New South Wales', 'Victoria', ''],
   types: ['Full time', 'Internship', ''],
   employmentTypes: ['Full-time', 'Contract', ''],
   jobLevels: ['Graduate', 'Senior', ''],
@@ -28,6 +29,7 @@ const EMPTY: FilterState = {
   query: '',
   companies: [],
   jobLocations: [],
+  jobStates: [],
   types: [],
   employmentTypes: [],
   jobLevels: [],
@@ -48,17 +50,6 @@ const EMPTY: FilterState = {
   postedWithinDays: 0,
   salaryMin: 0,
   salaryMax: 0,
-  minRating: 0,
-};
-
-const COUNTS = {
-  minRating: new Map([
-    ['3', 12],
-    ['3.5', 8],
-    ['4', 3],
-    ['4.5', 1],
-    ['-1', 30],
-  ]),
 };
 
 function Harness() {
@@ -67,7 +58,6 @@ function Harness() {
     <Filters
       filters={filters}
       options={OPTIONS}
-      counts={COUNTS}
       resultCount={42}
       onChange={setFilters}
       onClear={() => setFilters(EMPTY)}
@@ -79,7 +69,7 @@ const trigger = (name: RegExp) => screen.getByRole('button', { name, expanded: f
 const openTrigger = (name: RegExp) => fireEvent.click(trigger(name));
 const closeTrigger = (name: RegExp) =>
   fireEvent.click(screen.getByRole('button', { name, expanded: true }));
-const openModal = () => fireEvent.click(screen.getByRole('button', { name: /More filters/ }));
+const openModal = () => fireEvent.click(screen.getByRole('button', { name: /All filters/ }));
 const modal = () => screen.getByRole('dialog', { name: 'Filters' });
 const done = () => fireEvent.click(screen.getByRole('button', { name: /Show \d+ roles?/ }));
 
@@ -92,9 +82,10 @@ describe('the filter bar', () => {
       .getAllByRole('button', { expanded: false })
       .map((b) => b.textContent ?? '');
     const seq = [
-      /^Posted/,
-      /^Hires international students and graduates/,
       /^Accredited sponsor/,
+      /^Hires international students and graduates/,
+      /^Job state/,
+      /^Posted/,
       /^In the latest invitation round/,
       /^ANZSCO occupations/,
       /^Leads to visa/,
@@ -104,7 +95,7 @@ describe('the filter bar', () => {
     expect(seq.every((i) => i >= 0)).toBe(true);
     expect(seq).toEqual([...seq].sort((a, b) => a - b));
 
-    expect(screen.getByRole('button', { name: /More filters/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /All filters/ })).toBeInTheDocument();
     // The rest are not on the bar.
     expect(
       screen.queryByRole('button', { name: /^Company$/, expanded: false })
@@ -122,23 +113,33 @@ describe('the filter bar', () => {
     expect(screen.getByRole('button', { name: /Accredited sponsor.*Yes/ })).toBeInTheDocument();
   });
 
-  test('ANZSCO occupations is a real dropdown on the bar', () => {
+  test('the job state narrows and chips', () => {
     render(<Harness />);
-    openTrigger(/ANZSCO occupations/);
-    fireEvent.click(screen.getByRole('checkbox', { name: /261313/ }));
-    closeTrigger(/ANZSCO occupations/);
-    expect(screen.getByRole('button', { name: /ANZSCO occupations.*261313/ })).toBeInTheDocument();
+    openTrigger(/^Job state/);
+    fireEvent.click(screen.getByRole('checkbox', { name: /Victoria/ }));
+    closeTrigger(/^Job state/);
+    expect(screen.getByRole('button', { name: /Job state.*Victoria/ })).toBeInTheDocument();
   });
 });
 
-describe('the More filters modal', () => {
+describe('the All filters modal', () => {
   test('opens with the same section headings, closes on Escape and on "Show N roles"', () => {
     render(<Harness />);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
     openModal();
-    ['Where', 'The role', 'The employer', 'Occupation and visa'].forEach((s) =>
-      expect(within(modal()).getByRole('heading', { name: s })).toBeInTheDocument()
+    [
+      'Visa and sponsorship',
+      'Where',
+      'When',
+      'Salary',
+      'The role',
+      'The employer',
+      'Occupation',
+    ].forEach((s) =>
+      expect(
+        within(modal()).getByRole('heading', { name: new RegExp(`^${s}`) })
+      ).toBeInTheDocument()
     );
 
     fireEvent.keyDown(document, { key: 'Escape' });
@@ -166,6 +167,30 @@ describe('the More filters modal', () => {
     expect(screen.getByRole('button', { name: /Work arrangement.*On-site/ })).toBeInTheDocument();
   });
 
+  test('holds the bar filters too, and counts every filter set on its button', () => {
+    render(<Harness />);
+    openTrigger(/Accredited sponsor/);
+    fireEvent.click(screen.getByRole('checkbox', { name: /Yes/ }));
+    closeTrigger(/Accredited sponsor/);
+    expect(screen.getByRole('button', { name: /All filters/ })).toHaveTextContent('1');
+
+    openModal();
+    [
+      /^Posted/,
+      /^Job state/,
+      /^Hires international/,
+      /^Accredited sponsor/,
+      /^Leads to visa/,
+    ].forEach((name) => expect(within(modal()).getByRole('button', { name })).toBeInTheDocument());
+    // Salary is laid out in place in the dialog rather than as a popover.
+    fireEvent.change(within(modal()).getByRole('combobox', { name: /min/i }), {
+      target: { value: '100000' },
+    });
+    done();
+    expect(screen.getByTitle('Salary: A$100k - Any')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /All filters/ })).toHaveTextContent('2');
+  });
+
   test('"Clear all" empties bar and modal filters alike', () => {
     render(<Harness />);
     openTrigger(/Accredited sponsor/);
@@ -173,76 +198,14 @@ describe('the More filters modal', () => {
     closeTrigger(/Accredited sponsor/);
 
     openModal();
-    fireEvent.click(
-      within(modal()).getByRole('button', { name: /Glassdoor rating/, expanded: false })
-    );
-    fireEvent.click(screen.getByRole('radio', { name: /4\.0 and up/ }));
+    fireEvent.click(within(modal()).getByRole('button', { name: /Job level/, expanded: false }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /^Senior/ }));
     fireEvent.click(within(modal()).getByRole('button', { name: /Clear all/ }));
+    done();
 
     expect(
       screen.queryByRole('button', { name: /Accredited sponsor.*Yes/ })
     ).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Glassdoor rating/, expanded: false })).toBeTruthy();
-    expect(
-      screen.queryByRole('button', { name: /Glassdoor rating.*and up/ })
-    ).not.toBeInTheDocument();
-  });
-});
-
-describe('the employer rating filter', () => {
-  const openRating = () => {
-    openModal();
-    fireEvent.click(
-      within(modal()).getByRole('button', { name: /Glassdoor rating/, expanded: false })
-    );
-  };
-
-  test('is single-choice and chips as "N and up"', () => {
-    render(<Harness />);
-    openRating();
-    fireEvent.click(screen.getByRole('radio', { name: /3\.5 and up/ }));
-    done();
-    expect(
-      screen.getByRole('button', { name: /Glassdoor rating.*3.5 and up/ })
-    ).toBeInTheDocument();
-  });
-
-  test('each rung shows how many employers it would leave, and "Not specified" is an option', () => {
-    render(<Harness />);
-    openRating();
-    // No Testing Library query reaches the count text beside a radio without walking to its
-    // enclosing label.
-    const optionRow = (name: RegExp) =>
-      // eslint-disable-next-line testing-library/no-node-access
-      screen.getByRole('radio', { name }).closest('label') as HTMLElement;
-    expect(optionRow(/3\.0 and up/)).toHaveTextContent('12');
-    expect(optionRow(/4\.0 and up/)).toHaveTextContent('3');
-    expect(optionRow(/Not specified/)).toHaveTextContent('30');
-  });
-
-  test('"Not specified" chips on its own and clears', () => {
-    render(<Harness />);
-    openRating();
-    fireEvent.click(screen.getByRole('radio', { name: /Not specified/ }));
-    done();
-    const chip = screen.getByRole('button', { name: /Glassdoor rating.*Not specified/ });
-    expect(chip).toBeInTheDocument();
-    fireEvent.click(chip);
-    expect(
-      screen.queryByRole('button', { name: /Glassdoor rating.*Not specified/ })
-    ).not.toBeInTheDocument();
-  });
-});
-
-describe('the salary range on the bar', () => {
-  test('min is chosen with a plain select and it chips', () => {
-    render(<Harness />);
-    openTrigger(/^Salary/);
-    fireEvent.change(screen.getByRole('combobox', { name: /min/i }), {
-      target: { value: '100000' },
-    });
-    closeTrigger(/^Salary/);
-    // The chip below the bar carries the chosen range.
-    expect(screen.getByTitle('Salary: A$100k - Any')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Job level.*Senior/ })).not.toBeInTheDocument();
   });
 });

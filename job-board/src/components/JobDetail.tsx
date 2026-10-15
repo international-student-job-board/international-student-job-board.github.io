@@ -30,7 +30,6 @@ import {
   VISA_DISCLAIMER,
 } from '../references';
 import { InfoTooltip } from './InfoTooltip';
-import { GlassdoorRating } from './GlassdoorRating';
 import { ShareJob } from './ShareJob';
 import { jobShareUrl } from '../App';
 import { OUTBOUND, outboundHref, emailApplyHref, safeHref } from '../outbound';
@@ -228,7 +227,7 @@ function SalaryFact({ salary }: { salary: Salary }) {
         <a
           className="reference-link"
           href={href}
-          title={`Salary estimate - ${salarySourceLabel(salary.source)}`}
+          title={['Salary estimate', salarySourceLabel(salary.source)].filter(Boolean).join(' - ')}
           {...OUTBOUND}
         >
           {figure}
@@ -628,16 +627,6 @@ export function JobDetail({ job, titleLevel = 1 }: { job: Job; titleLevel?: 1 | 
                 </dd>
               </div>
             )}
-            <div className="fact">
-              <dt className="fact-label">Glassdoor rating</dt>
-              <dd className="fact-value">
-                {company.glassdoorRating ? (
-                  <GlassdoorRating company={company} showSource={false} />
-                ) : (
-                  NOT_SPECIFIED
-                )}
-              </dd>
-            </div>
             {company.employees && (
               <div className="fact">
                 <dt className="fact-label">Employees</dt>

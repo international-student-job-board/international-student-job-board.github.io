@@ -7,7 +7,6 @@
  * "off", so a hand-edited or stale link still lands somewhere sensible.
  */
 import { FilterState, FilterListKey, POSTED_WINDOWS } from './components/Filters';
-import { RATING_VALUES } from './components/RatingFilter';
 import {
   CompanyFilterKey,
   CompanyFilters,
@@ -20,6 +19,7 @@ import {
 const LIST_PARAM: Record<FilterListKey, string> = {
   companies: 'company',
   jobLocations: 'location',
+  jobStates: 'state',
   types: 'type',
   employmentTypes: 'employment',
   jobLevels: 'level',
@@ -47,7 +47,6 @@ const POSTED_PARAM = 'posted';
 export const PAGE_PARAM = 'page';
 const SALARY_MIN_PARAM = 'salarymin';
 const SALARY_MAX_PARAM = 'salarymax';
-const RATING_PARAM = 'rating';
 
 /** A filter can ask for "roles that don't say"; in a URL that blank is this. */
 const BLANK_TOKEN = '(none)';
@@ -72,7 +71,6 @@ export function filtersToParams(filters: FilterState): URLSearchParams {
   if (filters.postedWithinDays > 0) params.set(POSTED_PARAM, String(filters.postedWithinDays));
   if (filters.salaryMin > 0) params.set(SALARY_MIN_PARAM, String(filters.salaryMin));
   if (filters.salaryMax > 0) params.set(SALARY_MAX_PARAM, String(filters.salaryMax));
-  if (filters.minRating !== 0) params.set(RATING_PARAM, String(filters.minRating));
 
   return params;
 }
@@ -100,9 +98,6 @@ export function filtersFromParams(params: URLSearchParams, base: FilterState): F
     next.salaryMin = 0;
   }
 
-  const rating = params.get(RATING_PARAM);
-  next.minRating = rating !== null && RATING_VALUES.includes(rating) ? Number(rating) : 0;
-
   return next;
 }
 
@@ -112,8 +107,7 @@ export function hasFilterParams(params: URLSearchParams): boolean {
     params.has(QUERY_PARAM) ||
     params.has(POSTED_PARAM) ||
     params.has(SALARY_MIN_PARAM) ||
-    params.has(SALARY_MAX_PARAM) ||
-    params.has(RATING_PARAM)
+    params.has(SALARY_MAX_PARAM)
   ) {
     return true;
   }
@@ -180,7 +174,6 @@ export function companyViewToParams(view: CompanyView): URLSearchParams {
   }
 
   if (view.query.trim()) params.set(QUERY_PARAM, view.query.trim());
-  if (view.minRating !== 0) params.set(RATING_PARAM, String(view.minRating));
   if (view.sort !== 'openings') params.set(SORT_PARAM, view.sort);
 
   return params;
@@ -193,19 +186,17 @@ export function companyViewFromParams(params: URLSearchParams, base: CompanyView
     filters[key] = values.length ? Array.from(new Set(values)) : [];
   }
 
-  const rating = params.get(RATING_PARAM);
   const sort = params.get(SORT_PARAM);
 
   return {
     query: params.get(QUERY_PARAM)?.trim() || '',
     filters,
-    minRating: rating !== null && RATING_VALUES.includes(rating) ? Number(rating) : 0,
     sort: COMPANY_SORTS.includes(sort as CompanySort) ? (sort as CompanySort) : base.sort,
   };
 }
 
 export function hasCompanyFilterParams(params: URLSearchParams): boolean {
-  if (params.has(QUERY_PARAM) || params.has(RATING_PARAM) || params.has(SORT_PARAM)) {
+  if (params.has(QUERY_PARAM) || params.has(SORT_PARAM)) {
     return true;
   }
   return COMPANY_LIST_KEYS.some((key) => params.has(COMPANY_LIST_PARAM[key]));

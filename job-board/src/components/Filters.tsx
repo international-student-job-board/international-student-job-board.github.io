@@ -24,7 +24,6 @@ import { useIsMobile } from '../useMediaQuery';
 import { ActiveFilters, ActiveChip } from './ActiveFilters';
 import { FilterSelect, SelectOption } from './FilterSelect';
 import { RangeFilter } from './RangeFilter';
-import { RatingFilter, ratingChipLabel } from './RatingFilter';
 import { FiltersModal, FilterSection } from './FiltersModal';
 
 const base = process.env.PUBLIC_URL || '';
@@ -35,6 +34,8 @@ export interface FilterState {
   companies: string[];
   /** Where the role is - "Melbourne, Victoria". */
   jobLocations: string[];
+  /** The state that place is in - "Victoria". */
+  jobStates: string[];
   types: string[];
   /** Full-time / Part-time / … - a different question from `types`, which is the
    * Dealroom role category ("Backend development"). */
@@ -62,14 +63,13 @@ export interface FilterState {
   /** AUD bounds on pay; 0 at either end means unbounded there. */
   salaryMin: number;
   salaryMax: number;
-  /** Minimum Glassdoor employer rating out of 5; 0 means any. */
-  minRating: number;
 }
 
 /** The list-valued keys, which are exactly the keys of FilterOptions. */
 export type FilterListKey =
   | 'companies'
   | 'jobLocations'
+  | 'jobStates'
   | 'types'
   | 'employmentTypes'
   | 'jobLevels'
@@ -123,7 +123,7 @@ export const SALARY_STEPS = [40_000, 60_000, 80_000, 100_000, 120_000, 150_000, 
 
 export const SALARY_NOTE =
   'If the salary is not provided in the job advert, an estimate is provided ' +
-  'from Levels.fyi or Glassdoor. Some jobs could have neither, unfortunately.';
+  'where one can be found. Some jobs have neither, unfortunately.';
 
 /** The three answers the two hand-checked columns can hold. */
 export const answerLabel = (value: string) =>
@@ -155,6 +155,7 @@ const OCCUPATION_LIST_LINK = {
 const FIELDS: FieldMeta[] = [
   { key: 'companies', label: 'Company' },
   { key: 'jobLocations', label: 'Job location', format: locationLabel },
+  { key: 'jobStates', label: 'Job state' },
   { key: 'types', label: 'Job type', format: prettyLabel },
   { key: 'employmentTypes', label: 'Employment type' },
   { key: 'jobLevels', label: 'Job level' },
@@ -212,27 +213,24 @@ const FIELDS: FieldMeta[] = [
 
 const FIELD_BY_KEY = new Map(FIELDS.map((f) => [f.key, f]));
 
-/** Filters that stay on the bar; the rest live in the modal. */
-const QUICK_KEYS: FilterListKey[] = [
-  'anzscos',
-  'invitedOccupations',
-  'pathwayVisas',
-  'sponsor',
-  'students',
-];
-
-/** The modal's filters, in sections - the same headings the companies page uses. */
-const MODAL_GROUPS: { title: string; keys: (FilterListKey | 'rating')[] }[] = [
-  { title: 'Where', keys: ['jobLocations', 'hqLocations'] },
+/**
+ * Every filter, in sections - the ones on the bar included, so the dialog is the one place that
+ * holds them all. Only the search box stays on the bar alone.
+ */
+const MODAL_GROUPS: { title: string; keys: (FilterListKey | 'posted' | 'salary')[] }[] = [
+  {
+    title: 'Visa and sponsorship',
+    keys: ['students', 'sponsor', 'invitedOccupations', 'pathwayVisas'],
+  },
+  { title: 'Where', keys: ['jobStates', 'jobLocations', 'hqLocations'] },
+  { title: 'When', keys: ['posted'] },
+  { title: 'Salary', keys: ['salary'] },
   {
     title: 'The role',
     keys: ['types', 'employmentTypes', 'jobLevels', 'workArrangements', 'educationLevels'],
   },
-  {
-    title: 'The employer',
-    keys: ['companies', 'industries', 'companyTypes', 'growthStages', 'rating'],
-  },
-  { title: 'Occupation and visa', keys: ['unitGroups', 'oscas', 'occupationLists'] },
+  { title: 'The employer', keys: ['companies', 'industries', 'companyTypes', 'growthStages'] },
+  { title: 'Occupation', keys: ['anzscos', 'unitGroups', 'oscas', 'occupationLists'] },
 ];
 
 const listCount = (filters: FilterState) =>
@@ -244,22 +242,21 @@ export function countActiveFilters(filters: FilterState): number {
     listCount(filters) +
     (filters.postedWithinDays > 0 ? 1 : 0) +
     (filters.salaryMin > 0 || filters.salaryMax > 0 ? 1 : 0) +
-    (filters.minRating !== 0 ? 1 : 0) +
     (filters.query.trim() ? 1 : 0)
   );
 }
 
-/** How many of the modal's filters are set - the count on the "More filters" button. */
+/** How many of the dialog's filters are set - the count on the "All filters" button. Everything
+ * but the search, which lives only on the bar. */
 function countModalFilters(filters: FilterState): number {
-  const onBar = [...QUICK_KEYS].reduce((total, key) => total + filters[key].length, 0);
-  return listCount(filters) - onBar + (filters.minRating !== 0 ? 1 : 0);
+  return countActiveFilters(filters) - (filters.query.trim() ? 1 : 0);
 }
 
 interface Props {
   filters: FilterState;
   options: FilterOptions;
   /** How many roles each option would leave, keyed by filter then by value. */
-  counts?: Partial<Record<FilterListKey | 'postedWithinDays' | 'minRating', Map<string, number>>>;
+  counts?: Partial<Record<FilterListKey | 'postedWithinDays', Map<string, number>>>;
   resultCount: number;
   onChange: (next: FilterState) => void;
   onClear: () => void;
@@ -304,6 +301,35 @@ export function Filters({ filters, options, counts, resultCount, onChange, onCle
     );
   };
 
+  // Posted and salary aren't lists, so they are drawn here rather than by `select`. Salary is a
+  // popover on the bar and laid out in place in the dialog.
+  const posted = (overlay: boolean) => (
+    <FilterSelect
+      label="Posted"
+      multiple={false}
+      searchable={false}
+      overlay={overlay}
+      options={POSTED_WINDOWS.map((w) => ({
+        ...w,
+        count: counts?.postedWithinDays?.get(w.value) ?? 0,
+      }))}
+      selected={filters.postedWithinDays > 0 ? [String(filters.postedWithinDays)] : []}
+      onChange={(next) => set({ postedWithinDays: Number(next[0] ?? 0) })}
+    />
+  );
+
+  const salary = (inline: boolean) => (
+    <RangeFilter
+      label="Salary"
+      value={{ min: filters.salaryMin, max: filters.salaryMax }}
+      onChange={(next) => set({ salaryMin: next.min, salaryMax: next.max })}
+      steps={SALARY_STEPS}
+      format={(aud) => formatMoney(aud)}
+      tooltip={SALARY_NOTE}
+      inline={inline}
+    />
+  );
+
   // Every applied filter gets its own chip below the bar.
   const chips: ActiveChip[] = [];
   FIELDS.forEach((field) => {
@@ -337,14 +363,6 @@ export function Filters({ filters, options, counts, resultCount, onChange, onCle
       remove: () => set({ salaryMin: 0, salaryMax: 0 }),
     });
   }
-  if (filters.minRating !== 0) {
-    chips.push({
-      id: 'rating',
-      field: 'Glassdoor rating',
-      value: ratingChipLabel(filters.minRating),
-      remove: () => set({ minRating: 0 }),
-    });
-  }
 
   const modalCount = countModalFilters(filters);
 
@@ -372,39 +390,23 @@ export function Filters({ filters, options, counts, resultCount, onChange, onCle
           />
         </div>
 
-        <FilterSelect
-          label="Posted"
-          multiple={false}
-          searchable={false}
-          options={POSTED_WINDOWS.map((w) => ({
-            ...w,
-            count: counts?.postedWithinDays?.get(w.value) ?? 0,
-          }))}
-          selected={filters.postedWithinDays > 0 ? [String(filters.postedWithinDays)] : []}
-          onChange={(next) => set({ postedWithinDays: Number(next[0] ?? 0) })}
-        />
-
-        {select('students', false)}
+        {/* Sponsor and students lead, in the companies page's order; every one of these is in
+            the dialog too. */}
         {select('sponsor', false)}
+        {select('students', false)}
+        {select('jobStates', false)}
+        {posted(false)}
         {select('invitedOccupations', false)}
         {select('anzscos', false)}
         {select('pathwayVisas', false)}
-
-        <RangeFilter
-          label="Salary"
-          value={{ min: filters.salaryMin, max: filters.salaryMax }}
-          onChange={(next) => set({ salaryMin: next.min, salaryMax: next.max })}
-          steps={SALARY_STEPS}
-          format={(aud) => formatMoney(aud)}
-          tooltip={SALARY_NOTE}
-        />
+        {salary(false)}
 
         <button
           type="button"
           className={`more-filters${modalCount ? ' is-set' : ''}`}
           onClick={() => setModalOpen(true)}
         >
-          More filters
+          All filters
           {modalCount > 0 && <span className="more-filters-count">{modalCount}</span>}
         </button>
       </div>
@@ -419,19 +421,18 @@ export function Filters({ filters, options, counts, resultCount, onChange, onCle
         resultNoun="role"
       >
         {MODAL_GROUPS.map((group) => (
-          <FilterSection title={group.title} key={group.title}>
+          <FilterSection
+            title={group.title}
+            tooltip={group.keys.includes('salary') ? SALARY_NOTE : undefined}
+            key={group.title}
+          >
             {group.keys.map((key) => (
-              <div className="fmodal-control" key={key}>
-                {key === 'rating' ? (
-                  <RatingFilter
-                    value={filters.minRating}
-                    onChange={(next) => set({ minRating: next })}
-                    counts={counts?.minRating}
-                    overlay
-                  />
-                ) : (
-                  select(key, true)
-                )}
+              <div className={`fmodal-control${key === 'salary' ? ' is-wide' : ''}`} key={key}>
+                {key === 'posted'
+                  ? posted(true)
+                  : key === 'salary'
+                    ? salary(true)
+                    : select(key, true)}
               </div>
             ))}
           </FilterSection>

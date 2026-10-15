@@ -6,8 +6,6 @@ const HEADERS_OLD =
 const HEADERS_NEW =
   'Company name,Segment,Type,Website,Growth stage,Employees,Industries,HQ city,HQ address,Tagline,LinkedIn,Profile,Job openings,Accredited sponsor,Hires international students';
 
-const HEADERS_GLASSDOOR = `${HEADERS_NEW},Glassdoor rating,Glassdoor reviews,Glassdoor URL`;
-
 const HEADERS_BOARD_ROLES = `${HEADERS_NEW},Board roles`;
 
 const stubCsv = (text: string) => {
@@ -58,19 +56,6 @@ describe('reading the companies CSV', () => {
     expect(c.openings).toBe(4);
     expect(c.accreditedSponsor).toBe(true);
     expect(c.hiresInternationalStudents).toBe(false);
-  });
-
-  test('the Glassdoor columns are read when present, and skipped when not', async () => {
-    const [rated] = await freshLoad(
-      `${HEADERS_GLASSDOOR}\nAcme,,,,,,,,,,,,,,,3.2,346,https://www.glassdoor.com.au/Overview/x.htm`
-    );
-    expect(rated.glassdoorRating).toBe(3.2);
-    expect(rated.glassdoorReviews).toBe(346);
-    expect(rated.glassdoorUrl).toContain('glassdoor');
-
-    const [plain] = await freshLoad(`${HEADERS_NEW}\nAcme,,,,,,,,,,,,,,`);
-    expect(plain.glassdoorRating).toBeUndefined();
-    expect(plain.glassdoorUrl).toBeUndefined();
   });
 
   test('"Board roles" is read when present, and defaults to 0 for a file written before it existed', async () => {

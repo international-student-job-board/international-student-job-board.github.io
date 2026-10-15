@@ -110,21 +110,15 @@ describe('reading the CSV', () => {
     expect(job.salary.scope).toBe('company');
   });
 
-  test('the Glassdoor rating folds onto the employer', () => {
-    const [job] = toJobs(
-      parseCsv(
-        csv(
-          row({
-            'Glassdoor rating': '3.2',
-            'Glassdoor reviews': '346',
-            'Glassdoor URL': 'https://www.glassdoor.com.au/Overview/Working-at-Acme-EI_IE1.htm',
-          })
-        )
-      )
+  test("the role's state comes with its city, and not without one", () => {
+    const [placed] = toJobs(
+      parseCsv(csv(row({ 'Job location city': 'Melbourne', 'Job location state': 'Victoria' })))
     );
-    expect(job.company.glassdoorRating).toBe(3.2);
-    expect(job.company.glassdoorReviews).toBe(346);
-    expect(job.company.glassdoorUrl).toContain('glassdoor');
+    expect(placed.locationState).toBe('Victoria');
+    const [unplaced] = toJobs(
+      parseCsv(csv(row({ 'Job location city': '', 'Job location state': 'Victoria' })))
+    );
+    expect(unplaced.locationState).toBe('');
   });
 
   test('a role with no salary data carries an empty pay block', () => {
