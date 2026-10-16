@@ -828,7 +828,9 @@ optgroup {
    viewport rect, and it must clear the modal (z-index 200). */
 .fselect-panel[data-overlay] {
   z-index: 300;
-  overflow: hidden;
+  /* Not overflow: hidden - the option list scrolls itself, and hiding the panel's overflow cut off
+     the "i" tooltip in its footer, which opens up past the panel's top edge. */
+  overflow: visible;
 }
 
 @keyframes panel-in {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 
 /** As wide as the bubble ever gets, matching the max-width the stylesheet sets. */
 const BUBBLE_WIDTH = 320;
@@ -8,8 +8,23 @@ const MARGIN = 12;
 
 type Align = 'center' | 'left' | 'right';
 
-/** Where the bubble hangs from, and how wide it may be once it is there. */
-type Placed = { align: Align; maxWidth?: number };
+/**
+ * Where the bubble hangs from, and how wide it may be once it is there - plus, for a tip inside
+ * the filters dialog, where on the screen it goes (see FLOATING).
+ */
+type Placed = { align: Align; maxWidth?: number; fixed?: CSSProperties };
+
+/**
+ * Containers that clip in both directions and are no bigger than they need to be: the filters
+ * dialog's scrolling body, and a dropdown panel floated over it, which hides its own overflow so
+ * its option list can scroll. A bubble positioned inside one of those is cut off by its edge - the
+ * sponsor and students tips lost their top half to the panel. Inside them the bubble is pinned to
+ * the screen instead, at the button, so nothing it sits in can clip it.
+ */
+const FLOATING = '[data-overlay], [role="dialog"]';
+
+/** How far the bubble stands off its button, matching the stylesheet's 10px. */
+const GAP = 10;
 
 /**
  * Overflow values that cut off whatever reaches past the edge. Listed the way
@@ -94,9 +109,11 @@ export function InfoTooltip({
     // tooltip that can't measure should still open somewhere sensible.
     if (!button?.getBoundingClientRect) return;
 
-    const { left, right } = button.getBoundingClientRect();
+    const rect = button.getBoundingClientRect();
+    const { left, right } = rect;
     const centre = (left + right) / 2;
-    const bounds = boundsFor(button);
+    const floating = Boolean(button.closest?.(FLOATING));
+    const bounds = floating ? { left: 0, right: window.innerWidth } : boundsFor(button);
     const edge = { left: bounds.left + MARGIN, right: bounds.right - MARGIN };
 
     // How wide the bubble could be under each anchoring, given it grows away
@@ -116,8 +133,24 @@ export function InfoTooltip({
       room.center >= BUBBLE_WIDTH ? 'center' : room.left >= room.right ? 'left' : 'right';
     const width = Math.min(BUBBLE_WIDTH, room[align], window.innerWidth * 0.8);
 
-    setPlaced({ align, maxWidth: width > 0 ? Math.round(width) : undefined });
-  }, []);
+    // Pinned to the screen: the same edge the stylesheet would hang it from, given as a viewport
+    // position, and opening the same way (above, or below for a 'bottom' tip).
+    const fixed: CSSProperties | undefined = floating
+      ? {
+          position: 'fixed',
+          ...(placement === 'bottom'
+            ? { top: rect.bottom + GAP, bottom: 'auto' }
+            : { bottom: window.innerHeight - rect.top + GAP, top: 'auto' }),
+          ...(align === 'center'
+            ? { left: centre }
+            : align === 'left'
+              ? { left }
+              : { left: 'auto', right: window.innerWidth - right }),
+        }
+      : undefined;
+
+    setPlaced({ align, maxWidth: width > 0 ? Math.round(width) : undefined, fixed });
+  }, [placement]);
 
   // A tapped-open bubble closes on a tap outside it or Escape - it has no other way out, since
   // there's no hover to lose on a touch screen.
@@ -158,7 +191,11 @@ export function InfoTooltip({
         className="info-tip-bubble"
         role="tooltip"
         data-align={placed.align}
-        style={placed.maxWidth ? { maxWidth: placed.maxWidth } : undefined}
+        style={
+          placed.maxWidth || placed.fixed
+            ? { ...placed.fixed, ...(placed.maxWidth ? { maxWidth: placed.maxWidth } : {}) }
+            : undefined
+        }
       >
         {text}
         {link && (

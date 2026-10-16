@@ -498,7 +498,7 @@ export const INVITED_ROUND_NOTE =
 
 /** How the two hand-checked columns are filled in, on both pages. */
 export const MANUAL_REVIEW_NOTE =
-  "We're working through this list by hand to confirm which companies sponsor " +
+  "We're working through this list to confirm which companies sponsor " +
   'visas and which hire international students and graduates.\n\n' +
   "A company without those tags hasn't been checked yet!";
 
