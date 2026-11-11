@@ -91,6 +91,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://international-student-job-board.github.io/jobs-in/wellington/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://international-student-job-board.github.io/jobs-in/townsville/</loc>
     <lastmod>2026-11-11</lastmod>
     <changefreq>daily</changefreq>
@@ -133,7 +139,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/roles/accounting/</loc>
+    <loc>https://international-student-job-board.github.io/roles/data-science-and-engineering/</loc>
     <lastmod>2026-11-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -145,7 +151,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/roles/data-science-and-engineering/</loc>
+    <loc>https://international-student-job-board.github.io/roles/accounting/</loc>
     <lastmod>2026-11-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -223,7 +229,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs-in/sydney/accounting/</loc>
+    <loc>https://international-student-job-board.github.io/jobs-in/sydney/data-science-and-engineering/</loc>
     <lastmod>2026-11-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -235,7 +241,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs-in/sydney/data-science-and-engineering/</loc>
+    <loc>https://international-student-job-board.github.io/jobs-in/sydney/accounting/</loc>
     <lastmod>2026-11-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -313,7 +319,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs-in/melbourne/accounting/</loc>
+    <loc>https://international-student-job-board.github.io/jobs-in/melbourne/data-science-and-engineering/</loc>
     <lastmod>2026-11-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -325,7 +331,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs-in/melbourne/data-science-and-engineering/</loc>
+    <loc>https://international-student-job-board.github.io/jobs-in/melbourne/accounting/</loc>
     <lastmod>2026-11-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -379,13 +385,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs-in/brisbane/accounting/</loc>
+    <loc>https://international-student-job-board.github.io/jobs-in/brisbane/project-management/</loc>
     <lastmod>2026-11-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs-in/brisbane/project-management/</loc>
+    <loc>https://international-student-job-board.github.io/jobs-in/brisbane/accounting/</loc>
     <lastmod>2026-11-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -404,6 +410,12 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs-in/perth/marketing-and-communication/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs-in/wellington/legal/</loc>
     <lastmod>2026-11-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -631,7 +643,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/visa-sponsorship/roles/accounting/</loc>
+    <loc>https://international-student-job-board.github.io/visa-sponsorship/roles/data-science-and-engineering/</loc>
     <lastmod>2026-11-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -643,7 +655,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/visa-sponsorship/roles/data-science-and-engineering/</loc>
+    <loc>https://international-student-job-board.github.io/visa-sponsorship/roles/accounting/</loc>
     <lastmod>2026-11-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -653,6 +665,402 @@
     <lastmod>2026-11-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92972799/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92972398/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92981264/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92977252/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92981670/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92999618/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92981661/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92973558/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92999191/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92973845/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92993143/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92990428/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92991078/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92977917/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92999757/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92972810/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92983074/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994041/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92987323/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92981619/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92983047/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92987335/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92989877/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92990034/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994439/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92999284/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93011265/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93009240/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93009011/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93007477/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93005961/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93005931/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93005894/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93005883/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93005874/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93005873/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93005871/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93005851/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93005825/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93005822/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93005817/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93005816/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93005814/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93005813/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93005812/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93003669/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93003428/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93003096/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93003090/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93003045/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93003035/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994760/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994736/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994733/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92991557/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92990853/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92990786/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92990568/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92989711/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92978722/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92975304/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92974428/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92974123/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92974089/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92974070/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92972069/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/92961429/</loc>
@@ -793,12 +1201,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/92915007/</loc>
-    <lastmod>2026-11-10</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/92924925/</loc>
     <lastmod>2026-11-10</lastmod>
     <changefreq>weekly</changefreq>
@@ -931,6 +1333,132 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://international-student-job-board.github.io/jobs/92924341/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93010122/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93009998/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93009980/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93004577/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93004517/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92995740/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92995715/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994769/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994759/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994753/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994752/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994744/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994742/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994741/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994739/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994730/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994715/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994713/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92991518/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92967438/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://international-student-job-board.github.io/jobs/92949021/</loc>
     <lastmod>2026-11-10</lastmod>
     <changefreq>weekly</changefreq>
@@ -1057,12 +1585,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/92870116/</loc>
-    <lastmod>2026-11-09</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/92871053/</loc>
     <lastmod>2026-11-09</lastmod>
     <changefreq>weekly</changefreq>
@@ -1111,12 +1633,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/92924341/</loc>
-    <lastmod>2026-11-09</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/92869214/</loc>
     <lastmod>2026-11-09</lastmod>
     <changefreq>weekly</changefreq>
@@ -1130,6 +1646,60 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/92871267/</loc>
+    <lastmod>2026-11-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994891/</loc>
+    <lastmod>2026-11-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994836/</loc>
+    <lastmod>2026-11-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994806/</loc>
+    <lastmod>2026-11-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994796/</loc>
+    <lastmod>2026-11-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994794/</loc>
+    <lastmod>2026-11-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92994791/</loc>
+    <lastmod>2026-11-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92989708/</loc>
+    <lastmod>2026-11-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92989706/</loc>
+    <lastmod>2026-11-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92975579/</loc>
     <lastmod>2026-11-09</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -1213,12 +1783,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/92846142/</loc>
-    <lastmod>2026-11-08</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/92846603/</loc>
     <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
@@ -1243,19 +1807,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/92846387/</loc>
-    <lastmod>2026-11-08</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/92847412/</loc>
-    <lastmod>2026-11-08</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/92849667/</loc>
     <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -1502,12 +2054,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/92826154/</loc>
-    <lastmod>2026-11-07</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/92826149/</loc>
     <lastmod>2026-11-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -2185,6 +2731,18 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://international-student-job-board.github.io/jobs/92656003/</loc>
+    <lastmod>2026-11-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92964407/</loc>
+    <lastmod>2026-11-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://international-student-job-board.github.io/jobs/92934044/</loc>
     <lastmod>2026-11-05</lastmod>
     <changefreq>weekly</changefreq>
@@ -2312,12 +2870,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/92692048/</loc>
-    <lastmod>2026-11-05</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/92692041/</loc>
     <lastmod>2026-11-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -2539,12 +3091,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/92656003/</loc>
-    <lastmod>2026-11-04</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/92905241/</loc>
     <lastmod>2026-11-04</lastmod>
     <changefreq>weekly</changefreq>
@@ -2611,19 +3157,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/92717194/</loc>
-    <lastmod>2026-11-04</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/92715626/</loc>
-    <lastmod>2026-11-04</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/92690048/</loc>
     <lastmod>2026-11-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -2851,12 +3385,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/92528727/</loc>
-    <lastmod>2026-11-03</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/92528149/</loc>
     <lastmod>2026-11-03</lastmod>
     <changefreq>weekly</changefreq>
@@ -3043,12 +3571,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/92536997/</loc>
-    <lastmod>2026-11-03</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/92536973/</loc>
     <lastmod>2026-11-03</lastmod>
     <changefreq>weekly</changefreq>
@@ -3134,12 +3656,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/92511241/</loc>
-    <lastmod>2026-11-02</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/92522605/</loc>
     <lastmod>2026-11-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -3260,12 +3776,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/92538321/</loc>
-    <lastmod>2026-11-02</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/92505754/</loc>
     <lastmod>2026-11-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -3493,18 +4003,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/92436561/</loc>
-    <lastmod>2026-11-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/92436552/</loc>
-    <lastmod>2026-11-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/92430770/</loc>
     <lastmod>2026-11-01</lastmod>
     <changefreq>weekly</changefreq>
@@ -3655,12 +4153,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/92383120/</loc>
-    <lastmod>2026-10-31</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/92398543/</loc>
     <lastmod>2026-10-31</lastmod>
     <changefreq>weekly</changefreq>
@@ -3704,12 +4196,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/92379270/</loc>
-    <lastmod>2026-10-31</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/92378342/</loc>
     <lastmod>2026-10-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -3877,12 +4363,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/92405012/</loc>
-    <lastmod>2026-10-30</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/92409739/</loc>
     <lastmod>2026-10-30</lastmod>
     <changefreq>weekly</changefreq>
@@ -3932,12 +4412,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/92492157/</loc>
-    <lastmod>2026-10-30</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/92450423/</loc>
     <lastmod>2026-10-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -4261,6 +4735,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://international-student-job-board.github.io/jobs/92424583/</loc>
+    <lastmod>2026-10-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://international-student-job-board.github.io/jobs/92734155/</loc>
     <lastmod>2026-10-29</lastmod>
     <changefreq>weekly</changefreq>
@@ -4519,25 +4999,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/92186826/</loc>
-    <lastmod>2026-10-28</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/92173859/</loc>
-    <lastmod>2026-10-28</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/92169539/</loc>
-    <lastmod>2026-10-28</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/92178264/</loc>
     <lastmod>2026-10-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -4556,12 +5018,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/92175942/</loc>
-    <lastmod>2026-10-28</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/92424583/</loc>
     <lastmod>2026-10-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -4856,12 +5312,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/92109944/</loc>
-    <lastmod>2026-10-27</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/92883193/</loc>
     <lastmod>2026-10-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -5257,6 +5707,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://international-student-job-board.github.io/jobs/93003850/</loc>
+    <lastmod>2026-10-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://international-student-job-board.github.io/jobs/92036265/</loc>
     <lastmod>2026-10-25</lastmod>
     <changefreq>weekly</changefreq>
@@ -5641,12 +6097,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/91960367/</loc>
-    <lastmod>2026-10-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/91910941/</loc>
     <lastmod>2026-10-23</lastmod>
     <changefreq>weekly</changefreq>
@@ -5696,12 +6146,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/91928961/</loc>
-    <lastmod>2026-10-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/91910451/</loc>
     <lastmod>2026-10-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -5971,13 +6415,13 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/91901915/</loc>
+    <loc>https://international-student-job-board.github.io/jobs/91889547/</loc>
     <lastmod>2026-10-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/91889547/</loc>
+    <loc>https://international-student-job-board.github.io/jobs/92180880/</loc>
     <lastmod>2026-10-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -6086,12 +6530,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/91867431/</loc>
-    <lastmod>2026-10-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/91866175/</loc>
     <lastmod>2026-10-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -6295,12 +6733,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/91805410/</loc>
-    <lastmod>2026-10-21</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/91746101/</loc>
     <lastmod>2026-10-21</lastmod>
     <changefreq>weekly</changefreq>
@@ -6463,12 +6895,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/92180880/</loc>
-    <lastmod>2026-10-21</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/91830954/</loc>
     <lastmod>2026-10-21</lastmod>
     <changefreq>weekly</changefreq>
@@ -6524,6 +6950,12 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/91823272/</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/93003820/</loc>
     <lastmod>2026-10-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -6727,19 +7159,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/91811030/</loc>
-    <lastmod>2026-10-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/91786356/</loc>
-    <lastmod>2026-10-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/91772355/</loc>
     <lastmod>2026-10-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -6776,12 +7196,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/91749421/</loc>
-    <lastmod>2026-10-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/91833207/</loc>
     <lastmod>2026-10-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -7004,12 +7418,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/91662397/</loc>
-    <lastmod>2026-10-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/91662380/</loc>
     <lastmod>2026-10-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -7411,25 +7819,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/91773819/</loc>
-    <lastmod>2026-10-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/91822682/</loc>
-    <lastmod>2026-10-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/91824976/</loc>
-    <lastmod>2026-10-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/91928082/</loc>
     <lastmod>2026-10-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -7532,12 +7922,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/91745824/</loc>
-    <lastmod>2026-10-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/91705613/</loc>
     <lastmod>2026-10-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -7970,12 +8354,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/91432845/</loc>
-    <lastmod>2026-10-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/91377880/</loc>
     <lastmod>2026-10-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -8419,6 +8797,18 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://international-student-job-board.github.io/jobs/92463174/</loc>
+    <lastmod>2026-10-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://international-student-job-board.github.io/jobs/92096728/</loc>
+    <lastmod>2026-10-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://international-student-job-board.github.io/jobs/92680571/</loc>
     <lastmod>2026-10-13</lastmod>
     <changefreq>weekly</changefreq>
@@ -8426,12 +8816,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/92641176/</loc>
-    <lastmod>2026-10-13</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/92038845/</loc>
     <lastmod>2026-10-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -8497,12 +8881,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/91587028/</loc>
-    <lastmod>2026-10-13</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/91587026/</loc>
     <lastmod>2026-10-13</lastmod>
     <changefreq>weekly</changefreq>
@@ -8516,12 +8894,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/91587021/</loc>
-    <lastmod>2026-10-13</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/91587020/</loc>
     <lastmod>2026-10-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -8635,12 +9007,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/91252645/</loc>
-    <lastmod>2026-10-13</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/91252509/</loc>
     <lastmod>2026-10-13</lastmod>
     <changefreq>weekly</changefreq>
@@ -8690,18 +9056,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/91408370/</loc>
-    <lastmod>2026-10-12</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/92463174/</loc>
-    <lastmod>2026-10-12</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/92096728/</loc>
     <lastmod>2026-10-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -9632,12 +9986,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/91497009/</loc>
-    <lastmod>2026-10-08</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/91256210/</loc>
     <lastmod>2026-10-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -10795,12 +11143,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/90573933/</loc>
-    <lastmod>2026-09-28</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/90526617/</loc>
     <lastmod>2026-09-28</lastmod>
     <changefreq>weekly</changefreq>
@@ -11365,12 +11707,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/90139332/</loc>
-    <lastmod>2026-09-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/90111336/</loc>
     <lastmod>2026-09-24</lastmod>
     <changefreq>weekly</changefreq>
@@ -11546,12 +11882,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/90054852/</loc>
-    <lastmod>2026-09-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/90082512/</loc>
     <lastmod>2026-09-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -11966,12 +12296,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/89914898/</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/90074684/</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -13099,18 +13423,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://international-student-job-board.github.io/jobs/89598345/</loc>
-    <lastmod>2026-09-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/89598284/</loc>
-    <lastmod>2026-09-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://international-student-job-board.github.io/jobs/89582323/</loc>
     <lastmod>2026-09-15</lastmod>
     <changefreq>weekly</changefreq>
@@ -13226,12 +13538,6 @@
   </url>
   <url>
     <loc>https://international-student-job-board.github.io/jobs/89567175/</loc>
-    <lastmod>2026-09-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://international-student-job-board.github.io/jobs/89583885/</loc>
     <lastmod>2026-09-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
