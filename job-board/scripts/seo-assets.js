@@ -666,7 +666,7 @@ function main() {
 
   writePage(template, {
     path: '/',
-    title: 'Startup Jobs in Australia | International Student Job Board',
+    title: `${SITE}: Startup Jobs in Australia`,
     description:
       'Startup and scaleup jobs across Australia, with pay and visa sponsorship info. Built for international students and graduates - open to everyone.',
     schema: {
@@ -682,7 +682,7 @@ function main() {
       '<main>',
       '<h1>Startup jobs in Australia for international students and graduates</h1>',
       `<p>${esc(
-        'Startup and scaleup jobs across Australia - open to everyone, and built for ' +
+        `${SITE} lists startup and scaleup jobs across Australia - open to everyone, and built for ` +
           'international students and graduates. Every listing shows the pay where known, the ' +
           'visa pathways, ANZSCO occupation and skills assessment that apply, and whether the ' +
           'employer sponsors visas.'

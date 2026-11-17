@@ -102,7 +102,7 @@ export function metaFor(
       };
     default:
       return {
-        title: `Startup Jobs in Australia | ${SITE_NAME}`,
+        title: `${SITE_NAME}: Startup Jobs in Australia`,
         description: HOME_DESCRIPTION,
         url: at('/'),
       };
